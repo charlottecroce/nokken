@@ -19,7 +19,6 @@ class MedicationListScreen extends ConsumerWidget {
     final isLoading = ref.watch(medicationsLoadingProvider);
     final error = ref.watch(medicationsErrorProvider);
     final needsRefill = ref.watch(medicationsByNeedRefillProvider);
-    final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(

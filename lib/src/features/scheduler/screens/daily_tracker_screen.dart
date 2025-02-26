@@ -5,14 +5,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nokken/src/features/medication_tracker/models/medication.dart';
 import 'package:nokken/src/features/medication_tracker/providers/medication_state.dart';
+import 'package:nokken/src/features/medication_tracker/providers/medication_taken_provider.dart';
 import 'package:nokken/src/services/navigation_service.dart';
 import 'package:nokken/src/shared/theme/shared_widgets.dart';
 import 'package:nokken/src/shared/theme/app_theme.dart';
 import 'package:nokken/src/shared/constants/date_constants.dart';
 import 'package:nokken/src/shared/theme/app_icons.dart';
 
-// Provider to track taken medications for the current day
-final takenMedicationsProvider = StateProvider<Set<String>>((ref) => {});
 // Provider to track the selected date
 final selectedDateProvider = StateProvider<DateTime>((ref) => DateTime.now());
 // Provider to track slide direction
@@ -25,14 +24,15 @@ class DailyTrackerScreen extends ConsumerStatefulWidget {
 
   @override
   // ignore: library_private_types_in_public_api
-  _DailyTrackerScreenState createState() =>
-      _DailyTrackerScreenState(); // Changed return type
+  _DailyTrackerScreenState createState() => _DailyTrackerScreenState();
 }
 
 class _DailyTrackerScreenState extends ConsumerState<DailyTrackerScreen> {
   @override
   void initState() {
     super.initState();
+
+    // Set selected date if provided
     if (widget.selectedDate_FromMonthView != null) {
       Future.microtask(() {
         ref.read(selectedDateProvider.notifier).state =
@@ -42,12 +42,41 @@ class _DailyTrackerScreenState extends ConsumerState<DailyTrackerScreen> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Load taken medications for the current date
+    _loadTakenMedicationsForCurrentDate();
+  }
+
+  void _loadTakenMedicationsForCurrentDate() {
+    final selectedDate = ref.read(selectedDateProvider);
+    //print('Loading taken medications for date: ${selectedDate.toIso8601String()}');
+
+    // Use normalized date
+    final normalizedDate =
+        DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
+    ref
+        .read(medicationTakenProvider.notifier)
+        .loadTakenMedicationsForDate(normalizedDate);
+  }
+
+  @override
   Widget build(BuildContext context) {
     final medications =
         ref.watch(medicationStateProvider.select((state) => state.medications));
-    final takenMedications = ref.watch(takenMedicationsProvider);
-
     final selectedDate = ref.watch(selectedDateProvider);
+
+    // When the date changes, load taken medications for the new date
+    ref.listen(selectedDateProvider, (previous, next) {
+      if (previous != next) {
+        //print('Date changed from ${previous?.toIso8601String()} to ${next.toIso8601String()}');
+        // Always use normalized date
+        final normalizedDate = DateTime(next.year, next.month, next.day);
+        ref
+            .read(medicationTakenProvider.notifier)
+            .loadTakenMedicationsForDate(normalizedDate);
+      }
+    });
 
     final medicationsForDay = _getMedicationsForDay(medications, selectedDate);
     final groupedMedications =
@@ -91,7 +120,6 @@ class _DailyTrackerScreenState extends ConsumerState<DailyTrackerScreen> {
               child: _MedicationsList(
                 key: ValueKey<DateTime>(selectedDate),
                 groupedMedications: groupedMedications,
-                takenMedications: takenMedications,
                 selectedDate: selectedDate,
               ),
             ),
@@ -212,12 +240,10 @@ class _MedicationsList extends ConsumerWidget {
   const _MedicationsList({
     super.key,
     required this.groupedMedications,
-    required this.takenMedications,
     required this.selectedDate,
   });
 
   final List<MedicationTimeGroup> groupedMedications;
-  final Set<String> takenMedications;
   final DateTime selectedDate;
 
   @override
@@ -236,7 +262,6 @@ class _MedicationsList extends ConsumerWidget {
       itemCount: groupedMedications.length,
       itemBuilder: (context, index) => _TimeGroupItem(
         timeGroup: groupedMedications[index],
-        takenMedications: takenMedications,
         selectedDate: selectedDate,
       ),
     );
@@ -246,12 +271,10 @@ class _MedicationsList extends ConsumerWidget {
 class _TimeGroupItem extends StatelessWidget {
   const _TimeGroupItem({
     required this.timeGroup,
-    required this.takenMedications,
     required this.selectedDate,
   });
 
   final MedicationTimeGroup timeGroup;
-  final Set<String> takenMedications;
   final DateTime selectedDate;
 
   @override
@@ -274,7 +297,6 @@ class _TimeGroupItem extends StatelessWidget {
                       (med) => _MedicationListTile(
                         medication: med,
                         timeSlot: timeGroup.timeSlot,
-                        takenMedications: takenMedications,
                         selectedDate: selectedDate,
                       ),
                     )
@@ -292,19 +314,22 @@ class _MedicationListTile extends ConsumerWidget {
   const _MedicationListTile({
     required this.medication,
     required this.timeSlot,
-    required this.takenMedications,
     required this.selectedDate,
   });
 
   final Medication medication;
   final String timeSlot;
-  final Set<String> takenMedications;
   final DateTime selectedDate;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Normalize the date to match how it's stored in the database (just year-month-day)
+    final normalizedDate =
+        DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
     final medicationKey =
-        '${medication.id}-${selectedDate.toIso8601String()}-$timeSlot';
-    final isTaken = takenMedications.contains(medicationKey);
+        '${medication.id}-${normalizedDate.toIso8601String()}-$timeSlot';
+    // Use the isMedicationTakenProvider to check if this medication is taken
+    final isTaken = ref.watch(isMedicationTakenProvider(medicationKey));
 
     return ListTile(
       title: Padding(
@@ -383,9 +408,17 @@ class _MedicationListTile extends ConsumerWidget {
       return;
     }
 
-    // Update taken medications set
-    ref.read(takenMedicationsProvider.notifier).update((state) =>
-        value ? {...state, medicationKey} : state.difference({medicationKey}));
+    // Normalize the date to prevent time-related issues
+    final normalizedDate =
+        DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
+
+    // Update taken medications in database and state
+    ref.read(medicationTakenProvider.notifier).setMedicationTaken(
+          medication.id,
+          normalizedDate,
+          timeSlot,
+          value,
+        );
 
     // Update medication quantity
     ref
