@@ -3,18 +3,15 @@
 //  Screen that handles both adding new medications and editing existing ones
 //
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nokken/src/services/navigation_service.dart';
+import 'package:nokken/src/shared/constants/date_constants.dart';
+import 'package:nokken/src/shared/theme/app_icons.dart';
+import 'package:nokken/src/shared/theme/app_theme.dart';
+import 'package:nokken/src/shared/theme/shared_widgets.dart';
 import '../models/medication.dart';
 import '../providers/medication_state.dart';
-import 'package:nokken/src/features/medication_tracker/screens/widgets/edit_basic_info_section.dart';
-import 'package:nokken/src/features/medication_tracker/screens/widgets/edit_medication_type_section.dart';
-import 'package:nokken/src/features/medication_tracker/screens/widgets/edit_injection_details_section.dart';
-import 'package:nokken/src/features/medication_tracker/screens/widgets/edit_timing_section.dart';
-import 'package:nokken/src/features/medication_tracker/screens/widgets/edit_inventory_section.dart';
-import 'package:nokken/src/features/medication_tracker/screens/widgets/edit_notes_section.dart';
-import 'package:nokken/src/shared/theme/shared_widgets.dart';
-import 'package:nokken/src/shared/theme/app_theme.dart';
 
 class AddEditMedicationScreen extends ConsumerStatefulWidget {
   final Medication? medication;
@@ -177,11 +174,6 @@ class _AddEditMedicationScreenState
 
       // Return to details screen
       if (mounted) {
-        // Get the updated medication from the state
-        /*final updatedMedication = ref
-            .read(medicationStateProvider)
-            .medications
-            .firstWhere((med) => med.id == medication.id);*/
         NavigationService.goToMedicationDetails(context,
             medication: medication);
       }
@@ -202,78 +194,6 @@ class _AddEditMedicationScreenState
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        // Show different title based on add/edit mode
-        title: Text(
-            widget.medication == null ? 'Add Medication' : 'Edit Medication'),
-        actions: [
-          // Show loading indicator or save button
-          _isLoading
-              ? const Center(
-                  child: Padding(
-                    padding: AppTheme.standardCardPadding,
-                    child: CircularProgressIndicator(),
-                  ),
-                )
-              : IconButton(
-                  icon: const Icon(Icons.save),
-                  onPressed: _saveMedication,
-                ),
-        ],
-      ),
-      // Main form layout using ListView for scrolling
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: AppTheme.standardCardPadding,
-          children: [
-            BasicInfoSection(
-              nameController: _nameController,
-              dosageController: _dosageController,
-            ),
-            SharedWidgets.verticalSpace(AppTheme.cardSpacing),
-            MedicationTypeSection(
-              medicationType: _medicationType,
-              onTypeChanged: _handleTypeChange,
-            ),
-            SharedWidgets.verticalSpace(AppTheme.cardSpacing),
-            if (_medicationType == MedicationType.injection)
-              InjectionDetailsSection(
-                injectionDetails: _injectionDetails!,
-                onDetailsChanged: _updateInjectionDetails,
-              ),
-            SharedWidgets.verticalSpace(AppTheme.cardSpacing),
-            TimingSection(
-              selectedStartDate: _startDate,
-              onStartDateChanged: (date) => setState(() => _startDate = date),
-              frequency: _frequency,
-              times: _times,
-              selectedDays: _selectedDays,
-              onFrequencyChanged: _handleFrequencyChange,
-              onTimeChanged: _handleTimeChange,
-              onDaysChanged: _handleDaysChange,
-            ),
-            SharedWidgets.verticalSpace(AppTheme.cardSpacing),
-            InventorySection(
-              currentQuantity: _currentQuantity,
-              refillThreshold: _refillThreshold,
-              onQuantityChanged: (value) =>
-                  setState(() => _currentQuantity = value),
-              onThresholdChanged: (value) =>
-                  setState(() => _refillThreshold = value),
-            ),
-            SharedWidgets.verticalSpace(AppTheme.cardSpacing),
-            NotesSection(controller: _notesController),
-          ],
-        ),
-      ),
-    );
-  }
-
-// Helper method to update injection details
   void _updateInjectionDetails({
     String? drawingNeedleType,
     int? drawingNeedleCount,
@@ -338,5 +258,723 @@ class _AddEditMedicationScreenState
     setState(() {
       _times[index] = newTime;
     });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        // Show different title based on add/edit mode
+        title: Text(
+            widget.medication == null ? 'Add Medication' : 'Edit Medication'),
+        actions: [
+          // Show loading indicator or save button
+          _isLoading
+              ? const Center(
+                  child: Padding(
+                    padding: AppTheme.standardCardPadding,
+                    child: CircularProgressIndicator(),
+                  ),
+                )
+              : IconButton(
+                  icon: const Icon(Icons.save),
+                  onPressed: _saveMedication,
+                ),
+        ],
+      ),
+      // Main form layout using ListView for scrolling
+      body: Form(
+        key: _formKey,
+        child: ListView(
+          padding: AppTheme.standardCardPadding,
+          children: [
+            BasicInfoSection(
+              nameController: _nameController,
+              dosageController: _dosageController,
+            ),
+            SharedWidgets.verticalSpace(AppTheme.cardSpacing),
+            MedicationTypeSection(
+              medicationType: _medicationType,
+              onTypeChanged: _handleTypeChange,
+            ),
+            SharedWidgets.verticalSpace(AppTheme.cardSpacing),
+            if (_medicationType == MedicationType.injection)
+              InjectionDetailsSection(
+                injectionDetails: _injectionDetails!,
+                onDetailsChanged: _updateInjectionDetails,
+              ),
+            SharedWidgets.verticalSpace(AppTheme.cardSpacing),
+            TimingSection(
+              selectedStartDate: _startDate,
+              onStartDateChanged: (date) => setState(() => _startDate = date),
+              frequency: _frequency,
+              times: _times,
+              selectedDays: _selectedDays,
+              onFrequencyChanged: _handleFrequencyChange,
+              onTimeChanged: _handleTimeChange,
+              onDaysChanged: _handleDaysChange,
+              isEveryTwoWeeks: _medicationType == MedicationType.injection &&
+                  _injectionDetails?.frequency == InjectionFrequency.biweekly,
+            ),
+            SharedWidgets.verticalSpace(AppTheme.cardSpacing),
+            InventorySection(
+              currentQuantity: _currentQuantity,
+              refillThreshold: _refillThreshold,
+              onQuantityChanged: (value) =>
+                  setState(() => _currentQuantity = value),
+              onThresholdChanged: (value) =>
+                  setState(() => _refillThreshold = value),
+            ),
+            SharedWidgets.verticalSpace(AppTheme.cardSpacing),
+            NotesSection(controller: _notesController),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+//
+// SECTION WIDGETS
+//
+
+/// Basic Information Section with name and dosage fields
+class BasicInfoSection extends StatelessWidget {
+  final TextEditingController nameController;
+  final TextEditingController dosageController;
+
+  const BasicInfoSection({
+    super.key,
+    required this.nameController,
+    required this.dosageController,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SharedWidgets.basicCard(
+      context: context,
+      title: 'Basic Information',
+      children: [
+        TextFormField(
+          controller: nameController,
+          decoration: AppTheme.defaultTextFieldDecoration.copyWith(
+            labelText: 'Medication Name',
+          ),
+          validator: (value) => value?.trim().isEmpty == true
+              ? 'Please enter a medication name'
+              : null,
+        ),
+        SharedWidgets.verticalSpace(),
+        TextFormField(
+          controller: dosageController,
+          decoration: AppTheme.defaultTextFieldDecoration.copyWith(
+            labelText: 'Dosage',
+            hintText: 'e.g., 50mg',
+          ),
+          validator: (value) =>
+              value?.trim().isEmpty == true ? 'Please enter the dosage' : null,
+        ),
+      ],
+    );
+  }
+}
+
+/// Medication Type Selection Section (Oral vs Injection)
+class MedicationTypeSection extends StatelessWidget {
+  final MedicationType medicationType;
+  final ValueChanged<MedicationType> onTypeChanged;
+
+  const MedicationTypeSection({
+    super.key,
+    required this.medicationType,
+    required this.onTypeChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SharedWidgets.basicCard(
+      context: context,
+      title: 'Medication Type',
+      children: [
+        RadioListTile<MedicationType>(
+          title: const Text('Oral'),
+          value: MedicationType.oral,
+          groupValue: medicationType,
+          onChanged: (value) {
+            if (value != null) {
+              onTypeChanged(value);
+            }
+          },
+        ),
+        RadioListTile<MedicationType>(
+          title: const Text('Injection'),
+          value: MedicationType.injection,
+          groupValue: medicationType,
+          onChanged: (value) {
+            if (value != null) {
+              onTypeChanged(value);
+            }
+          },
+        ),
+      ],
+    );
+  }
+}
+
+/// Injection Details Section - Only shown for injection medications
+class InjectionDetailsSection extends StatelessWidget {
+  final InjectionDetails injectionDetails;
+  final Function({
+    String? drawingNeedleType,
+    int? drawingNeedleCount,
+    int? drawingNeedleRefills,
+    String? injectingNeedleType,
+    int? injectingNeedleCount,
+    int? injectingNeedleRefills,
+    String? injectionSiteNotes,
+    InjectionFrequency? frequency,
+  }) onDetailsChanged;
+
+  const InjectionDetailsSection({
+    super.key,
+    required this.injectionDetails,
+    required this.onDetailsChanged,
+  });
+
+  Widget _buildNeedleSection({
+    required BuildContext context,
+    required String title,
+    required String type,
+    required int count,
+    required int refills,
+    required Function(String) onTypeChanged,
+    required Function(int) onCountChanged,
+    required Function(int) onRefillsChanged,
+    String typeHint = '',
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: Theme.of(context).textTheme.titleSmall,
+        ),
+        SharedWidgets.verticalSpace(),
+        TextFormField(
+          initialValue: type,
+          decoration: AppTheme.defaultTextFieldDecoration.copyWith(
+            labelText: 'Needle Type',
+            hintText: typeHint,
+          ),
+          onChanged: onTypeChanged,
+          validator: (value) =>
+              value?.isEmpty ?? true ? 'Please enter needle type' : null,
+        ),
+        SharedWidgets.verticalSpace(),
+        Row(
+          children: [
+            Expanded(
+              child: TextFormField(
+                initialValue: count.toString(),
+                decoration: AppTheme.defaultTextFieldDecoration.copyWith(
+                  labelText: 'Count',
+                ),
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                onChanged: (value) => onCountChanged(int.tryParse(value) ?? 0),
+                validator: (value) => int.tryParse(value ?? '') == null
+                    ? 'Enter valid number'
+                    : null,
+              ),
+            ),
+            SharedWidgets.verticalSpace(),
+            Expanded(
+              child: TextFormField(
+                initialValue: refills.toString(),
+                decoration: AppTheme.defaultTextFieldDecoration.copyWith(
+                  labelText: 'Refills',
+                ),
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                onChanged: (value) =>
+                    onRefillsChanged(int.tryParse(value) ?? 0),
+                validator: (value) => int.tryParse(value ?? '') == null
+                    ? 'Enter valid number'
+                    : null,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SharedWidgets.basicCard(
+      context: context,
+      title: 'Injection Details',
+      children: [
+        // Frequency Dropdown
+        DropdownButtonFormField<InjectionFrequency>(
+          value: injectionDetails.frequency,
+          decoration: AppTheme.defaultTextFieldDecoration.copyWith(
+            labelText: 'Frequency',
+          ),
+          items: InjectionFrequency.values.map((freq) {
+            return DropdownMenuItem(
+              value: freq,
+              child: Text(
+                freq == InjectionFrequency.weekly ? 'Weekly' : 'Every 2 Weeks',
+              ),
+            );
+          }).toList(),
+          onChanged: (value) {
+            if (value != null) {
+              onDetailsChanged(frequency: value);
+            }
+          },
+        ),
+        SharedWidgets.verticalSpace(24),
+
+        // Drawing Needles Section
+        _buildNeedleSection(
+          context: context,
+          title: 'Drawing Needles',
+          type: injectionDetails.drawingNeedleType,
+          count: injectionDetails.drawingNeedleCount,
+          refills: injectionDetails.drawingNeedleRefills,
+          typeHint: 'e.g., 18G 1.5"',
+          onTypeChanged: (value) => onDetailsChanged(drawingNeedleType: value),
+          onCountChanged: (value) =>
+              onDetailsChanged(drawingNeedleCount: value),
+          onRefillsChanged: (value) =>
+              onDetailsChanged(drawingNeedleRefills: value),
+        ),
+        SharedWidgets.verticalSpace(24),
+
+        // Injecting Needles Section
+        _buildNeedleSection(
+          context: context,
+          title: 'Injecting Needles',
+          type: injectionDetails.injectingNeedleType,
+          count: injectionDetails.injectingNeedleCount,
+          refills: injectionDetails.injectingNeedleRefills,
+          typeHint: 'e.g., 25G 1"',
+          onTypeChanged: (value) =>
+              onDetailsChanged(injectingNeedleType: value),
+          onCountChanged: (value) =>
+              onDetailsChanged(injectingNeedleCount: value),
+          onRefillsChanged: (value) =>
+              onDetailsChanged(injectingNeedleRefills: value),
+        ),
+        SharedWidgets.verticalSpace(24),
+
+        // Injection Site Notes
+        Text(
+          'Injection Site Notes',
+          style: Theme.of(context).textTheme.titleSmall,
+        ),
+        SharedWidgets.verticalSpace(),
+        TextFormField(
+          initialValue: injectionDetails.injectionSiteNotes,
+          decoration: AppTheme.defaultTextFieldDecoration.copyWith(
+            hintText: 'Enter notes about injection sites, rotation, etc.',
+          ),
+          maxLines: 3,
+          onChanged: (value) => onDetailsChanged(injectionSiteNotes: value),
+        ),
+      ],
+    );
+  }
+}
+
+/// Timing Section for medication schedule
+class TimingSection extends StatelessWidget {
+  final int frequency;
+  final List<TimeOfDay> times;
+  final Set<String> selectedDays;
+  final ValueChanged<int> onFrequencyChanged;
+  final Function(int, TimeOfDay) onTimeChanged;
+  final ValueChanged<Set<String>> onDaysChanged;
+  final DateTime selectedStartDate;
+  final ValueChanged<DateTime> onStartDateChanged;
+  final bool isEveryTwoWeeks;
+
+  const TimingSection({
+    super.key,
+    required this.frequency,
+    required this.times,
+    required this.selectedDays,
+    required this.onFrequencyChanged,
+    required this.onTimeChanged,
+    required this.onDaysChanged,
+    required this.selectedStartDate,
+    required this.onStartDateChanged,
+    this.isEveryTwoWeeks = false,
+  });
+
+  Widget _buildFrequencySelector() {
+    return Row(
+      children: [
+        const Text('Times per day: '),
+        IconButton(
+          icon: const Icon(Icons.remove),
+          onPressed:
+              frequency > 1 ? () => onFrequencyChanged(frequency - 1) : null,
+        ),
+        Text('$frequency'),
+        IconButton(
+          icon: const Icon(Icons.add),
+          onPressed:
+              frequency < 10 ? () => onFrequencyChanged(frequency + 1) : null,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDaySelector(BuildContext context) {
+    return Wrap(
+      spacing: AppTheme.spacing,
+      children: [
+        Text('Days: ', style: AppTextStyles.titleMedium),
+        ...DateConstants.orderedDays.map((day) {
+          final bool isSelected = selectedDays.contains(day);
+          final bool canToggle =
+              !isEveryTwoWeeks || selectedDays.length > 1 || !isSelected;
+
+          return TextButton(
+            onPressed: canToggle
+                ? () {
+                    final newDays = Set<String>.from(selectedDays);
+                    if (isSelected) {
+                      newDays.remove(day);
+                    } else {
+                      newDays.add(day);
+                    }
+                    onDaysChanged(newDays);
+                  }
+                : null,
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+              side: BorderSide(
+                color: AppColors.outline,
+              ),
+              backgroundColor: isSelected ? AppColors.secondary : null,
+            ),
+            child: Text(
+              day,
+              style: TextStyle(
+                fontSize: AppTheme.bodyMedium.fontSize,
+                color: isSelected ? AppColors.onPrimary : null,
+              ),
+            ),
+          );
+        }),
+      ],
+    );
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.month}/${date.day}/${date.year}';
+  }
+
+  Future<void> _selectStartDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: selectedStartDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2034),
+    );
+    if (picked != null && picked != selectedStartDate) {
+      onStartDateChanged(picked);
+    }
+  }
+
+  Widget _buildStartDateSelector(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 8),
+        ListTile(
+          title: Text(
+            'Start Date: ${_formatDate(selectedStartDate)}',
+          ),
+          trailing: const Icon(Icons.calendar_today),
+          onTap: () => _selectStartDate(context),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTimeInput(BuildContext context, int index) {
+    final time = times[index];
+    final isPM = time.hour >= 12;
+    final hour12 =
+        time.hour > 12 ? time.hour - 12 : (time.hour == 0 ? 12 : time.hour);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 80,
+            child: Text(
+              'Time ${index + 1}:',
+              style: const TextStyle(fontSize: 16),
+            ),
+          ),
+          // Hour input
+          SizedBox(
+            width: 45,
+            child: TextFormField(
+              initialValue: hour12.toString(),
+              keyboardType: TextInputType.number,
+              textAlign: TextAlign.center,
+              decoration: AppTheme.defaultTextFieldDecoration,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(2),
+              ],
+              onChanged: (value) {
+                if (value.isNotEmpty) {
+                  final newHour = int.parse(value);
+                  if (newHour >= 1 && newHour <= 12) {
+                    final hour24 = isPM
+                        ? (newHour == 12 ? 12 : newHour + 12)
+                        : (newHour == 12 ? 0 : newHour);
+                    onTimeChanged(
+                      index,
+                      TimeOfDay(hour: hour24, minute: time.minute),
+                    );
+                  }
+                }
+              },
+            ),
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 8),
+            child: Text(':', style: TextStyle(fontSize: 20)),
+          ),
+          // Minute input
+          SizedBox(
+            width: 45,
+            child: TextFormField(
+              initialValue: time.minute.toString().padLeft(2, '0'),
+              keyboardType: TextInputType.number,
+              textAlign: TextAlign.center,
+              decoration: AppTheme.defaultTextFieldDecoration,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(2),
+              ],
+              onChanged: (value) {
+                if (value.isNotEmpty) {
+                  final newMinute = int.parse(value);
+                  if (newMinute >= 0 && newMinute < 60) {
+                    onTimeChanged(
+                      index,
+                      TimeOfDay(hour: time.hour, minute: newMinute),
+                    );
+                  }
+                }
+              },
+            ),
+          ),
+          const SizedBox(width: 12),
+          // AM/PM toggle
+          TextButton(
+            onPressed: () {
+              final currentHour = time.hour;
+              final hour12 = currentHour > 12
+                  ? currentHour - 12
+                  : (currentHour == 0 ? 12 : currentHour);
+
+              final newIsPM = !isPM;
+              final newHour = newIsPM
+                  ? (hour12 == 12 ? 12 : hour12 + 12)
+                  : (hour12 == 12 ? 0 : hour12);
+
+              onTimeChanged(
+                index,
+                TimeOfDay(hour: newHour, minute: time.minute),
+              );
+            },
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              side: BorderSide(color: AppColors.outline),
+            ),
+            child: Text(
+              isPM ? 'PM' : 'AM',
+              style: const TextStyle(fontSize: 16),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SharedWidgets.basicCard(
+      context: context,
+      title: 'Timing',
+      children: [
+        _buildStartDateSelector(context),
+        if (!isEveryTwoWeeks) _buildFrequencySelector(),
+        SharedWidgets.verticalSpace(16),
+        _buildDaySelector(context),
+        SharedWidgets.verticalSpace(16),
+        ...List.generate(
+          frequency,
+          (index) => _buildTimeInput(context, index),
+        ),
+      ],
+    );
+  }
+}
+
+/// Inventory Section for tracking medication quantities
+class InventorySection extends StatelessWidget {
+  final int currentQuantity;
+  final int refillThreshold;
+  final ValueChanged<int> onQuantityChanged;
+  final ValueChanged<int> onThresholdChanged;
+
+  const InventorySection({
+    super.key,
+    required this.currentQuantity,
+    required this.refillThreshold,
+    required this.onQuantityChanged,
+    required this.onThresholdChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SharedWidgets.basicCard(
+      context: context,
+      title: 'Inventory',
+      children: [
+        _buildCounterRow(
+          context,
+          label: 'Current Quantity',
+          value: currentQuantity,
+          onChanged: onQuantityChanged,
+          minValue: 0,
+          showAddButton: true,
+        ),
+        SharedWidgets.verticalSpace(),
+        _buildCounterRow(
+          context,
+          label: 'Refill Alert at',
+          value: refillThreshold,
+          onChanged: onThresholdChanged,
+          minValue: 0,
+          showAddButton: false,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCounterRow(
+    BuildContext context, {
+    required String label,
+    required int value,
+    required ValueChanged<int> onChanged,
+    required int minValue,
+    required bool showAddButton,
+    int? maxValue,
+  }) {
+    final controller = TextEditingController(text: value.toString());
+    final addController = TextEditingController(text: '30');
+
+    return Row(
+      children: [
+        Text('$label: '),
+        Flexible(
+          child: TextField(
+            controller: controller,
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            onSubmitted: (String val) {
+              final newValue = int.tryParse(val) ?? value;
+              if (newValue >= minValue &&
+                  (maxValue == null || newValue <= maxValue)) {
+                onChanged(newValue);
+              } else {
+                controller.text = value.toString();
+              }
+            },
+          ),
+        ),
+        if (showAddButton)
+          TextButton.icon(
+            icon: const Icon(Icons.add),
+            label: const Text('Add More'),
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Add More'),
+                  content: TextField(
+                    controller: addController,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    decoration: const InputDecoration(
+                      labelText: 'Amount to add',
+                    ),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => NavigationService.goBack(context),
+                      child: const Text('Cancel'),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        final amount = int.tryParse(addController.text) ?? 0;
+                        final newValue = value + amount;
+                        if (maxValue == null || newValue <= maxValue) {
+                          onChanged(newValue);
+                          controller.text = newValue.toString();
+                        }
+                        NavigationService.goBack(context);
+                      },
+                      child: const Text('Add'),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+      ],
+    );
+  }
+}
+
+/// Notes Section for additional medication information
+class NotesSection extends StatelessWidget {
+  final TextEditingController controller;
+
+  const NotesSection({
+    super.key,
+    required this.controller,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SharedWidgets.basicCard(
+      context: context,
+      title: 'Notes',
+      children: [
+        TextFormField(
+          controller: controller,
+          decoration: AppTheme.defaultTextFieldDecoration.copyWith(
+            hintText: 'Add any additional notes here',
+          ),
+          maxLines: 3,
+        ),
+      ],
+    );
   }
 }
