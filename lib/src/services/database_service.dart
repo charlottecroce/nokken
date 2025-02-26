@@ -15,9 +15,70 @@ class DatabaseException implements Exception {
       'DatabaseException: $message${error != null ? ' ($error)' : ''}';
 }
 
+class TakenMedication {
+  final String medicationId;
+  final DateTime date;
+  final String timeSlot;
+  final bool taken;
+
+  TakenMedication({
+    required this.medicationId,
+    required this.date,
+    required this.timeSlot,
+    required this.taken,
+  });
+
+  // Generate a unique key for this record - normalize date to prevent time issues
+  String get uniqueKey {
+    // Create a normalized date string (just year-month-day, no time)
+    final normalizedDate =
+        DateTime(date.year, date.month, date.day).toIso8601String();
+    return '$medicationId-$normalizedDate-$timeSlot';
+  }
+
+  // Convert to database map
+  Map<String, dynamic> toMap() {
+    // Always normalize the date when saving to database
+    final normalizedDate =
+        DateTime(date.year, date.month, date.day).toIso8601String();
+    return {
+      'medication_id': medicationId,
+      'date': normalizedDate,
+      'time_slot': timeSlot,
+      'taken': taken ? 1 : 0,
+    };
+  }
+
+  // Create from database map
+  factory TakenMedication.fromMap(Map<String, dynamic> map) {
+    try {
+      final date = DateTime.parse(map['date']);
+      // Always normalize the date to ensure consistency
+      final normalizedDate = DateTime(date.year, date.month, date.day);
+
+      return TakenMedication(
+        medicationId: map['medication_id'],
+        date: normalizedDate,
+        timeSlot: map['time_slot'],
+        taken: map['taken'] == 1,
+      );
+    } catch (e) {
+      //print('Error parsing TakenMedication from map: $e');
+      //print('Map data: $map');
+      // Return a default value in case of error
+      return TakenMedication(
+        medicationId: map['medication_id'] ?? 'unknown',
+        date: DateTime.now(),
+        timeSlot: map['time_slot'] ?? 'unknown',
+        taken: map['taken'] == 1,
+      );
+    }
+  }
+}
+
 class DatabaseService {
   static Database? _database;
-  static const int _currentVersion = 3; // Increase for migrations
+  static const int _currentVersion = 4; // Increased for the new table
 
   Future<Database> get database async {
     if (_database != null) return _database!;
@@ -36,8 +97,11 @@ class DatabaseService {
         onCreate: (db, version) async {
           await _createDatabase(db);
         },
-        // to reset db: flutter clean
-        // onUpgrade: (db, oldVersion, newVersion) async {},
+        onUpgrade: (db, oldVersion, newVersion) async {
+          if (oldVersion < 4) {
+            // for updates to DB. for now just resetting
+          }
+        },
       );
     } catch (e) {
       throw DatabaseException('Failed to initialize database', e);
@@ -45,6 +109,7 @@ class DatabaseService {
   }
 
   Future<void> _createDatabase(Database db) async {
+    // Create the medications table
     await db.execute('''
       CREATE TABLE medications(
         id TEXT PRIMARY KEY,
@@ -66,6 +131,21 @@ class DatabaseService {
         injectingNeedleCount INTEGER,
         injectingNeedleRefills INTEGER,
         injectionSiteNotes TEXT
+      )
+    ''');
+
+    // Create the taken_medications table
+    await _createTakenMedicationsTable(db);
+  }
+
+  Future<void> _createTakenMedicationsTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE taken_medications(
+        medication_id TEXT NOT NULL,
+        date TEXT NOT NULL,
+        time_slot TEXT NOT NULL,
+        taken INTEGER NOT NULL,
+        PRIMARY KEY (medication_id, date, time_slot)
       )
     ''');
   }
@@ -172,6 +252,7 @@ class DatabaseService {
     );
   }
 
+  // Medication CRUD operations
   Future<void> insertMedication(Medication medication) async {
     try {
       final db = await database;
@@ -207,6 +288,13 @@ class DatabaseService {
         where: 'id = ?',
         whereArgs: [id],
       );
+
+      // Also delete any taken records for this medication
+      await db.delete(
+        'taken_medications',
+        where: 'medication_id = ?',
+        whereArgs: [id],
+      );
     } catch (e) {
       throw DatabaseException('Failed to delete medication', e);
     }
@@ -219,6 +307,81 @@ class DatabaseService {
       return maps.map(_mapToMedication).toList();
     } catch (e) {
       throw DatabaseException('Failed to fetch medications', e);
+    }
+  }
+
+  // Taken Medication operations
+  Future<void> setMedicationTaken(
+      String medicationId, DateTime date, String timeSlot, bool taken) async {
+    try {
+      final db = await database;
+      final takenMed = TakenMedication(
+        medicationId: medicationId,
+        date: DateTime(date.year, date.month, date.day), // Strip time component
+        timeSlot: timeSlot,
+        taken: taken,
+      );
+
+      await db.insert(
+        'taken_medications',
+        takenMed.toMap(),
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    } catch (e) {
+      throw DatabaseException('Failed to save medication taken status', e);
+    }
+  }
+
+  Future<Set<String>> getTakenMedicationsForDate(DateTime date) async {
+    try {
+      final db = await database;
+      final dateStr =
+          DateTime(date.year, date.month, date.day).toIso8601String();
+
+      final List<Map<String, dynamic>> maps = await db.query(
+        'taken_medications',
+        where: 'date = ? AND taken = 1',
+        whereArgs: [dateStr],
+      );
+
+      // For debugging
+      //print('Found ${maps.length} taken medications for date $dateStr');
+
+      final result = maps
+          .map((map) {
+            final takenMed = TakenMedication.fromMap(map);
+            //print('Loaded medication: ${takenMed.medicationId} on ${takenMed.date} at ${takenMed.timeSlot}');
+            return takenMed;
+          })
+          .where((takenMed) => takenMed.taken)
+          .map((takenMed) {
+            final key = takenMed.uniqueKey;
+            //print('Generated key: $key');
+            return key;
+          })
+          .toSet();
+
+      //print('Returning ${result.length} keys');
+      return result;
+    } catch (e) {
+      //print('Error fetching taken medications: $e');
+      throw DatabaseException('Failed to fetch taken medications', e);
+    }
+  }
+
+  Future<void> deleteTakenMedicationsOlderThan(DateTime date) async {
+    try {
+      final db = await database;
+      final cutoffDate =
+          DateTime(date.year, date.month, date.day).toIso8601String();
+
+      await db.delete(
+        'taken_medications',
+        where: 'date < ?',
+        whereArgs: [cutoffDate],
+      );
+    } catch (e) {
+      throw DatabaseException('Failed to delete old taken medications', e);
     }
   }
 }
