@@ -12,6 +12,11 @@ class AppIcons {
     'profile': (outlined: Icons.person_outline, filled: Icons.person),
     'menu': (outlined: Icons.menu_outlined, filled: Icons.menu),
 
+    'check_circle': (
+      outlined: Icons.check_circle_outline,
+      filled: Icons.check_circle
+    ),
+
     // Actions
     'add': (outlined: Icons.add, filled: Icons.add),
     'edit': (outlined: Icons.edit_outlined, filled: Icons.edit),

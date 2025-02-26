@@ -2,23 +2,25 @@
 //  calendar_screen.dart
 //
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:nokken/src/features/medication_tracker/models/medication.dart';
+import 'package:nokken/src/features/medication_tracker/providers/medication_taken_provider.dart';
 import 'package:nokken/src/services/database_service.dart';
 import 'package:nokken/src/services/navigation_service.dart';
 import 'package:nokken/src/shared/theme/app_icons.dart';
 import 'package:nokken/src/shared/theme/app_theme.dart';
 import 'package:nokken/src/shared/constants/date_constants.dart';
 
-class CalendarScreen extends StatefulWidget {
+class CalendarScreen extends ConsumerStatefulWidget {
   const CalendarScreen({super.key});
 
   @override
-  _CalendarScreenState createState() => _CalendarScreenState();
+  ConsumerState<CalendarScreen> createState() => _CalendarScreenState();
 }
 
-class _CalendarScreenState extends State<CalendarScreen> {
+class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   List<Medication> _medications = [];
   DateTime _selectedDay = DateTime.now();
   bool _isLoading = true;
@@ -29,6 +31,20 @@ class _CalendarScreenState extends State<CalendarScreen> {
   void initState() {
     super.initState();
     _loadMedicationsFromDB();
+
+    // Load taken medications data after first build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadTakenMedicationsForSelectedDay();
+    });
+  }
+
+  // Load taken medications for the selected day
+  void _loadTakenMedicationsForSelectedDay() {
+    final normalizedDate =
+        DateTime(_selectedDay.year, _selectedDay.month, _selectedDay.day);
+    ref
+        .read(medicationTakenProvider.notifier)
+        .loadTakenMedicationsForDate(normalizedDate);
   }
 
   @override
@@ -141,6 +157,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                         setState(() {
                           _selectedDay = day;
                         });
+                        // Load taken medications when day changes
+                        _loadTakenMedicationsForSelectedDay();
                       },
                     ),
 
@@ -197,6 +215,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
   }
 
   Widget _buildMedicationCard(Medication medication) {
+    // Create a normalized date for the selected day
+    final normalizedDate =
+        DateTime(_selectedDay.year, _selectedDay.month, _selectedDay.day);
+
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       child: Padding(
@@ -248,14 +270,41 @@ class _CalendarScreenState extends State<CalendarScreen> {
                               fontSize: 14,
                             ),
                           ),
-                          ...medication.timeOfDay.map((time) => Padding(
-                                padding:
-                                    const EdgeInsets.only(left: 12, top: 2),
-                                child: Text(
-                                  DateFormat('h:mm a').format(time),
-                                  style: Theme.of(context).textTheme.bodyMedium,
-                                ),
-                              )),
+                          // Map through times and include checkmark if taken
+                          ...medication.timeOfDay.map((time) {
+                            // Format time the same way as in the UI
+                            final timeStr =
+                                TimeOfDay.fromDateTime(time).format(context);
+
+                            // Create the key for the medication taken provider
+                            final medicationKey =
+                                '${medication.id}-${normalizedDate.toIso8601String()}-$timeStr';
+
+                            // Check if this medication was taken
+                            final isTaken = ref.watch(
+                                isMedicationTakenProvider(medicationKey));
+
+                            return Padding(
+                              padding: const EdgeInsets.only(left: 12, top: 2),
+                              child: Row(
+                                children: [
+                                  Text(
+                                    timeStr,
+                                    style: AppTextStyles.bodyMedium,
+                                  ),
+                                  if (isTaken)
+                                    Padding(
+                                      padding: const EdgeInsets.only(left: 8),
+                                      child: Icon(
+                                        AppIcons.getIcon('check_circle'),
+                                        color: AppColors.tertiary,
+                                        size: 16,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            );
+                          }),
                         ],
                       ),
                     ],
