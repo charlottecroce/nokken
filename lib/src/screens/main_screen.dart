@@ -42,7 +42,7 @@ class MainScreen extends ConsumerWidget {
     final screens = [
       const MedicationListScreen(),
       buildComingSoon('Feature 1'),
-      const DailyTrackerScreen(),
+      DailyTrackerScreen(),
       buildComingSoon('Feature 2'),
       const SettingsScreen(),
     ];

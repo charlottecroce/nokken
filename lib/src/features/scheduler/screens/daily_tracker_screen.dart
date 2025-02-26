@@ -18,9 +18,7 @@ final selectedDateProvider = StateProvider<DateTime>((ref) => DateTime.now());
 final slideDirectionProvider = StateProvider<bool>((ref) => true);
 
 class DailyTrackerScreen extends ConsumerStatefulWidget {
-  final DateTime? selectedDate_FromMonthView;
-
-  const DailyTrackerScreen({super.key, this.selectedDate_FromMonthView});
+  const DailyTrackerScreen({super.key});
 
   @override
   // ignore: library_private_types_in_public_api
@@ -31,14 +29,6 @@ class _DailyTrackerScreenState extends ConsumerState<DailyTrackerScreen> {
   @override
   void initState() {
     super.initState();
-
-    // Set selected date if provided
-    if (widget.selectedDate_FromMonthView != null) {
-      Future.microtask(() {
-        ref.read(selectedDateProvider.notifier).state =
-            widget.selectedDate_FromMonthView!;
-      });
-    }
   }
 
   @override

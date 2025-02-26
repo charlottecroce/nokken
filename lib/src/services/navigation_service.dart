@@ -21,10 +21,8 @@ class NavigationService {
     Navigator.of(context).popUntil((route) => route.isFirst);
   }
 
-  static void goToDailyTracker(BuildContext context, DateTime? selectedDay) {
-    Navigator.pushReplacementNamed(context, RouteNames.calendar,
-        arguments:
-            ArgsCalendarDaily(selectedDay: selectedDay ?? DateTime.now()));
+  static void goToDailyTracker(BuildContext context) {
+    Navigator.pushNamed(context, RouteNames.dailyTracker);
   }
 
   static void goToMedicationList(BuildContext context) {
