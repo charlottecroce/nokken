@@ -76,7 +76,9 @@ class _DailyTrackerScreenState extends ConsumerState<DailyTrackerScreen> {
       appBar: AppBar(
         title: const Text('Schedule'),
         leading: IconButton(
-            onPressed: () => NavigationService.goToCalendar(context),
+            onPressed: () => NavigationService.goToCalendar(context).then((_) {
+                  _loadTakenMedicationsForCurrentDate();
+                }),
             icon: Icon(AppIcons.getIcon('calendar'))),
       ),
       body: Column(

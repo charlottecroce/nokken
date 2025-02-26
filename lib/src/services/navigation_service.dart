@@ -47,8 +47,9 @@ class NavigationService {
     );
   }
 
-  static void goToCalendar(BuildContext context) {
-    Navigator.pushNamed(context, RouteNames.calendar);
+  // Returning a Future allows a '.then(...' action. needed to load DB when calendar pops
+  static Future<void> goToCalendar(BuildContext context) {
+    return Navigator.pushNamed(context, RouteNames.calendar);
   }
 
   static void goToSettings(BuildContext context) {
