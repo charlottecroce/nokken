@@ -90,4 +90,90 @@ class MedicationScheduleService {
 
     return result;
   }
+
+  /// Calculate all dates that have injections due for a set of medications
+  static Set<DateTime> calculateInjectionDueDates(
+      List<Medication> medications) {
+    Set<DateTime> injectionDates = {};
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    // Look back a year and ahead a year (total 730 days)
+    final startDate = today.subtract(const Duration(days: 365));
+    const daysToCalculate = 730;
+
+    for (var medication in medications) {
+      if (medication.medicationType == MedicationType.injection) {
+        // Use medication's start date if it's later than our lookback date
+        final medicationStartDate = DateTime(medication.startDate.year,
+            medication.startDate.month, medication.startDate.day);
+
+        final calculationStartDate = medicationStartDate.isAfter(startDate)
+            ? medicationStartDate
+            : startDate;
+
+        if (medication.injectionDetails?.frequency ==
+            InjectionFrequency.weekly) {
+          _addWeeklyInjections(
+            injectionDates,
+            medication.daysOfWeek,
+            calculationStartDate,
+            daysToCalculate,
+            7, // Every 7 days
+          );
+        } else if (medication.injectionDetails?.frequency ==
+            InjectionFrequency.biweekly) {
+          _addWeeklyInjections(
+            injectionDates,
+            medication.daysOfWeek,
+            calculationStartDate,
+            daysToCalculate,
+            14, // Every 14 days
+          );
+        }
+      }
+    }
+    return injectionDates;
+  }
+
+  /// Add injection dates based on frequency and selected days
+  static void _addWeeklyInjections(
+    Set<DateTime> dates,
+    Set<String> daysOfWeek,
+    DateTime startDate,
+    int daysToLookAhead,
+    int frequency,
+  ) {
+    // Convert days of week to int representation (0-6)
+    Set<int> weekdayNumbers = daysOfWeek
+        .map((day) => DateConstants.dayAbbreviationToWeekday(day))
+        .toSet();
+
+    // Calculate reference date for biweekly calculation
+    final referenceDate =
+        DateTime(startDate.year, startDate.month, startDate.day);
+
+    // Look through each day in the period
+    for (int i = 0; i < daysToLookAhead; i++) {
+      DateTime currentDate = startDate.add(Duration(days: i));
+
+      // Check if this day matches any of the target weekdays
+      if (weekdayNumbers.contains(currentDate.weekday % 7)) {
+        // For biweekly, we need to check if this is the right week
+        bool isCorrectFrequencyWeek = true;
+
+        if (frequency == 14) {
+          // Calculate days since reference date
+          final daysSinceReference =
+              currentDate.difference(referenceDate).inDays;
+          // Check if we're in the correct week
+          isCorrectFrequencyWeek = (daysSinceReference ~/ 7) % 2 == 0;
+        }
+
+        if (isCorrectFrequencyWeek) {
+          dates.add(currentDate);
+        }
+      }
+    }
+  }
 }
