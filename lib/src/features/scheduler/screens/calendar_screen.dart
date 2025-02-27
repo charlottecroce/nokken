@@ -4,6 +4,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:nokken/src/shared/utils/date_time_formatter.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:nokken/src/features/medication_tracker/models/medication.dart';
 import 'package:nokken/src/features/medication_tracker/providers/medication_taken_provider.dart';
@@ -12,6 +13,7 @@ import 'package:nokken/src/services/navigation_service.dart';
 import 'package:nokken/src/shared/theme/app_icons.dart';
 import 'package:nokken/src/shared/theme/app_theme.dart';
 import 'package:nokken/src/shared/constants/date_constants.dart';
+import 'package:nokken/src/shared/utils/date_time_formatter.dart';
 
 class CalendarScreen extends ConsumerStatefulWidget {
   const CalendarScreen({super.key});
@@ -175,7 +177,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
   Widget _buildMedicationsListContent() {
     final medicationsForDay = _getMedicationsForSelectedDay();
-    final formattedDate = DateFormat('MM/dd/yy').format(_selectedDay);
+    final formattedDate = DateTimeFormatter.formatDateDDMMYY(_selectedDay);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -183,7 +185,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
           child: Text(
-            DateConstants.formatDate(_selectedDay),
+            DateTimeFormatter.formatDateMMMDDYYYY(_selectedDay),
             style: Theme.of(context).textTheme.titleMedium,
           ),
         ),

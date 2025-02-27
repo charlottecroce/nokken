@@ -8,6 +8,7 @@ import 'package:nokken/src/shared/theme/shared_widgets.dart';
 import 'package:nokken/src/shared/theme/app_theme.dart';
 import 'package:nokken/src/shared/constants/date_constants.dart';
 import 'package:nokken/src/shared/theme/app_icons.dart';
+import 'package:nokken/src/shared/utils/date_time_formatter.dart';
 
 // Provider to track the selected date
 final selectedDateProvider = StateProvider<DateTime>((ref) => DateTime.now());
@@ -140,7 +141,8 @@ class _DailyTrackerScreenState extends ConsumerState<DailyTrackerScreen> {
     for (final med in medications) {
       for (final time in med.timeOfDay) {
         // Always use AM/PM format for time
-        final timeStr = _formatTimeToAMPM(TimeOfDay.fromDateTime(time));
+        final timeStr =
+            DateTimeFormatter.formatTimeToAMPM(TimeOfDay.fromDateTime(time));
         groups.putIfAbsent(timeStr, () => []).add(med);
       }
     }
@@ -151,57 +153,8 @@ class _DailyTrackerScreenState extends ConsumerState<DailyTrackerScreen> {
               medications: e.value,
             ))
         .toList()
-      ..sort((a, b) => _compareTimeSlots(a.timeSlot, b.timeSlot));
-  }
-
-  // Helper function to always format time in AM/PM
-  static String _formatTimeToAMPM(TimeOfDay time) {
-    final int hour = time.hourOfPeriod == 0 ? 12 : time.hourOfPeriod;
-    final String minute = time.minute.toString().padLeft(2, '0');
-    final String period = time.period == DayPeriod.am ? 'AM' : 'PM';
-    return '$hour:$minute $period';
-  }
-
-  // Helper function to determine which icon to show based on the time
-  static IconData _getTimeIcon(String timeSlot) {
-    final timeOfDay = _parseTimeString(timeSlot);
-    final hour = timeOfDay.hour;
-
-    if (hour >= 5 && hour < 9) {
-      return AppIcons.getFilled('twilight');
-    } else if (hour >= 9 && hour < 17) {
-      return AppIcons.getFilled('sun');
-    } else if (hour >= 17 && hour < 21) {
-      return AppIcons.getFilled('twilight');
-    } else {
-      return AppIcons.getFilled('night');
-    }
-  }
-
-  static int _compareTimeSlots(String a, String b) {
-    final timeA = _parseTimeString(a);
-    final timeB = _parseTimeString(b);
-    return timeA.hour * 60 + timeA.minute - (timeB.hour * 60 + timeB.minute);
-  }
-
-  static TimeOfDay _parseTimeString(String timeStr) {
-    final isPM = timeStr.toLowerCase().contains('pm');
-    final cleanTime =
-        timeStr.toLowerCase().replaceAll(RegExp(r'[ap]m'), '').trim();
-
-    final parts = cleanTime.split(':');
-    if (parts.length != 2) return const TimeOfDay(hour: 0, minute: 0);
-
-    var hour = int.tryParse(parts[0]) ?? 0;
-    final minute = int.tryParse(parts[1]) ?? 0;
-
-    if (isPM && hour != 12) hour += 12;
-    if (!isPM && hour == 12) hour = 0;
-
-    return TimeOfDay(
-      hour: hour.clamp(0, 23),
-      minute: minute.clamp(0, 59),
-    );
+      ..sort(
+          (a, b) => DateTimeFormatter.compareTimeSlots(a.timeSlot, b.timeSlot));
   }
 }
 
@@ -226,7 +179,7 @@ class _DateSelector extends ConsumerWidget {
               onPressed: () => _changeDate(ref, -1),
             ),
             Text(
-              DateConstants.formatDate(selectedDate),
+              DateTimeFormatter.formatDateMMMDDYYYY(selectedDate),
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: AppColors.onPrimary,
                   ),
@@ -294,8 +247,7 @@ class _TimeGroupItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Get the appropriate time icon
-    final IconData timeIcon =
-        _DailyTrackerScreenState._getTimeIcon(timeGroup.timeSlot);
+    final IconData timeIcon = DateTimeFormatter.getTimeIcon(timeGroup.timeSlot);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

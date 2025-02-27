@@ -1,6 +1,6 @@
 //
 //  date_constants.dart
-//  constants and functions to format dates and timing
+//  constants for dates and timing
 //
 class DateConstants {
   static const Map<String, String> dayNames = {
@@ -61,29 +61,5 @@ class DateConstants {
     };
 
     return dayMap[dayAbbr] ?? 0; // Default to Sunday if not found
-  }
-
-  static String formatDate(DateTime date) {
-    final now = DateTime.now();
-
-    String formatDateString() {
-      return '${DateConstants.months[date.month - 1]} ${date.day}, ${date.year}';
-    }
-
-    if (date.year == now.year &&
-        date.month == now.month &&
-        date.day == now.day) {
-      return 'Today - ${formatDateString()}';
-    } else if (date.year == now.year &&
-        date.month == now.month &&
-        date.day == now.day + 1) {
-      return 'Tomorrow - ${formatDateString()}';
-    } else if (date.year == now.year &&
-        date.month == now.month &&
-        date.day == now.day - 1) {
-      return 'Yesterday - ${formatDateString()}';
-    }
-
-    return formatDateString();
   }
 }

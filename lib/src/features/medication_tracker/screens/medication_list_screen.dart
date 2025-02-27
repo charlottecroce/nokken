@@ -9,6 +9,7 @@ import 'package:nokken/src/services/navigation_service.dart';
 import 'package:nokken/src/shared/theme/shared_widgets.dart';
 import 'package:nokken/src/shared/theme/app_icons.dart';
 import 'package:nokken/src/shared/theme/app_theme.dart';
+import 'package:nokken/src/shared/utils/date_time_formatter.dart';
 
 class MedicationListScreen extends ConsumerWidget {
   const MedicationListScreen({super.key});
@@ -155,7 +156,8 @@ class MedicationListTile extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               SharedWidgets.verticalSpace(),
-              Text(formatMedicationFrequency()),
+              Text(DateTimeFormatter.formatMedicationFrequencyDosage(
+                  medication)),
               if (medication.needsRefill()) ...[
                 SharedWidgets.verticalSpace(),
                 Container(
@@ -174,25 +176,5 @@ class MedicationListTile extends StatelessWidget {
           onTap: () => NavigationService.goToMedicationDetails(context,
               medication: medication)),
     );
-  }
-
-// create the text under medication name
-  String formatMedicationFrequency() {
-    // cases for once/twice/three times
-    String frequencyText = medication.frequency == 1
-        ? 'once'
-        : medication.frequency == 2
-            ? 'twice'
-            : '${medication.frequency} times';
-
-    if (medication.medicationType == MedicationType.oral) {
-      if (medication.daysOfWeek.isEmpty || medication.daysOfWeek.length == 7) {
-        return 'Take ${medication.dosage} $frequencyText daily, everyday';
-      } else {
-        return 'Take ${medication.dosage} $frequencyText daily, on ${medication.daysOfWeek.join(', ')}';
-      }
-    } else {
-      return 'Inject ${medication.dosage} on ${medication.daysOfWeek.join(', ')}';
-    }
   }
 }
