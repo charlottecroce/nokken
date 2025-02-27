@@ -9,6 +9,8 @@ import 'package:nokken/src/shared/theme/shared_widgets.dart';
 import 'package:nokken/src/shared/utils/date_time_formatter.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:nokken/src/features/medication_tracker/models/medication.dart';
+import 'package:nokken/src/features/medication_tracker/models/medication_dose.dart'; // Add new model import
+import 'package:nokken/src/features/medication_tracker/services/medication_schedule_service.dart'; // Add service import
 import 'package:nokken/src/features/medication_tracker/providers/medication_taken_provider.dart';
 import 'package:nokken/src/services/database_service.dart';
 import 'package:nokken/src/services/navigation_service.dart';
@@ -43,6 +45,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
   /// Load taken medications for the selected day
   void _loadTakenMedicationsForSelectedDay() {
+    // Use normalized date for consistency with MedicationDose model
     final normalizedDate =
         DateTime(_selectedDay.year, _selectedDay.month, _selectedDay.day);
     ref
@@ -97,39 +100,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   }
 
   /// Filter medications to those that should appear on the selected day
+  /// Now using the MedicationScheduleService
   List<Medication> _getMedicationsForSelectedDay() {
-    return _medications.where((med) {
-      // Check if this medication is before start date
-      // Strip time components for date-only comparison
-      DateTime dateOnlyStart = DateUtils.dateOnly(med.startDate);
-      DateTime dateOnlySelected = DateUtils.dateOnly(_selectedDay);
-
-      if (dateOnlySelected.compareTo(dateOnlyStart) < 0) {
-        return false;
-      }
-
-      // Check if this medication is due on the selected day
-      String dayAbbr = _weekdayToAbbreviation(_selectedDay.weekday);
-      if (!med.daysOfWeek.contains(dayAbbr)) {
-        return false;
-      }
-
-      // For biweekly, check if this is the right week
-      if (med.injectionDetails?.frequency == InjectionFrequency.biweekly) {
-        // Calculate if this is the correct week for biweekly schedule
-        final daysSinceStart =
-            dateOnlySelected.difference(dateOnlyStart).inDays;
-        final weeksSinceStart = daysSinceStart ~/ 7;
-        return weeksSinceStart % 2 == 0; // Improved biweekly logic
-      }
-
-      return true;
-    }).toList();
-  }
-
-  /// Convert weekday number to day abbreviation
-  String _weekdayToAbbreviation(int weekday) {
-    return DateConstants.dayMap[weekday] ?? '';
+    return MedicationScheduleService.getMedicationsForDate(
+        _medications, _selectedDay);
   }
 
   @override
@@ -223,11 +197,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   }
 
   /// Build a card for an individual medication
+  /// Updated to use MedicationDose model and new providers
   Widget _buildMedicationCard(Medication medication) {
-    // Create a normalized date for the selected day
-    final normalizedDate =
-        DateTime(_selectedDay.year, _selectedDay.month, _selectedDay.day);
-
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       child: Padding(
@@ -295,13 +266,16 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                               final timeStr =
                                   DateTimeFormatter.formatTimeToAMPM(timeOfDay);
 
-                              // Create the key for the medication taken provider
-                              final medicationKey =
-                                  '${medication.id}-${normalizedDate.toIso8601String()}-$timeStr';
+                              // Create a medication dose object instead of a string key
+                              final dose = MedicationDose(
+                                medicationId: medication.id,
+                                date: _selectedDay,
+                                timeSlot: timeStr,
+                              );
 
-                              // Check if this medication was taken
-                              final isTaken = ref.watch(
-                                  isMedicationTakenProvider(medicationKey));
+                              // Use the new provider to check if taken
+                              final isTaken =
+                                  ref.watch(isDoseTakenProvider(dose));
 
                               return Padding(
                                 padding: const EdgeInsets.only(left: 0, top: 2),
@@ -348,6 +322,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   }
 }
 
+// The rest of the file remains largely unchanged for now, but in a complete
+// refactoring, we would move the injection date calculation functions to the
+// MedicationScheduleService
+
 //----------------------------------------------------------------------------
 // MEDICATION CALENDAR COMPONENT
 //----------------------------------------------------------------------------
@@ -393,12 +371,17 @@ class _MedicationCalendarState extends State<MedicationCalendar> {
     _injectionDueDates = _calculateInjectionDueDates(widget.medications);
   }
 
+  // Rest of the MedicationCalendar implementation remains unchanged
+  // In a complete refactoring, we would update this to use MedicationScheduleService
+
   @override
   Widget build(BuildContext context) {
+    // Existing build method code stays the same
     const Color injectionDueColor = AppTheme.orangeDark;
     return Padding(
       padding: AppTheme.standardScreenMargins,
       child: TableCalendar(
+        // Existing TableCalendar configuration
         firstDay: DateTime.now().subtract(const Duration(days: 365)),
         lastDay: DateTime.now().add(const Duration(days: 365)),
         focusedDay: _focusedDay,
@@ -461,7 +444,7 @@ class _MedicationCalendarState extends State<MedicationCalendar> {
           _focusedDay = focusedDay;
         },
         calendarBuilders: CalendarBuilders(
-          // Custom day builder to show injection indicators
+          // Existing builders remain unchanged
           defaultBuilder: (context, day, focusedDay) {
             bool hasInjection = _hasInjectionDue(day, _injectionDueDates);
 
@@ -485,7 +468,6 @@ class _MedicationCalendarState extends State<MedicationCalendar> {
             }
             return null; // Use default rendering for other days
           },
-          // Make sure injection indicators still show for selected days
           selectedBuilder: (context, day, focusedDay) {
             bool hasInjection = _hasInjectionDue(day, _injectionDueDates);
 
@@ -510,7 +492,6 @@ class _MedicationCalendarState extends State<MedicationCalendar> {
               ),
             );
           },
-          // Custom "today" builder
           todayBuilder: (context, day, focusedDay) {
             bool hasInjection = _hasInjectionDue(day, _injectionDueDates);
 
@@ -535,7 +516,6 @@ class _MedicationCalendarState extends State<MedicationCalendar> {
               ),
             );
           },
-          // Builder for out-of-month days with transparency and injection rules
           outsideBuilder: (context, day, focusedDay) {
             bool hasInjection = _hasInjectionDue(day, _injectionDueDates);
 
@@ -591,6 +571,7 @@ class _MedicationCalendarState extends State<MedicationCalendar> {
 //----------------------------------------------------------------------------
 // INJECTION DATE CALCULATION HELPERS
 //----------------------------------------------------------------------------
+// future refactoring: move this to MedicationScheduleService
 
 /// Calculate which days have injections due based on medication schedules
 Set<DateTime> _calculateInjectionDueDates(List<Medication> medications) {
@@ -645,6 +626,7 @@ void _addWeeklyInjections(
   int daysToLookAhead,
   int frequency,
 ) {
+  // Existing implementation remains unchanged
   // Convert days of week to int representation (0-6)
   Set<int> weekdayNumbers = daysOfWeek
       .map((day) => DateConstants.dayAbbreviationToWeekday(day))
