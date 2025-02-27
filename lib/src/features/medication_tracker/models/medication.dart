@@ -3,7 +3,7 @@
 //  Core model for medication data
 //
 import 'package:uuid/uuid.dart';
-import 'package:nokken/src/shared/constants/date_constants.dart';
+import 'package:nokken/src/services/validation_service.dart';
 
 /// Types of medications supported
 enum MedicationType { oral, injection }
@@ -106,40 +106,41 @@ class Medication {
 
   /// Validates medication fields
   void _validate() {
-    if (name.trim().isEmpty) {
-      throw MedicationException('Name cannot be empty');
+    final nameResult = ValidationService.validateMedicationName(name);
+    if (nameResult.hasError) {
+      throw MedicationException(nameResult.message!);
     }
-    if (dosage.trim().isEmpty) {
-      throw MedicationException('Dosage cannot be empty');
+
+    final dosageResult = ValidationService.validateMedicationDosage(dosage);
+    if (dosageResult.hasError) {
+      throw MedicationException(dosageResult.message!);
     }
-    if (frequency < 1 || frequency > 10) {
-      throw MedicationException('Frequency must be between 1 and 10');
+
+    final frequencyResult = ValidationService.validateFrequency(frequency);
+    if (frequencyResult.hasError) {
+      throw MedicationException(frequencyResult.message!);
     }
-    if (timeOfDay.length != frequency) {
-      throw MedicationException('Number of times must match frequency');
+
+    final timeResult =
+        ValidationService.validateTimeOfDay(timeOfDay, frequency);
+    if (timeResult.hasError) {
+      throw MedicationException(timeResult.message!);
     }
-    if (daysOfWeek.isEmpty) {
-      throw MedicationException('At least one day must be selected');
+
+    final daysResult = ValidationService.validateDaysOfWeek(daysOfWeek);
+    if (daysResult.hasError) {
+      throw MedicationException(daysResult.message!);
     }
-    if (!daysOfWeek.every((day) => DateConstants.orderedDays.contains(day))) {
-      throw MedicationException('Invalid day selection');
+
+    final quantityResult = ValidationService.validateQuantity(currentQuantity);
+    if (quantityResult.hasError) {
+      throw MedicationException(quantityResult.message!);
     }
-    if (currentQuantity < 0) {
-      throw MedicationException('Current quantity cannot be negative');
-    }
-    if (medicationType == MedicationType.injection &&
-        injectionDetails == null) {
-      throw MedicationException(
-          'Injection details required for injection type');
-    }
-    if (medicationType == MedicationType.oral && injectionDetails != null) {
-      throw MedicationException(
-          'Oral medication should not have injection details');
-    }
-    if (medicationType == MedicationType.injection &&
-        injectionDetails!.frequency == InjectionFrequency.biweekly &&
-        frequency != 1) {
-      throw MedicationException('Biweekly injections must have frequency of 1');
+
+    final injectionResult = ValidationService.validateInjectionDetails(
+        medicationType, injectionDetails, frequency);
+    if (injectionResult.hasError) {
+      throw MedicationException(injectionResult.message!);
     }
   }
 

@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nokken/src/services/navigation_service.dart';
+import 'package:nokken/src/services/validation_service.dart';
 import 'package:nokken/src/shared/constants/date_constants.dart';
 import 'package:nokken/src/shared/utils/date_time_formatter.dart';
 import 'package:nokken/src/shared/theme/app_icons.dart';
@@ -382,14 +383,11 @@ class BasicInfoSection extends StatelessWidget {
       children: [
         // Medication name field
         TextFormField(
-          controller: nameController,
-          decoration: AppTheme.defaultTextFieldDecoration.copyWith(
-            labelText: 'Medication Name',
-          ),
-          validator: (value) => value?.trim().isEmpty == true
-              ? 'Please enter a medication name'
-              : null,
-        ),
+            controller: nameController,
+            decoration: AppTheme.defaultTextFieldDecoration.copyWith(
+              labelText: 'Medication Name',
+            ),
+            validator: ValidationService.nameValidator),
         SharedWidgets.verticalSpace(),
         // Dosage field
         TextFormField(
@@ -398,8 +396,7 @@ class BasicInfoSection extends StatelessWidget {
             labelText: 'Dosage',
             hintText: 'e.g., 50mg',
           ),
-          validator: (value) =>
-              value?.trim().isEmpty == true ? 'Please enter the dosage' : null,
+          validator: ValidationService.dosageValidator,
         ),
       ],
     );
@@ -498,8 +495,7 @@ class InjectionDetailsSection extends StatelessWidget {
             hintText: typeHint,
           ),
           onChanged: onTypeChanged,
-          validator: (value) =>
-              value?.isEmpty ?? true ? 'Please enter needle type' : null,
+          validator: ValidationService.needleTypeValidator,
         ),
         SharedWidgets.verticalSpace(),
         Row(
@@ -514,9 +510,7 @@ class InjectionDetailsSection extends StatelessWidget {
                 keyboardType: TextInputType.number,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 onChanged: (value) => onCountChanged(int.tryParse(value) ?? 0),
-                validator: (value) => int.tryParse(value ?? '') == null
-                    ? 'Enter valid number'
-                    : null,
+                validator: ValidationService.numberValidator,
               ),
             ),
             SharedWidgets.verticalSpace(),
@@ -531,9 +525,7 @@ class InjectionDetailsSection extends StatelessWidget {
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 onChanged: (value) =>
                     onRefillsChanged(int.tryParse(value) ?? 0),
-                validator: (value) => int.tryParse(value ?? '') == null
-                    ? 'Enter valid number'
-                    : null,
+                validator: ValidationService.numberValidator,
               ),
             ),
           ],
