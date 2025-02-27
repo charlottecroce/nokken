@@ -8,8 +8,6 @@ import 'package:nokken/src/features/medication_tracker/models/medication.dart';
 import 'package:nokken/src/shared/constants/date_constants.dart';
 import 'package:nokken/src/shared/theme/app_icons.dart';
 
-/// Utility class that provides static methods for formatting dates, times,
-/// and generating time-related UI elements.
 class DateTimeFormatter {
   //----------------------------------------------------------------------------
   // DATE FORMATTING FUNCTIONS
@@ -21,7 +19,6 @@ class DateTimeFormatter {
   /// Examples:
   /// - Today - Jan 1, 2025
   /// - Tomorrow - Jan 2, 2025
-  /// - Yesterday - Dec 31, 2024
   /// - Jan 15, 2025
   static String formatDateMMMDDYYYY(DateTime date) {
     final now = DateTime.now();
@@ -58,8 +55,6 @@ class DateTimeFormatter {
   ///
   /// If all 7 days are included, returns "Everyday"
   /// Otherwise, returns a comma-separated list of day names
-  ///
-  /// Example: "Monday, Wednesday, Friday"
   static String formatDaysOfWeek(Set<String> days) {
     if (days.length == 7 && DateConstants.orderedDays.every(days.contains)) {
       return 'Everyday';
@@ -78,20 +73,12 @@ class DateTimeFormatter {
   //----------------------------------------------------------------------------
 
   /// Returns a string describing the frequency of a medication
-  ///
-  /// Handles different medication types and frequencies
-  ///
-  /// Examples:
-  /// - "once a day"
-  /// - "twice a day"
-  /// - "every week"
-  /// - "Once every 2 weeks"
   static String formatMedicationFrequency(Medication medication) {
     if (medication.medicationType == MedicationType.injection) {
       return 'every week';
     }
     if (medication.injectionDetails?.frequency == InjectionFrequency.biweekly) {
-      return 'Once every 2 weeks';
+      return 'every 2 weeks';
     }
     String frequencyText = medication.frequency == 1
         ? 'once'
