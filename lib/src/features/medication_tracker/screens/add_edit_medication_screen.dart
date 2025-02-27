@@ -234,6 +234,13 @@ class _AddEditMedicationScreenState
         frequency: frequency ?? _injectionDetails!.frequency,
       );
     });
+
+    // Ensure frequency is 1 when biweekly is selected.
+    // We could have twice a week, every other week, but that's confusing idk who injects like that
+    if (frequency == InjectionFrequency.biweekly && _frequency != 1) {
+      _frequency = 1;
+      _times = _adjustTimesList(_times, 1);
+    }
   }
 
   /// Handle frequency change (times per day)

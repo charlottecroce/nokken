@@ -76,11 +76,13 @@ class DateTimeFormatter {
   /// Returns a string describing the frequency of a medication
   static String formatMedicationFrequency(Medication medication) {
     if (medication.medicationType == MedicationType.injection) {
+      if (medication.injectionDetails?.frequency ==
+          InjectionFrequency.biweekly) {
+        return 'every 2 weeks';
+      }
       return 'every week';
     }
-    if (medication.injectionDetails?.frequency == InjectionFrequency.biweekly) {
-      return 'every 2 weeks';
-    }
+
     String frequencyText = medication.frequency == 1
         ? 'once'
         : medication.frequency == 2
@@ -91,13 +93,7 @@ class DateTimeFormatter {
   }
 
   /// Creates a comprehensive description of medication dosage and schedule
-  ///
-  /// Accounts for medication type (oral vs. injection) and frequency
-  ///
-  /// Examples:
-  /// - "Take 10mg once daily, everyday"
-  /// - "Take 5mg twice daily, on Mon, Wed, Fri"
-  /// - "Inject 15ml on Tue, Thu"
+  /// Accounts for medication type and frequency and weekly vs. biweekly
   static String formatMedicationFrequencyDosage(Medication medication) {
     // Format frequency text (once/twice/three times)
     String frequencyText = medication.frequency == 1
@@ -113,7 +109,12 @@ class DateTimeFormatter {
         return 'Take ${medication.dosage} $frequencyText daily, on ${medication.daysOfWeek.join(', ')}';
       }
     } else {
-      return 'Inject ${medication.dosage} on ${medication.daysOfWeek.join(', ')}';
+      // Add this condition for biweekly injections
+      if (medication.injectionDetails?.frequency ==
+          InjectionFrequency.biweekly) {
+        return 'Inject ${medication.dosage} every 2 weeks on ${medication.daysOfWeek.join(', ')}';
+      }
+      return 'Inject ${medication.dosage} every week on ${medication.daysOfWeek.join(', ')}';
     }
   }
 
