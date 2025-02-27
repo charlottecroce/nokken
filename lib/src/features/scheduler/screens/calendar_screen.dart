@@ -4,6 +4,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:nokken/src/shared/theme/shared_widgets.dart';
 import 'package:nokken/src/shared/utils/date_time_formatter.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:nokken/src/features/medication_tracker/models/medication.dart';
@@ -233,9 +234,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 ? AppIcons.getOutlined('vaccine')
                 : AppIcons.getOutlined('medication')),
 
-            const SizedBox(width: 16),
+            SharedWidgets.verticalSpace(16),
 
-            // Medication details with clickable name
+            // Medication details
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -245,75 +246,94 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                         context, medication),
                     child: Text(
                       medication.name,
-                      style: const TextStyle(
-                        fontSize: 16.0,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: AppTextStyles.titleLarge,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  SharedWidgets.verticalSpace(),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Display dosage
                       Text(
-                        'Dosage: ${medication.dosage}',
-                        style: Theme.of(context).textTheme.bodyMedium,
+                        medication.dosage,
+                        style: AppTextStyles.bodyMedium,
                       ),
                       const SizedBox(height: 4),
-                      // Display all times medication is taken
+
+                      // Display times medication is taken
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'Time${medication.timeOfDay.length > 1 ? 's' : ''}:',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w500,
-                              fontSize: 14,
-                            ),
-                          ),
-                          // Map through times and include checkmark if taken
-                          ...medication.timeOfDay.map((time) {
-                            // Format time the same way as in the UI
-                            final timeStr =
-                                TimeOfDay.fromDateTime(time).format(context);
+                          ...(() {
+                            // Create a sorted copy of all time slots
+                            final sortedTimes =
+                                List<DateTime>.from(medication.timeOfDay);
 
-                            // Create the key for the medication taken provider
-                            final medicationKey =
-                                '${medication.id}-${normalizedDate.toIso8601String()}-$timeStr';
+                            // Sort all time slots using DateTimeFormatter.compareTimeSlots
+                            sortedTimes.sort((a, b) {
+                              final aTimeStr =
+                                  DateTimeFormatter.formatTimeToAMPM(
+                                      TimeOfDay.fromDateTime(a));
+                              final bTimeStr =
+                                  DateTimeFormatter.formatTimeToAMPM(
+                                      TimeOfDay.fromDateTime(b));
+                              return DateTimeFormatter.compareTimeSlots(
+                                  aTimeStr, bTimeStr);
+                            });
 
-                            // Check if this medication was taken
-                            final isTaken = ref.watch(
-                                isMedicationTakenProvider(medicationKey));
+                            // Convert each time slot to a UI element with appropriate icon and checkmark if taken
+                            return sortedTimes.map((time) {
+                              // Format times consistently using DateTimeFormatter
+                              final timeOfDay = TimeOfDay.fromDateTime(time);
+                              final timeStr =
+                                  DateTimeFormatter.formatTimeToAMPM(timeOfDay);
 
-                            return Padding(
-                              padding: const EdgeInsets.only(left: 12, top: 2),
-                              child: Row(
-                                children: [
-                                  Text(
-                                    timeStr,
-                                    style: AppTextStyles.bodyMedium,
-                                  ),
-                                  if (isTaken)
-                                    Padding(
-                                      padding: const EdgeInsets.only(left: 8),
-                                      child: Icon(
-                                        AppIcons.getIcon('check_circle'),
-                                        color: AppColors.tertiary,
-                                        size: 16,
-                                      ),
+                              // Create the key for the medication taken provider
+                              final medicationKey =
+                                  '${medication.id}-${normalizedDate.toIso8601String()}-$timeStr';
+
+                              // Check if this medication was taken
+                              final isTaken = ref.watch(
+                                  isMedicationTakenProvider(medicationKey));
+
+                              return Padding(
+                                padding: const EdgeInsets.only(left: 0, top: 2),
+                                child: Row(
+                                  children: [
+                                    // Add time icon
+                                    Icon(
+                                      DateTimeFormatter.getTimeIcon(timeStr),
+                                      size: 16,
+                                      color: AppColors.primary,
                                     ),
-                                ],
-                              ),
-                            );
-                          }),
+                                    SharedWidgets.verticalSpace(),
+                                    // Display formatted time
+                                    Text(
+                                      timeStr,
+                                      style: AppTextStyles.bodyMedium,
+                                    ),
+                                    // Show checkmark if taken
+                                    if (isTaken)
+                                      Padding(
+                                        padding: const EdgeInsets.only(left: 8),
+                                        child: Icon(
+                                          AppIcons.getIcon('check_circle'),
+                                          color: AppColors.tertiary,
+                                          size: 16,
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              );
+                            }).toList();
+                          })(),
                         ],
                       ),
                     ],
                   ),
                 ],
               ),
-            ),
+            )
           ],
         ),
       ),

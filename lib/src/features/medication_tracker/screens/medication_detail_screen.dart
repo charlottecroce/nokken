@@ -118,19 +118,34 @@ class MedicationDetailScreen extends ConsumerWidget {
                 ],
               ),
               SharedWidgets.verticalSpace(AppTheme.spacing * 2),
-              ...medication.timeOfDay.map((time) {
-                final timeStr = TimeOfDay.fromDateTime(time).format(context);
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.access_time),
-                      SharedWidgets.verticalSpace(AppTheme.spacing),
-                      Text(timeStr, style: AppTextStyles.bodyMedium),
-                    ],
-                  ),
-                );
-              }).toList(),
+              // Sort and display all time slots chronologically
+              ...(() {
+                // Create a sorted copy of all time slots
+                final sortedTimes = List<DateTime>.from(medication.timeOfDay);
+                sortedTimes.sort((a, b) {
+                  final aTimeStr = DateTimeFormatter.formatTimeToAMPM(
+                      TimeOfDay.fromDateTime(a));
+                  final bTimeStr = DateTimeFormatter.formatTimeToAMPM(
+                      TimeOfDay.fromDateTime(b));
+                  return DateTimeFormatter.compareTimeSlots(aTimeStr, bTimeStr);
+                });
+
+                // Convert each time slot to a UI element
+                return sortedTimes.map((time) {
+                  final timeOfDay = TimeOfDay.fromDateTime(time);
+                  final timeStr = DateTimeFormatter.formatTimeToAMPM(timeOfDay);
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Row(
+                      children: [
+                        Icon(DateTimeFormatter.getTimeIcon(timeStr)),
+                        SharedWidgets.verticalSpace(AppTheme.spacing),
+                        Text(timeStr, style: AppTextStyles.bodyMedium),
+                      ],
+                    ),
+                  );
+                }).toList();
+              })(),
             ],
           ),
           if (medication.medicationType == MedicationType.injection &&
