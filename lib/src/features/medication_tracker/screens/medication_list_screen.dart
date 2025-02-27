@@ -1,5 +1,6 @@
 //
 //  medication_list_screen.dart
+//  Screen that displays user medications in a list
 //
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,6 +17,7 @@ class MedicationListScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Watch for changes to medication data
     final medications = ref.watch(sortedMedicationsProvider);
     final isLoading = ref.watch(medicationsLoadingProvider);
     final error = ref.watch(medicationsErrorProvider);
@@ -31,7 +33,7 @@ class MedicationListScreen extends ConsumerWidget {
             ref.read(medicationStateProvider.notifier).loadMedications(),
         child: Column(
           children: [
-            // Refill Alert Section
+            // Refill Alert Section - shown only when medications need refill
             if (needsRefill.isNotEmpty)
               Container(
                 color: AppColors.errorContainer.withAlpha(25),
@@ -52,17 +54,11 @@ class MedicationListScreen extends ConsumerWidget {
                         ),
                       ),
                     ),
-                    // TextButton(
-                    //  onPressed: () {
-                    // Show refill details screen
-                    //   },
-                    //  child: const Text('View All'),
-                    // ),
                   ],
                 ),
               ),
 
-            // Error Display
+            // Error Display - shown only when there's an error
             if (error != null)
               Container(
                 color: AppColors.errorContainer,
@@ -86,35 +82,12 @@ class MedicationListScreen extends ConsumerWidget {
                 ),
               ),
 
-            // Main Content
+            // Main Content Area
             Expanded(
               child: isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : medications.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.medication_outlined,
-                                size: 64,
-                                color: AppColors.secondary,
-                              ),
-                              SharedWidgets.verticalSpace(),
-                              Text(
-                                'No medications yet',
-                                style: AppTheme.titleLarge,
-                              ),
-                              SharedWidgets.verticalSpace(),
-                              ElevatedButton(
-                                onPressed: () =>
-                                    NavigationService.goToMedicationAddEdit(
-                                        context),
-                                child: const Text('Add Medication'),
-                              ),
-                            ],
-                          ),
-                        )
+                      ? _buildEmptyState(context)
                       : ListView.builder(
                           itemCount: medications.length,
                           itemBuilder: (context, index) {
@@ -126,14 +99,42 @@ class MedicationListScreen extends ConsumerWidget {
           ],
         ),
       ),
+      // FAB for adding new medications
       floatingActionButton: FloatingActionButton(
         onPressed: () => NavigationService.goToMedicationAddEdit(context),
         child: Icon(AppIcons.getIcon('add')),
       ),
     );
   }
+
+  /// Builds the empty state view when no medications exist
+  Widget _buildEmptyState(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.medication_outlined,
+            size: 64,
+            color: AppColors.secondary,
+          ),
+          SharedWidgets.verticalSpace(),
+          Text(
+            'No medications yet',
+            style: AppTheme.titleLarge,
+          ),
+          SharedWidgets.verticalSpace(),
+          ElevatedButton(
+            onPressed: () => NavigationService.goToMedicationAddEdit(context),
+            child: const Text('Add Medication'),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
+/// List tile for displaying a medication in the list
 class MedicationListTile extends StatelessWidget {
   final Medication medication;
 
@@ -142,9 +143,6 @@ class MedicationListTile extends StatelessWidget {
     required this.medication,
   });
 
-  //
-  // Medication Card
-  //
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -158,6 +156,7 @@ class MedicationListTile extends StatelessWidget {
               SharedWidgets.verticalSpace(),
               Text(DateTimeFormatter.formatMedicationFrequencyDosage(
                   medication)),
+              // Show refill indicator if needed
               if (medication.needsRefill()) ...[
                 SharedWidgets.verticalSpace(),
                 Container(

@@ -1,6 +1,7 @@
 //
 //  add_edit_medication_screen.dart
 //  Screen that handles both adding new medications and editing existing ones
+//  Uses a form with multiple sections for different medication properties
 //
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -53,6 +54,7 @@ class _AddEditMedicationScreenState
     _initializeFields();
   }
 
+  /// Initialize all form fields with either existing medication data or defaults
   void _initializeFields() {
     // Initialize controllers
     _nameController =
@@ -78,6 +80,7 @@ class _AddEditMedicationScreenState
     _refillThreshold = widget.medication?.refillThreshold ?? 0;
   }
 
+  /// Initialize time slots from existing medication or default to current time
   List<TimeOfDay> _initializeTimes() {
     if (widget.medication != null) {
       return widget.medication!.timeOfDay
@@ -87,6 +90,7 @@ class _AddEditMedicationScreenState
     return [TimeOfDay.now()];
   }
 
+  /// Initialize injection details if applicable
   InjectionDetails? _initializeInjectionDetails() {
     if (_medicationType == MedicationType.injection) {
       return widget.medication?.injectionDetails ??
@@ -104,6 +108,8 @@ class _AddEditMedicationScreenState
     return null;
   }
 
+  /// Handle medication type change (oral/injection)
+  /// Resets relevant fields according to the type
   void _handleTypeChange(MedicationType type) {
     setState(() {
       _medicationType = type;
@@ -127,7 +133,7 @@ class _AddEditMedicationScreenState
     super.dispose();
   }
 
-  // Handles saving/updating medication data
+  /// Save or update medication data
   Future<void> _saveMedication() async {
     // Validate form before proceeding
     if (!_formKey.currentState!.validate()) return;
@@ -195,6 +201,7 @@ class _AddEditMedicationScreenState
     }
   }
 
+  /// Update injection details when fields change
   void _updateInjectionDetails({
     String? drawingNeedleType,
     int? drawingNeedleCount,
@@ -228,6 +235,7 @@ class _AddEditMedicationScreenState
     });
   }
 
+  /// Handle frequency change (times per day)
   void _handleFrequencyChange(int newFrequency) {
     setState(() {
       _frequency = newFrequency;
@@ -235,9 +243,11 @@ class _AddEditMedicationScreenState
     });
   }
 
+  /// Adjust the time slots list when frequency changes
   List<TimeOfDay> _adjustTimesList(
       List<TimeOfDay> currentTimes, int newFrequency) {
     if (newFrequency > currentTimes.length) {
+      // Add new time slots if frequency increases
       return [
         ...currentTimes,
         ...List.generate(
@@ -246,15 +256,18 @@ class _AddEditMedicationScreenState
         )
       ];
     }
+    // Remove excess time slots if frequency decreases
     return currentTimes.sublist(0, newFrequency);
   }
 
+  /// Handle changes to the selected days of the week
   void _handleDaysChange(Set<String> newDays) {
     setState(() {
       _selectedDays = newDays;
     });
   }
 
+  /// Handle changes to individual time slots
   void _handleTimeChange(int index, TimeOfDay newTime) {
     setState(() {
       _times[index] = newTime;
@@ -289,22 +302,29 @@ class _AddEditMedicationScreenState
         child: ListView(
           padding: AppTheme.standardCardPadding,
           children: [
+            // Basic information section (name, dosage)
             BasicInfoSection(
               nameController: _nameController,
               dosageController: _dosageController,
             ),
             SharedWidgets.verticalSpace(AppTheme.cardSpacing),
+
+            // Medication type section (oral/injection)
             MedicationTypeSection(
               medicationType: _medicationType,
               onTypeChanged: _handleTypeChange,
             ),
             SharedWidgets.verticalSpace(AppTheme.cardSpacing),
+
+            // Injection details section (only shown for injectable medications)
             if (_medicationType == MedicationType.injection)
               InjectionDetailsSection(
                 injectionDetails: _injectionDetails!,
                 onDetailsChanged: _updateInjectionDetails,
               ),
             SharedWidgets.verticalSpace(AppTheme.cardSpacing),
+
+            // Timing section (frequency, days, time slots)
             TimingSection(
               selectedStartDate: _startDate,
               onStartDateChanged: (date) => setState(() => _startDate = date),
@@ -318,6 +338,8 @@ class _AddEditMedicationScreenState
                   _injectionDetails?.frequency == InjectionFrequency.biweekly,
             ),
             SharedWidgets.verticalSpace(AppTheme.cardSpacing),
+
+            // Inventory section (quantities and refill threshold)
             InventorySection(
               currentQuantity: _currentQuantity,
               refillThreshold: _refillThreshold,
@@ -327,6 +349,8 @@ class _AddEditMedicationScreenState
                   setState(() => _refillThreshold = value),
             ),
             SharedWidgets.verticalSpace(AppTheme.cardSpacing),
+
+            // Notes section
             NotesSection(controller: _notesController),
           ],
         ),
@@ -335,9 +359,9 @@ class _AddEditMedicationScreenState
   }
 }
 
-//
+//----------------------------------------------------------------------------
 // SECTION WIDGETS
-//
+//----------------------------------------------------------------------------
 
 /// Basic Information Section with name and dosage fields
 class BasicInfoSection extends StatelessWidget {
@@ -356,6 +380,7 @@ class BasicInfoSection extends StatelessWidget {
       context: context,
       title: 'Basic Information',
       children: [
+        // Medication name field
         TextFormField(
           controller: nameController,
           decoration: AppTheme.defaultTextFieldDecoration.copyWith(
@@ -366,6 +391,7 @@ class BasicInfoSection extends StatelessWidget {
               : null,
         ),
         SharedWidgets.verticalSpace(),
+        // Dosage field
         TextFormField(
           controller: dosageController,
           decoration: AppTheme.defaultTextFieldDecoration.copyWith(
@@ -397,6 +423,7 @@ class MedicationTypeSection extends StatelessWidget {
       context: context,
       title: 'Medication Type',
       children: [
+        // Oral medication radio button
         RadioListTile<MedicationType>(
           title: const Text('Oral'),
           value: MedicationType.oral,
@@ -407,6 +434,7 @@ class MedicationTypeSection extends StatelessWidget {
             }
           },
         ),
+        // Injection medication radio button
         RadioListTile<MedicationType>(
           title: const Text('Injection'),
           value: MedicationType.injection,
@@ -442,6 +470,7 @@ class InjectionDetailsSection extends StatelessWidget {
     required this.onDetailsChanged,
   });
 
+  /// Helper method to build needle input sections
   Widget _buildNeedleSection({
     required BuildContext context,
     required String title,
@@ -461,6 +490,7 @@ class InjectionDetailsSection extends StatelessWidget {
           style: Theme.of(context).textTheme.titleSmall,
         ),
         SharedWidgets.verticalSpace(),
+        // Needle type input
         TextFormField(
           initialValue: type,
           decoration: AppTheme.defaultTextFieldDecoration.copyWith(
@@ -474,6 +504,7 @@ class InjectionDetailsSection extends StatelessWidget {
         SharedWidgets.verticalSpace(),
         Row(
           children: [
+            // Count input
             Expanded(
               child: TextFormField(
                 initialValue: count.toString(),
@@ -489,6 +520,7 @@ class InjectionDetailsSection extends StatelessWidget {
               ),
             ),
             SharedWidgets.verticalSpace(),
+            // Refills input
             Expanded(
               child: TextFormField(
                 initialValue: refills.toString(),
@@ -615,6 +647,7 @@ class TimingSection extends StatelessWidget {
     this.isEveryTwoWeeks = false,
   });
 
+  /// Build the frequency selector (times per day)
   Widget _buildFrequencySelector() {
     return Row(
       children: [
@@ -634,6 +667,7 @@ class TimingSection extends StatelessWidget {
     );
   }
 
+  /// Build the days of week selector
   Widget _buildDaySelector(BuildContext context) {
     return Wrap(
       spacing: AppTheme.spacing,
@@ -676,6 +710,7 @@ class TimingSection extends StatelessWidget {
     );
   }
 
+  /// Show date picker dialog and handle date selection
   Future<void> _selectStartDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -688,6 +723,7 @@ class TimingSection extends StatelessWidget {
     }
   }
 
+  /// Build the start date selector
   Widget _buildStartDateSelector(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -704,6 +740,7 @@ class TimingSection extends StatelessWidget {
     );
   }
 
+  /// Build time input for a specific time slot
   Widget _buildTimeInput(BuildContext context, int index) {
     final time = times[index];
     final isPM = time.hour >= 12;
@@ -874,6 +911,7 @@ class InventorySection extends StatelessWidget {
     );
   }
 
+  /// Build a row with counter and optional add button
   Widget _buildCounterRow(
     BuildContext context, {
     required String label,
@@ -949,7 +987,7 @@ class InventorySection extends StatelessWidget {
   }
 }
 
-/// Notes Section for additional medication information
+/// Notes Section for additional information (optional)
 class NotesSection extends StatelessWidget {
   final TextEditingController controller;
 

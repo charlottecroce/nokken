@@ -1,5 +1,6 @@
 //
 //  medication_detail_screen.dart
+//  Screen that displays more detailed information about a medication
 //
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,7 +10,7 @@ import 'package:nokken/src/features/medication_tracker/providers/medication_stat
 import 'package:nokken/src/services/navigation_service.dart';
 import 'package:nokken/src/shared/theme/app_theme.dart';
 import 'package:nokken/src/shared/theme/shared_widgets.dart';
-import 'package:nokken/src/shared/constants/date_constants.dart';
+//import 'package:nokken/src/shared/constants/date_constants.dart';
 import 'package:nokken/src/shared/utils/date_time_formatter.dart';
 
 class MedicationDetailScreen extends ConsumerWidget {
@@ -35,11 +36,13 @@ class MedicationDetailScreen extends ConsumerWidget {
           ],
         ),
         actions: [
+          // Edit button
           IconButton(
             icon: const Icon(Icons.edit),
             onPressed: () => NavigationService.goToMedicationAddEdit(context,
                 medication: medication),
           ),
+          // Delete button
           IconButton(
             icon: const Icon(Icons.delete),
             onPressed: () => _showDeleteDialog(context, ref),
@@ -49,6 +52,7 @@ class MedicationDetailScreen extends ConsumerWidget {
       body: ListView(
         padding: AppTheme.standardCardPadding,
         children: [
+          // Refill alert banner
           if (medication.needsRefill())
             Card(
               color: AppColors.errorContainer,
@@ -69,6 +73,8 @@ class MedicationDetailScreen extends ConsumerWidget {
                 ),
               ),
             ),
+
+          // Basic medication information card
           Card(
             child: Padding(
               padding: AppTheme.standardCardPadding,
@@ -100,6 +106,8 @@ class MedicationDetailScreen extends ConsumerWidget {
             ),
           ),
           SharedWidgets.verticalSpace(AppTheme.cardSpacing),
+
+          // Schedule information card
           SharedWidgets.basicCard(
             context: context,
             title: 'Schedule',
@@ -148,11 +156,13 @@ class MedicationDetailScreen extends ConsumerWidget {
               })(),
             ],
           ),
+
+          // Injection details card - only shown for injection medications
           if (medication.medicationType == MedicationType.injection &&
               medication.injectionDetails != null) ...[
             SharedWidgets.basicCard(
               context: context,
-              title: 'Srynges',
+              title: 'Syringes',
               children: [
                 _buildInfoRow('Drawing Needle',
                     medication.injectionDetails!.drawingNeedleType),
@@ -179,6 +189,8 @@ class MedicationDetailScreen extends ConsumerWidget {
             ),
             SharedWidgets.verticalSpace(AppTheme.cardSpacing),
           ],
+
+          // Notes card - only shown if notes exist
           if (medication.notes?.isNotEmpty == true) ...[
             SharedWidgets.verticalSpace(AppTheme.cardSpacing),
             SharedWidgets.basicCard(
@@ -194,8 +206,8 @@ class MedicationDetailScreen extends ConsumerWidget {
     );
   }
 
+  /// Helper to build consistent info rows
   Widget _buildInfoRow(String label, String value) {
-    ;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -211,6 +223,7 @@ class MedicationDetailScreen extends ConsumerWidget {
     );
   }
 
+  /// Show confirmation dialog before deleting medication
   Future<void> _showDeleteDialog(BuildContext context, WidgetRef ref) async {
     final result = await showDialog<bool>(
       context: context,

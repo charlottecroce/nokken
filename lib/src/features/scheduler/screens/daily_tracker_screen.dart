@@ -1,3 +1,7 @@
+//
+//  daily_tracker_screen.dart
+//  Screen for tracking daily medications
+//
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nokken/src/features/medication_tracker/models/medication.dart';
@@ -10,16 +14,16 @@ import 'package:nokken/src/shared/constants/date_constants.dart';
 import 'package:nokken/src/shared/theme/app_icons.dart';
 import 'package:nokken/src/shared/utils/date_time_formatter.dart';
 
-// Provider to track the selected date
+/// Provider to track the currently selected date
 final selectedDateProvider = StateProvider<DateTime>((ref) => DateTime.now());
-// Provider to track slide direction
+
+/// Provider to track slide direction for day-change animation
 final slideDirectionProvider = StateProvider<bool>((ref) => true);
 
 class DailyTrackerScreen extends ConsumerStatefulWidget {
   const DailyTrackerScreen({super.key});
 
   @override
-  // ignore: library_private_types_in_public_api
   _DailyTrackerScreenState createState() => _DailyTrackerScreenState();
 }
 
@@ -36,11 +40,11 @@ class _DailyTrackerScreenState extends ConsumerState<DailyTrackerScreen> {
     _loadTakenMedicationsForCurrentDate();
   }
 
+  /// Loads which medications have been taken for the current date
   void _loadTakenMedicationsForCurrentDate() {
     final selectedDate = ref.read(selectedDateProvider);
-    //print('Loading taken medications for date: ${selectedDate.toIso8601String()}');
 
-    // Use normalized date
+    // Use normalized date (no time component)
     final normalizedDate =
         DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
     ref
@@ -50,14 +54,14 @@ class _DailyTrackerScreenState extends ConsumerState<DailyTrackerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Watch for changes to medication data
     final medications =
         ref.watch(medicationStateProvider.select((state) => state.medications));
     final selectedDate = ref.watch(selectedDateProvider);
 
-    // When the date changes, load taken medications for the new date
+    // Listen for date changes to reload taken medications
     ref.listen(selectedDateProvider, (previous, next) {
       if (previous != next) {
-        //print('Date changed from ${previous?.toIso8601String()} to ${next.toIso8601String()}');
         // Always use normalized date
         final normalizedDate = DateTime(next.year, next.month, next.day);
         ref
@@ -66,6 +70,7 @@ class _DailyTrackerScreenState extends ConsumerState<DailyTrackerScreen> {
       }
     });
 
+    // Get medications for the selected day, grouped by time
     final medicationsForDay = _getMedicationsForDay(medications, selectedDate);
     final groupedMedications =
         _groupMedicationsByTime(medicationsForDay, context);
@@ -81,7 +86,10 @@ class _DailyTrackerScreenState extends ConsumerState<DailyTrackerScreen> {
       ),
       body: Column(
         children: [
+          // Date selector component
           _DateSelector(selectedDate: selectedDate),
+
+          // Medications list with animation for date changes
           Expanded(
             child: AnimatedSwitcher(
               duration: const Duration(milliseconds: 200),
@@ -119,25 +127,32 @@ class _DailyTrackerScreenState extends ConsumerState<DailyTrackerScreen> {
     );
   }
 
+  /// Filters medications to only those scheduled for the given day
   static List<Medication> _getMedicationsForDay(
       List<Medication> medications, DateTime date) {
     if (medications.isEmpty) return const [];
+
+    // Get day abbreviation for the selected date
     final weekday = DateConstants.orderedDays[date.weekday % 7];
 
     return medications
         .where((med) =>
+            // Check if this medication should be taken on this day of the week
             med.daysOfWeek.contains(weekday) &&
+            // Check if the date is on or after the medication start date
             !date.isBefore(DateTime(
                 med.startDate.year, med.startDate.month, med.startDate.day)))
         .toList();
   }
 
+  /// Groups medications by time slot for organized display
   static List<MedicationTimeGroup> _groupMedicationsByTime(
       List<Medication> medications, BuildContext context) {
     if (medications.isEmpty) return const [];
 
     final groups = <String, List<Medication>>{};
 
+    // Group medications by time slot
     for (final med in medications) {
       for (final time in med.timeOfDay) {
         // Always use AM/PM format for time
@@ -147,6 +162,7 @@ class _DailyTrackerScreenState extends ConsumerState<DailyTrackerScreen> {
       }
     }
 
+    // Convert to list of MedicationTimeGroup objects and sort by time
     return groups.entries
         .map((e) => MedicationTimeGroup(
               timeSlot: e.key,
@@ -158,6 +174,7 @@ class _DailyTrackerScreenState extends ConsumerState<DailyTrackerScreen> {
   }
 }
 
+/// Date selector component for navigating between days
 class _DateSelector extends ConsumerWidget {
   const _DateSelector({required this.selectedDate});
 
@@ -173,17 +190,20 @@ class _DateSelector extends ConsumerWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
+            // Previous day button
             IconButton(
               icon: Icon(AppIcons.getIcon('chevron_left')),
               color: AppColors.onPrimary,
               onPressed: () => _changeDate(ref, -1),
             ),
+            // Current date display
             Text(
               DateTimeFormatter.formatDateMMMDDYYYY(selectedDate),
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: AppColors.onPrimary,
                   ),
             ),
+            // Next day button
             IconButton(
               icon: Icon(AppIcons.getIcon('chevron_right')),
               color: AppColors.onPrimary,
@@ -195,14 +215,19 @@ class _DateSelector extends ConsumerWidget {
     );
   }
 
+  /// Change the date by the specified number of days (-1, 1)
   void _changeDate(WidgetRef ref, int days) {
+    // Update slide direction for animation
     ref.read(slideDirectionProvider.notifier).state = days > 0;
+
+    // Update selected date
     ref.read(selectedDateProvider.notifier).update(
           (state) => state.add(Duration(days: days)),
         );
   }
 }
 
+/// List of medications grouped by time
 class _MedicationsList extends ConsumerWidget {
   const _MedicationsList({
     super.key,
@@ -215,6 +240,7 @@ class _MedicationsList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Show empty state if no medications are scheduled
     if (groupedMedications.isEmpty) {
       return Center(
         child: Text(
@@ -224,6 +250,7 @@ class _MedicationsList extends ConsumerWidget {
       );
     }
 
+    // Show grouped medications by time
     return ListView.builder(
       padding: AppTheme.standardCardPadding,
       itemCount: groupedMedications.length,
@@ -235,6 +262,7 @@ class _MedicationsList extends ConsumerWidget {
   }
 }
 
+/// Group of medications scheduled for the same time
 class _TimeGroupItem extends StatelessWidget {
   const _TimeGroupItem({
     required this.timeGroup,
@@ -249,6 +277,7 @@ class _TimeGroupItem extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Time slot header
         Padding(
           padding: const EdgeInsets.symmetric(vertical: AppTheme.spacing),
           child: Row(
@@ -260,6 +289,7 @@ class _TimeGroupItem extends StatelessWidget {
             ],
           ),
         ),
+        // Card containing medications for this time slot
         Card(
           child: Padding(
             padding: AppTheme.standardCardPadding,
@@ -282,6 +312,7 @@ class _TimeGroupItem extends StatelessWidget {
   }
 }
 
+/// Individual medication item with take/untake functionality
 class _MedicationListTile extends ConsumerWidget {
   const _MedicationListTile({
     required this.medication,
@@ -295,12 +326,13 @@ class _MedicationListTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Normalize the date to match how it's stored in the database (just year-month-day)
+    // Normalize the date to match how it's stored in the database
     final normalizedDate =
         DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
     final medicationKey =
         '${medication.id}-${normalizedDate.toIso8601String()}-$timeSlot';
-    // Use the isMedicationTakenProvider to check if this medication is taken
+
+    // Check if this medication is taken
     final isTaken = ref.watch(isMedicationTakenProvider(medicationKey));
 
     return ListTile(
@@ -312,8 +344,8 @@ class _MedicationListTile extends ConsumerWidget {
             child: TextButton(
               style: TextButton.styleFrom(textStyle: AppTextStyles.titleMedium),
               child: Text(medication.name),
-              onPressed: () =>
-                  NavigationService.showMedicaitonDetails(context, medication),
+              onPressed: () => NavigationService.goToMedicationDetails(context,
+                  medication: medication),
             ),
           ),
         ),
@@ -325,6 +357,7 @@ class _MedicationListTile extends ConsumerWidget {
             medication.dosage,
             style: AppTextStyles.bodyMedium,
           ),
+          // Show quantity with warning color if refill needed
           if (medication.currentQuantity > 0 && medication.refillThreshold > 0)
             Text(
               'Remaining: ${medication.currentQuantity}',
@@ -342,6 +375,7 @@ class _MedicationListTile extends ConsumerWidget {
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
+          // Checkbox to mark medication as taken
           Transform.scale(
             scale: 1.5,
             child: Checkbox(
@@ -359,10 +393,12 @@ class _MedicationListTile extends ConsumerWidget {
           ),
         ],
       ),
-      tileColor: isTaken ? AppColors.surfaceContainer.withAlpha(40) : null,
+      // Subtle background color for taken medications
+      tileColor: isTaken ? AppColors.tertiary.withAlpha(40) : null,
     );
   }
 
+  /// Handle toggling a medication's taken status
   void _handleTakenChange(bool? value, String medicationKey, WidgetRef ref) {
     if (value == null) return;
 
@@ -399,6 +435,7 @@ class _MedicationListTile extends ConsumerWidget {
   }
 }
 
+/// Data model for grouping medications by time slot
 class MedicationTimeGroup {
   final String timeSlot;
   final List<Medication> medications;
