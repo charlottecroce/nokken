@@ -1,5 +1,6 @@
 //
 //  main_screen.dart
+//  Main container screen with bottom navigation
 //
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,10 +11,12 @@ import 'package:nokken/src/features/medication_tracker/screens/medication_list_s
 import 'package:nokken/src/shared/theme/app_icons.dart';
 import 'package:nokken/src/shared/theme/app_theme.dart';
 
-// Provider to track the current navigation index
-final navigationIndexProvider =
-    StateProvider<int>((ref) => 2); // Default to daily tracker
+/// Provider to track the current navigation index
+/// Default to index 2 (daily tracker)
+final navigationIndexProvider = StateProvider<int>((ref) => 2);
 
+/// Main application screen
+/// Serves as the container for the main functional screens
 class MainScreen extends ConsumerWidget {
   const MainScreen({super.key});
 
@@ -21,7 +24,7 @@ class MainScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final currentIndex = ref.watch(navigationIndexProvider);
 
-    // Placeholder widget for coming soon screens
+    /// Placeholder for upcoming features
     Widget buildComingSoon(String feature) {
       return Center(
         child: Column(
@@ -38,17 +41,20 @@ class MainScreen extends ConsumerWidget {
       );
     }
 
-    // List of all screens
+    // List of all screens accessible from the bottom navigation
     final screens = [
       const MedicationListScreen(),
       buildComingSoon('Feature 1'),
       DailyTrackerScreen(),
       buildComingSoon('Feature 2'),
-      const SettingsScreen(),
+      const SettingsScreen()
     ];
 
     return Scaffold(
+      // Display the currently selected screen
       body: screens[currentIndex],
+
+      // Bottom navigation bar
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           border: Border(
@@ -64,6 +70,7 @@ class MainScreen extends ConsumerWidget {
             ref.read(navigationIndexProvider.notifier).state = index;
           },
           destinations: [
+            // Medications tab
             NavigationDestination(
               icon: Padding(
                 padding: AppTheme.navigationBarPadding,
@@ -75,6 +82,7 @@ class MainScreen extends ConsumerWidget {
               ),
               label: 'Medications',
             ),
+            // Placeholder for future feature
             NavigationDestination(
               icon: Padding(
                 padding: AppTheme.navigationBarPadding,
@@ -86,6 +94,7 @@ class MainScreen extends ConsumerWidget {
               ),
               label: 'coming soon',
             ),
+            // Daily tracker tab
             NavigationDestination(
               icon: Padding(
                 padding: AppTheme.navigationBarPadding,
@@ -97,6 +106,7 @@ class MainScreen extends ConsumerWidget {
               ),
               label: 'Daily Tracker',
             ),
+            // Placeholder for future feature
             NavigationDestination(
               icon: Padding(
                 padding: AppTheme.navigationBarPadding,
@@ -108,6 +118,7 @@ class MainScreen extends ConsumerWidget {
               ),
               label: 'coming soon',
             ),
+            // Settings tab
             NavigationDestination(
               icon: Padding(
                 padding: AppTheme.navigationBarPadding,

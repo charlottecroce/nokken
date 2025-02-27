@@ -1,12 +1,17 @@
+//
+//  app_theme.dart
+//  Theme system
+//
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-//
-//  AppColors
-//
-// Theme-aware color class that supports multiple themes
+//----------------------------------------------------------------------------
+// APP COLORS
+//----------------------------------------------------------------------------
+
+/// Theme-aware color provider that adjusts based on current theme mode
 class AppColors {
-  // Private constructor
+  // Private constructor to prevent instantiation
   AppColors._();
 
   // Current theme mode
@@ -16,16 +21,17 @@ class AppColors {
   static final ColorScheme _darkScheme = AppTheme.darkColorScheme;
   static final ColorScheme _lightScheme = AppTheme.lightColorScheme;
 
-  // Get current scheme based on theme mode
+  /// Get current scheme based on theme mode
   static ColorScheme get current =>
       _themeMode == ThemeMode.light ? _lightScheme : _darkScheme;
 
-  // Method to change theme mode
+  /// Method to change theme mode
   static void setThemeMode(ThemeMode mode) {
     _themeMode = mode;
-    // maybe add notifer here??
+    // A notifier could be added here for more reactive theme changes
   }
 
+  // Basic theme colors
   static Color get primary => current.primary;
   static Color get onPrimary => current.onPrimary;
   static Color get secondary => current.secondary;
@@ -33,11 +39,13 @@ class AppColors {
   static Color get tertiary => current.tertiary;
   static Color get onTertiary => current.onTertiary;
 
+  // Surface colors
   static Color get surface => current.surface;
   static Color get surfaceContainer => current.surfaceContainer;
   static Color get onSurface => current.onSurface;
   static Color get onSurfaceVariant => current.onSurfaceVariant;
 
+  // Status colors
   static Color get error => current.error;
   static Color get errorContainer => current.errorContainer;
   static Color get success =>
@@ -47,22 +55,27 @@ class AppColors {
       : AppTheme.orangeDark;
   static Color get info => current.primary;
 
+  // Other UI element colors
   static Color get shadow => current.shadow;
   static Color get outline => current.outline;
   static Color get cardColor => current.surfaceContainer;
 }
 
-// Theme-aware text style class that supports multiple themes
+//----------------------------------------------------------------------------
+// TEXT STYLES
+//----------------------------------------------------------------------------
+
+/// Theme-aware text styles that adjust based on current theme mode
 class AppTextStyles {
-  // Private constructor
+  // Private constructor to prevent instantiation
   AppTextStyles._();
 
-  // Get current text theme based on theme mode
+  /// Get current text theme based on theme mode
   static TextTheme get _current => AppColors._themeMode == ThemeMode.light
       ? _getLightTextTheme()
       : _getDarkTextTheme();
 
-  // Dark text theme
+  /// Create the dark theme text styles
   static TextTheme _getDarkTextTheme() => TextTheme(
         displayLarge: AppTheme.displayLarge,
         displayMedium: AppTheme.displayMedium,
@@ -81,7 +94,7 @@ class AppTextStyles {
         labelSmall: AppTheme.labelSmall,
       );
 
-  // Light text theme (we'll create these styles later)
+  /// Create the light theme text styles with adjusted colors
   static TextTheme _getLightTextTheme() {
     // For now, using same styles with color adjusted for light theme
     final baseStyle = GoogleFonts.nunito(
@@ -155,27 +168,55 @@ class AppTextStyles {
       : AppTheme.link;
 }
 
-//
-//  AppTheme
-//
+//----------------------------------------------------------------------------
+// MAIN THEME CONFIGURATION
+//----------------------------------------------------------------------------
+
+/// Main theme class with comprehensive style definitions
 class AppTheme {
-  // Spacing
+  //----------------------------------------------------------------------------
+  // SPACING CONSTANTS
+  //----------------------------------------------------------------------------
+
+  /// Standard spacing unit for margins, padding, etc.
   static const double spacing = 8.0;
+
+  /// Standard padding for containers
   static const double padding = 16.0;
+
+  /// Standard padding for cards
   static const double cardPadding = 16.0;
+
+  /// Standard spacing between cards
   static const double cardSpacing = 24.0;
+
+  /// Standard padding for navigation elements
   static const double navbarPadding = 8.0;
 
-  //EdgeInsets
+  //----------------------------------------------------------------------------
+  // STANDARD EDGE INSETS
+  //----------------------------------------------------------------------------
+
+  /// Standard padding for cards
   static const EdgeInsets standardCardPadding = EdgeInsets.all(cardPadding);
+
+  /// Standard margins for screens
   static const EdgeInsets standardScreenMargins = EdgeInsets.all(padding);
+
+  /// Standard padding for navigation bar icons
   static const EdgeInsets navigationBarPadding = EdgeInsets.all(navbarPadding);
+
+  //----------------------------------------------------------------------------
+  // BASE COLORS
+  //----------------------------------------------------------------------------
 
   static const Color black = Color(0xFF0A100D);
   static const Color white = Color(0xFFF7F7F9);
   static const Color darkgrey = Color.fromARGB(255, 29, 29, 29);
 
-  // Colors - Dark Theme
+  //----------------------------------------------------------------------------
+  // DARK THEME COLORS
+  //----------------------------------------------------------------------------
   static const Color greyDark = Color.fromARGB(255, 39, 39, 39);
   static const Color lightgreyDark = Color.fromARGB(255, 236, 236, 243);
   static const Color blueDark = Color.fromARGB(255, 59, 170, 255);
@@ -186,7 +227,9 @@ class AppTheme {
   static const Color lightpinkDark = Color.fromARGB(255, 235, 141, 166);
   static const Color greenDark = Color(0xFF4FB286);
 
-  // Colors - Light Theme
+  //----------------------------------------------------------------------------
+  // LIGHT THEME COLORS
+  //----------------------------------------------------------------------------
   static const Color greyLight = Color.fromARGB(255, 227, 227, 227);
   static const Color lightgreyLight = Color.fromARGB(255, 229, 229, 229);
   static const Color blueLight = Color.fromARGB(255, 24, 118, 210);
@@ -197,7 +240,11 @@ class AppTheme {
   static const Color lightpinkLight = Color.fromARGB(255, 248, 176, 195);
   static const Color greenLight = Color(0xFF2E7D32);
 
-  // Dark Color Scheme
+  //----------------------------------------------------------------------------
+  // COLOR SCHEMES
+  //----------------------------------------------------------------------------
+
+  /// Dark mode color scheme
   static final ColorScheme darkColorScheme = ColorScheme.dark(
     primary: blueDark,
     secondary: pinkDark,
@@ -215,7 +262,7 @@ class AppTheme {
     outline: greyDark,
   );
 
-  // Light Color Scheme
+  /// Light mode color scheme
   static final ColorScheme lightColorScheme = ColorScheme.light(
     primary: blueLight,
     secondary: pinkLight,
@@ -233,12 +280,17 @@ class AppTheme {
     outline: greyLight,
   );
 
+  /// Default text field decoration used throughout the app
   static const defaultTextFieldDecoration = InputDecoration(
     border: OutlineInputBorder(),
     contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
   );
 
-  // Text Styles
+  //----------------------------------------------------------------------------
+  // TEXT STYLES
+  //----------------------------------------------------------------------------
+
+  /// Base text style for the application
   static final TextStyle _baseTextStyle = GoogleFonts.nunito(
     color: AppColors.onSurface,
     letterSpacing: 0.15,
@@ -396,12 +448,20 @@ class AppTheme {
     height: 1.43,
   );
 
-  // Method to get current ThemeData based on theme mode
+  //----------------------------------------------------------------------------
+  // THEME DATA CONFIGURATION
+  //----------------------------------------------------------------------------
+
+  /// Get ThemeData based on specified theme mode
   static ThemeData getTheme(ThemeMode mode) {
     return mode == ThemeMode.light ? lightTheme : darkTheme;
   }
 
-  // Dark Theme
+  //----------------------------------------------------------------------------
+  // DARK THEME
+  //----------------------------------------------------------------------------
+
+  /// Dark theme configuration
   static final ThemeData darkTheme = ThemeData(
     useMaterial3: true,
     brightness: Brightness.dark,
@@ -434,7 +494,6 @@ class AppTheme {
       elevation: 0,
       centerTitle: true,
       titleTextStyle: headlineSmall,
-      //iconTheme: IconThemeData(color: darkColorScheme.onPrimary),
     ),
 
     // Dark - Card Theme
@@ -626,7 +685,11 @@ class AppTheme {
     ),
   );
 
-  // Light Theme
+  //----------------------------------------------------------------------------
+  // LIGHT THEME
+  //----------------------------------------------------------------------------
+
+  /// Light theme configuration
   static final ThemeData lightTheme = ThemeData(
     useMaterial3: true,
     brightness: Brightness.light,
@@ -807,7 +870,11 @@ class AppTheme {
     ),
   );
 
-  // Helper method to toggle theme
+  //----------------------------------------------------------------------------
+  // THEME HELPER METHODS
+  //----------------------------------------------------------------------------
+
+  /// Toggle between light and dark theme mode
   static ThemeMode toggleThemeMode(ThemeMode current) {
     ThemeMode newMode =
         current == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;

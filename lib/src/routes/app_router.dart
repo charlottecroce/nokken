@@ -1,5 +1,6 @@
 //
 // app_router.dart
+// Centralized navigation router
 //
 import 'package:flutter/material.dart';
 import 'route_names.dart';
@@ -11,7 +12,9 @@ import 'package:nokken/src/features/medication_tracker/screens/medication_detail
 import 'package:nokken/src/features/medication_tracker/screens/add_edit_medication_screen.dart';
 import 'package:nokken/src/features/settings/screens/settings_screen.dart';
 
+/// Router class that handles all navigation within the app
 class AppRouter {
+  /// Called by MaterialApp's onGenerateRoute property
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
       case RouteNames.dailyTracker:
@@ -48,6 +51,7 @@ class AppRouter {
       case RouteNames.settings:
         return MaterialPageRoute(builder: (_) => const SettingsScreen());
 
+      // Fallback for unknown routes
       default:
         return MaterialPageRoute(
           builder: (_) => Scaffold(

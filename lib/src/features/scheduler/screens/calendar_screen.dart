@@ -1,5 +1,6 @@
 //
 //  calendar_screen.dart
+//  Monthly calendar view with medication schedule visualization
 //
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -14,7 +15,6 @@ import 'package:nokken/src/services/navigation_service.dart';
 import 'package:nokken/src/shared/theme/app_icons.dart';
 import 'package:nokken/src/shared/theme/app_theme.dart';
 import 'package:nokken/src/shared/constants/date_constants.dart';
-import 'package:nokken/src/shared/utils/date_time_formatter.dart';
 
 class CalendarScreen extends ConsumerStatefulWidget {
   const CalendarScreen({super.key});
@@ -41,7 +41,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     });
   }
 
-  // Load taken medications for the selected day
+  /// Load taken medications for the selected day
   void _loadTakenMedicationsForSelectedDay() {
     final normalizedDate =
         DateTime(_selectedDay.year, _selectedDay.month, _selectedDay.day);
@@ -56,6 +56,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     super.dispose();
   }
 
+  /// Load medications directly from the database
   Future<void> _loadMedicationsFromDB() async {
     try {
       setState(() {
@@ -95,6 +96,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     }
   }
 
+  /// Filter medications to those that should appear on the selected day
   List<Medication> _getMedicationsForSelectedDay() {
     return _medications.where((med) {
       // Check if this medication is before start date
@@ -125,6 +127,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     }).toList();
   }
 
+  /// Convert weekday number to day abbreviation
   String _weekdayToAbbreviation(int weekday) {
     return DateConstants.dayMap[weekday] ?? '';
   }
@@ -154,6 +157,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 controller: _scrollController,
                 child: Column(
                   children: [
+                    // Calendar component
                     MedicationCalendar(
                       medications: _medications,
                       onDaySelected: (day) {
@@ -176,6 +180,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     );
   }
 
+  /// Build the list of medications for the selected day
   Widget _buildMedicationsListContent() {
     final medicationsForDay = _getMedicationsForSelectedDay();
     final formattedDate = DateTimeFormatter.formatDateDDMMYY(_selectedDay);
@@ -217,6 +222,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     );
   }
 
+  /// Build a card for an individual medication
   Widget _buildMedicationCard(Medication medication) {
     // Create a normalized date for the selected day
     final normalizedDate =
@@ -242,8 +248,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   InkWell(
-                    onTap: () => NavigationService.showMedicaitonDetails(
-                        context, medication),
+                    onTap: () => NavigationService.goToMedicationDetails(
+                        context,
+                        medication: medication),
                     child: Text(
                       medication.name,
                       style: AppTextStyles.titleLarge,
@@ -269,7 +276,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                             final sortedTimes =
                                 List<DateTime>.from(medication.timeOfDay);
 
-                            // Sort all time slots using DateTimeFormatter.compareTimeSlots
+                            // Sort all time slots
                             sortedTimes.sort((a, b) {
                               final aTimeStr =
                                   DateTimeFormatter.formatTimeToAMPM(
@@ -281,9 +288,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                                   aTimeStr, bTimeStr);
                             });
 
-                            // Convert each time slot to a UI element with appropriate icon and checkmark if taken
+                            // Convert each time slot to a UI element with checkmark if taken
                             return sortedTimes.map((time) {
-                              // Format times consistently using DateTimeFormatter
+                              // Format times consistently
                               final timeOfDay = TimeOfDay.fromDateTime(time);
                               final timeStr =
                                   DateTimeFormatter.formatTimeToAMPM(timeOfDay);
@@ -317,7 +324,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                                       Padding(
                                         padding: const EdgeInsets.only(left: 8),
                                         child: Icon(
-                                          AppIcons.getIcon('check_circle'),
+                                          AppIcons.getIcon('success'),
                                           color: AppColors.tertiary,
                                           size: 16,
                                         ),
@@ -340,6 +347,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     );
   }
 }
+
+//----------------------------------------------------------------------------
+// MEDICATION CALENDAR COMPONENT
+//----------------------------------------------------------------------------
 
 /// Custom calendar widget showing medication schedules with visual indicators
 class MedicationCalendar extends StatefulWidget {
@@ -377,6 +388,7 @@ class _MedicationCalendarState extends State<MedicationCalendar> {
     }
   }
 
+  /// Update the set of dates that have injections due
   void _updateInjectionDates() {
     _injectionDueDates = _calculateInjectionDueDates(widget.medications);
   }
@@ -481,7 +493,7 @@ class _MedicationCalendarState extends State<MedicationCalendar> {
               margin: const EdgeInsets.all(4),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                // Change the background color to injectionDueColor when selected day has injection
+                // Change the background color when selected day has injection
                 color: hasInjection ? injectionDueColor : AppColors.primary,
                 border: hasInjection
                     ? Border.all(color: injectionDueColor, width: 2)
@@ -523,7 +535,7 @@ class _MedicationCalendarState extends State<MedicationCalendar> {
               ),
             );
           },
-          // Add builder for out-of-month days to add transparency and apply injection rules
+          // Builder for out-of-month days with transparency and injection rules
           outsideBuilder: (context, day, focusedDay) {
             bool hasInjection = _hasInjectionDue(day, _injectionDueDates);
 
@@ -561,6 +573,7 @@ class _MedicationCalendarState extends State<MedicationCalendar> {
     );
   }
 
+  /// Check if a date has an injection due
   bool _hasInjectionDue(DateTime date, Set<DateTime> injectionDates) {
     // Compare just the date part, not time
     final normalizedDate = DateTime(date.year, date.month, date.day);
@@ -575,9 +588,11 @@ class _MedicationCalendarState extends State<MedicationCalendar> {
   }
 }
 
-/// Helper functions for calculating injection dates
+//----------------------------------------------------------------------------
+// INJECTION DATE CALCULATION HELPERS
+//----------------------------------------------------------------------------
 
-// Helper method to calculate which days have injections due
+/// Calculate which days have injections due based on medication schedules
 Set<DateTime> _calculateInjectionDueDates(List<Medication> medications) {
   Set<DateTime> injectionDates = {};
   final now = DateTime.now();
@@ -622,7 +637,7 @@ Set<DateTime> _calculateInjectionDueDates(List<Medication> medications) {
   return injectionDates;
 }
 
-// Calculate injection dates based on frequency and selected days
+/// Add injection dates based on frequency and selected days
 void _addWeeklyInjections(
   Set<DateTime> dates,
   Set<String> daysOfWeek,

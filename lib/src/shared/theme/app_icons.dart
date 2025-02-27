@@ -1,8 +1,10 @@
 //
 //  app_icons.dart
+//  Centralized icon management
 //
 import 'package:flutter/material.dart';
 
+/// Provides outlined and filled versions of each icon
 class AppIcons {
   // Map of icon pairs where key is a string identifier and value is a pair of outlined/filled icons
   static final Map<String, ({IconData outlined, IconData filled})> iconMap = {
@@ -12,26 +14,24 @@ class AppIcons {
     'profile': (outlined: Icons.person_outline, filled: Icons.person),
     'menu': (outlined: Icons.menu_outlined, filled: Icons.menu),
 
+    // Time of day
     'sun': (outlined: Icons.wb_sunny_outlined, filled: Icons.wb_sunny),
     'twilight': (
       outlined: Icons.wb_twilight_outlined,
       filled: Icons.wb_twilight
     ),
-
     'night': (outlined: Icons.bedtime_outlined, filled: Icons.bedtime),
-
-    'check_circle': (
-      outlined: Icons.check_circle_outline,
-      filled: Icons.check_circle
-    ),
 
     // Actions
     'add': (outlined: Icons.add, filled: Icons.add),
     'edit': (outlined: Icons.edit_outlined, filled: Icons.edit),
     'delete': (outlined: Icons.delete_outline, filled: Icons.delete),
     'save': (outlined: Icons.save_outlined, filled: Icons.save),
+    'refresh': (outlined: Icons.refresh_outlined, filled: Icons.refresh),
+    'redo': (outlined: Icons.redo_outlined, filled: Icons.redo),
+    'undo': (outlined: Icons.undo_outlined, filled: Icons.undo),
 
-    //Arrows
+    // Arrows
     'arrow_back': (
       outlined: Icons.arrow_back_outlined,
       filled: Icons.arrow_back
@@ -89,10 +89,6 @@ class AppIcons {
       filled: Icons.chevron_right
     ),
 
-    'refresh': (outlined: Icons.refresh_outlined, filled: Icons.refresh),
-    'redo': (outlined: Icons.redo_outlined, filled: Icons.redo),
-    'undo': (outlined: Icons.undo_outlined, filled: Icons.undo),
-
     // Communication
     'message': (outlined: Icons.message_outlined, filled: Icons.message),
     'notification': (
@@ -136,17 +132,17 @@ class AppIcons {
     'schedule': (outlined: Icons.schedule_outlined, filled: Icons.schedule),
   };
 
-  // Helper method to get outlined version
+  /// Get the outlined version of an icon
   static IconData getOutlined(String name) {
     return iconMap[name]?.outlined ?? Icons.error_outline;
   }
 
-  // Helper method to get filled version
+  /// Get the filled version of an icon
   static IconData getFilled(String name) {
     return iconMap[name]?.filled ?? Icons.error;
   }
 
-  // Helper method to get icon based on selected state
+  /// Get icon based on selected state (filled when selected, outlined when not)
   static IconData getIcon(String name, {bool selected = false}) {
     return selected ? getFilled(name) : getOutlined(name);
   }

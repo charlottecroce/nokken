@@ -12,6 +12,7 @@ class SettingsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Watch the theme provider to react to theme changes
     final themeMode = ref.watch(themeProvider);
     final isDarkMode = themeMode == ThemeMode.dark;
 
@@ -63,6 +64,7 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
+  /// Helper method to build consistent setting items
   Widget _buildSettingItem(
     BuildContext context, {
     required String title,
