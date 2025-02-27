@@ -1,12 +1,11 @@
-# Nokken
-## work in progress 🏗️
+# Nøkken
+work in progress 🏗️
+___
+## 🏹 Purpose
 
-A mobile health management app to help users track medications, appointments, and blood levels.
+The goal of this project is to develop a mobile health app for tracking medications, injections, appointments, and blood level trends.
 
-## Features
-
-
-## :rocket: Getting Started
+## 🚀 Getting Started
 
 ### Prerequisites
 - Flutter (2.10.0 or higher)
@@ -16,39 +15,30 @@ A mobile health management app to help users track medications, appointments, an
 
 ### Installation
 
-1. Clone the repository
+
 ```bash
+# Clone the repository
 git clone https://github.com/charlottecroce/nokken.git
-```
 
-2. Navigate to project directory
-```bash
+# Navigate to project directory
 cd nokken
-```
 
-3. Install dependencies
-```bash
+# Install dependencies
 flutter pub get
-```
 
-4. Run the app
-```bash
+# Run the app
 flutter run
 ```
 
-## Project Structure
+## 🤝 Contributing
 
-## Contributing
+All contributions are welcome!
 
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-Please read [CONTRIBUTING.md](##) for details on our code of conduct and the process for submitting pull requests.
+Please read [CONTRIBUTING.md](https://github.com/charlottecroce/nokken/blob/main/CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
 
 ## 📜 License
 
-This project is licensed under the MIT License - see the [LICENSE](https://github.com/charlottecroce/nokken/blob/main/LICENSE) file for details.
-
-## Contact
+This project is licensed under the GPLv3 License - see the [LICENSE](https://github.com/charlottecroce/nokken/blob/main/LICENSE) file for details.
 
 ---
 
