@@ -246,9 +246,6 @@ class _TimeGroupItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Get the appropriate time icon
-    final IconData timeIcon = DateTimeFormatter.getTimeIcon(timeGroup.timeSlot);
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -256,7 +253,8 @@ class _TimeGroupItem extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: AppTheme.spacing),
           child: Row(
             children: [
-              Icon(timeIcon, size: 20, color: AppColors.primary),
+              Icon(DateTimeFormatter.getTimeIcon(timeGroup.timeSlot),
+                  size: 20, color: AppColors.primary),
               const SizedBox(width: 8),
               Text(timeGroup.timeSlot, style: AppTextStyles.titleMedium),
             ],
