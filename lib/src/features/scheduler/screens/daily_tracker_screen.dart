@@ -5,8 +5,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nokken/src/features/medication_tracker/models/medication.dart';
+import 'package:nokken/src/features/medication_tracker/models/medication_dose.dart';
 import 'package:nokken/src/features/medication_tracker/providers/medication_state.dart';
 import 'package:nokken/src/features/medication_tracker/providers/medication_taken_provider.dart';
+import 'package:nokken/src/features/medication_tracker/services/medication_schedule_service.dart';
 import 'package:nokken/src/services/navigation_service.dart';
 import 'package:nokken/src/shared/theme/shared_widgets.dart';
 import 'package:nokken/src/shared/theme/app_theme.dart';
@@ -326,14 +328,13 @@ class _MedicationListTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Normalize the date to match how it's stored in the database
-    final normalizedDate =
-        DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
-    final medicationKey =
-        '${medication.id}-${normalizedDate.toIso8601String()}-$timeSlot';
-
+    final dose = MedicationDose(
+      medicationId: medication.id,
+      date: selectedDate,
+      timeSlot: timeSlot,
+    );
     // Check if this medication is taken
-    final isTaken = ref.watch(isMedicationTakenProvider(medicationKey));
+    final isTaken = ref.watch(isDoseTakenProvider(dose));
 
     return ListTile(
       title: Padding(
@@ -380,8 +381,7 @@ class _MedicationListTile extends ConsumerWidget {
             scale: 1.5,
             child: Checkbox(
               value: isTaken,
-              onChanged: (bool? value) =>
-                  _handleTakenChange(value, medicationKey, ref),
+              onChanged: (bool? value) => _handleTakenChange(value, ref, dose),
               fillColor: WidgetStateProperty.resolveWith((states) {
                 if (states.contains(WidgetState.selected)) {
                   return AppColors.tertiary;
@@ -399,7 +399,7 @@ class _MedicationListTile extends ConsumerWidget {
   }
 
   /// Handle toggling a medication's taken status
-  void _handleTakenChange(bool? value, String medicationKey, WidgetRef ref) {
+  void _handleTakenChange(bool? value, WidgetRef ref, MedicationDose dose) {
     if (value == null) return;
 
     // Check if we have enough quantity to mark as taken
@@ -422,9 +422,7 @@ class _MedicationListTile extends ConsumerWidget {
 
     // Update taken medications in database and state
     ref.read(medicationTakenProvider.notifier).setMedicationTaken(
-          medication.id,
-          normalizedDate,
-          timeSlot,
+          dose,
           value,
         );
 

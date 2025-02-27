@@ -325,6 +325,7 @@ class DatabaseService {
   //----------------------------------------------------------------------------
 
   /// Mark a medication as taken or not taken
+// Add this method to support the MedicationDose model
   Future<void> setMedicationTaken(
       String medicationId, DateTime date, String timeSlot, bool taken) async {
     try {
