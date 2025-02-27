@@ -1,10 +1,12 @@
 //
 //  database_service.dart
+//  Service for handling database operations
 //
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart' as path;
 import 'package:nokken/src/features/medication_tracker/models/medication.dart';
 
+/// Custom exception for database-related errors
 class DatabaseException implements Exception {
   final String message;
   final dynamic error;
@@ -15,6 +17,7 @@ class DatabaseException implements Exception {
       'DatabaseException: $message${error != null ? ' ($error)' : ''}';
 }
 
+/// Model for tracking when medications are taken
 class TakenMedication {
   final String medicationId;
   final DateTime date;
@@ -28,7 +31,7 @@ class TakenMedication {
     required this.taken,
   });
 
-  // Generate a unique key for this record - normalize date to prevent time issues
+  /// Generate a unique key for this record - normalize date to prevent time issues
   String get uniqueKey {
     // Create a normalized date string (just year-month-day, no time)
     final normalizedDate =
@@ -36,7 +39,7 @@ class TakenMedication {
     return '$medicationId-$normalizedDate-$timeSlot';
   }
 
-  // Convert to database map
+  /// Convert to database map
   Map<String, dynamic> toMap() {
     // Always normalize the date when saving to database
     final normalizedDate =
@@ -49,7 +52,7 @@ class TakenMedication {
     };
   }
 
-  // Create from database map
+  /// Create from database map
   factory TakenMedication.fromMap(Map<String, dynamic> map) {
     try {
       final date = DateTime.parse(map['date']);
@@ -63,8 +66,6 @@ class TakenMedication {
         taken: map['taken'] == 1,
       );
     } catch (e) {
-      //print('Error parsing TakenMedication from map: $e');
-      //print('Map data: $map');
       // Return a default value in case of error
       return TakenMedication(
         medicationId: map['medication_id'] ?? 'unknown',
@@ -76,16 +77,19 @@ class TakenMedication {
   }
 }
 
+/// Service that manages database operations for the application
 class DatabaseService {
   static Database? _database;
-  static const int _currentVersion = 4; // Increased for the new table
+  static const int _currentVersion = 1; // Will be used in future for DB updates
 
+  /// Get the database instance (lazy initialization)
   Future<Database> get database async {
     if (_database != null) return _database!;
     _database = await _initDatabase();
     return _database!;
   }
 
+  /// Initialize the database connection
   Future<Database> _initDatabase() async {
     try {
       final dbPath = await getDatabasesPath();
@@ -98,7 +102,7 @@ class DatabaseService {
           await _createDatabase(db);
         },
         onUpgrade: (db, oldVersion, newVersion) async {
-          if (oldVersion < 4) {
+          if (oldVersion < 1) {
             // for updates to DB. for now just resetting
           }
         },
@@ -108,8 +112,9 @@ class DatabaseService {
     }
   }
 
+  /// Create the database schema
   Future<void> _createDatabase(Database db) async {
-    // Create the medications table
+    // Create medications table
     await db.execute('''
       CREATE TABLE medications(
         id TEXT PRIMARY KEY,
@@ -134,11 +139,7 @@ class DatabaseService {
       )
     ''');
 
-    // Create the taken_medications table
-    await _createTakenMedicationsTable(db);
-  }
-
-  Future<void> _createTakenMedicationsTable(Database db) async {
+    // Create taken_medications table
     await db.execute('''
       CREATE TABLE taken_medications(
         medication_id TEXT NOT NULL,
@@ -150,6 +151,7 @@ class DatabaseService {
     ''');
   }
 
+  /// Convert a Medication object to a database map
   Map<String, dynamic> _medicationToMap(Medication medication) {
     // Start with basic fields
     final map = {
@@ -200,6 +202,7 @@ class DatabaseService {
     return map;
   }
 
+  /// Convert a database map to a Medication object
   Medication _mapToMedication(Map<String, dynamic> map) {
     // Convert enum string back to enum value
     final medicationType = MedicationType.values.firstWhere(
@@ -252,7 +255,11 @@ class DatabaseService {
     );
   }
 
-  // Medication CRUD operations
+  //----------------------------------------------------------------------------
+  // MEDICATION CRUD OPERATIONS
+  //----------------------------------------------------------------------------
+
+  /// Insert a new medication into the database
   Future<void> insertMedication(Medication medication) async {
     try {
       final db = await database;
@@ -266,6 +273,7 @@ class DatabaseService {
     }
   }
 
+  /// Update an existing medication in the database
   Future<void> updateMedication(Medication medication) async {
     try {
       final db = await database;
@@ -280,6 +288,7 @@ class DatabaseService {
     }
   }
 
+  /// Delete a medication and its taken records
   Future<void> deleteMedication(String id) async {
     try {
       final db = await database;
@@ -300,6 +309,7 @@ class DatabaseService {
     }
   }
 
+  /// Get all medications from the database
   Future<List<Medication>> getAllMedications() async {
     try {
       final db = await database;
@@ -310,7 +320,11 @@ class DatabaseService {
     }
   }
 
-  // Taken Medication operations
+  //----------------------------------------------------------------------------
+  // TAKEN MEDICATION OPERATIONS
+  //----------------------------------------------------------------------------
+
+  /// Mark a medication as taken or not taken
   Future<void> setMedicationTaken(
       String medicationId, DateTime date, String timeSlot, bool taken) async {
     try {
@@ -332,6 +346,7 @@ class DatabaseService {
     }
   }
 
+  /// Get all medications taken on a specific date
   Future<Set<String>> getTakenMedicationsForDate(DateTime date) async {
     try {
       final db = await database;
@@ -344,31 +359,19 @@ class DatabaseService {
         whereArgs: [dateStr],
       );
 
-      // For debugging
-      //print('Found ${maps.length} taken medications for date $dateStr');
-
       final result = maps
-          .map((map) {
-            final takenMed = TakenMedication.fromMap(map);
-            //print('Loaded medication: ${takenMed.medicationId} on ${takenMed.date} at ${takenMed.timeSlot}');
-            return takenMed;
-          })
+          .map((map) => TakenMedication.fromMap(map))
           .where((takenMed) => takenMed.taken)
-          .map((takenMed) {
-            final key = takenMed.uniqueKey;
-            //print('Generated key: $key');
-            return key;
-          })
+          .map((takenMed) => takenMed.uniqueKey)
           .toSet();
 
-      //print('Returning ${result.length} keys');
       return result;
     } catch (e) {
-      //print('Error fetching taken medications: $e');
       throw DatabaseException('Failed to fetch taken medications', e);
     }
   }
 
+  /// Delete taken medication records older than the specified date
   Future<void> deleteTakenMedicationsOlderThan(DateTime date) async {
     try {
       final db = await database;

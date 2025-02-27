@@ -1,3 +1,10 @@
+//
+// route_names.dart
+// Constants for all route paths
+//
+
+/// Contains string constants for all route paths
+/// Used to maintain consistency in navigation throughout the app
 class RouteNames {
   static const String dailyTracker = '/calendar/day';
   static const String calendar = '/calendar/month';

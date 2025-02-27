@@ -23,6 +23,7 @@ class DateTimeFormatter {
   static String formatDateMMMDDYYYY(DateTime date) {
     final now = DateTime.now();
 
+    /// Helper function to create the base date string
     String formatDateStringMMMDDYYYY() {
       return '${DateConstants.months[date.month - 1]} ${date.day}, ${date.year}';
     }

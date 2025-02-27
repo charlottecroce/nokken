@@ -1,9 +1,17 @@
+//
+//  medication.dart
+//  Core model for medication data
+//
 import 'package:uuid/uuid.dart';
+import 'package:nokken/src/shared/constants/date_constants.dart';
 
+/// Types of medications supported
 enum MedicationType { oral, injection }
 
+/// Frequency options for injectable medications
 enum InjectionFrequency { weekly, biweekly }
 
+/// Details specific to injectable medications
 class InjectionDetails {
   final String drawingNeedleType;
   final int drawingNeedleCount;
@@ -25,6 +33,7 @@ class InjectionDetails {
     required this.frequency,
   });
 
+  /// Convert to JSON for database storage
   Map<String, dynamic> toJson() => {
         'drawingNeedleType': drawingNeedleType,
         'drawingNeedleCount': drawingNeedleCount,
@@ -36,6 +45,7 @@ class InjectionDetails {
         'frequency': frequency.toString(),
       };
 
+  /// Create InjectionDetails from JSON (database record)
   factory InjectionDetails.fromJson(Map<String, dynamic> json) {
     return InjectionDetails(
       drawingNeedleType: json['drawingNeedleType'],
@@ -52,6 +62,7 @@ class InjectionDetails {
   }
 }
 
+/// Custom exception for medication-related errors
 class MedicationException implements Exception {
   final String message;
   MedicationException(this.message);
@@ -60,13 +71,14 @@ class MedicationException implements Exception {
   String toString() => 'MedicationException: $message';
 }
 
+/// Primary model for medication data
 class Medication {
   final String id;
   final String name;
   final String dosage;
   final DateTime startDate;
-  final int frequency;
-  final List<DateTime> timeOfDay;
+  final int frequency; // Times per day
+  final List<DateTime> timeOfDay; // Specific times for each dose
   final Set<String> daysOfWeek;
   final int currentQuantity;
   final int refillThreshold;
@@ -74,8 +86,7 @@ class Medication {
   final MedicationType medicationType;
   final InjectionDetails? injectionDetails; // null for oral medications
 
-  static const validDays = {'Su', 'M', 'T', 'W', 'Th', 'F', 'Sa'};
-
+  /// Constructor with validation
   Medication({
     String? id,
     required this.name,
@@ -93,6 +104,7 @@ class Medication {
     _validate();
   }
 
+  /// Validates medication fields
   void _validate() {
     if (name.trim().isEmpty) {
       throw MedicationException('Name cannot be empty');
@@ -109,7 +121,7 @@ class Medication {
     if (daysOfWeek.isEmpty) {
       throw MedicationException('At least one day must be selected');
     }
-    if (!daysOfWeek.every((day) => validDays.contains(day))) {
+    if (!daysOfWeek.every((day) => DateConstants.orderedDays.contains(day))) {
       throw MedicationException('Invalid day selection');
     }
     if (currentQuantity < 0) {
@@ -131,6 +143,7 @@ class Medication {
     }
   }
 
+  /// Convert to JSON format for database storage
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -149,6 +162,7 @@ class Medication {
     };
   }
 
+  /// Create a Medication instance from JSON (database record)
   factory Medication.fromJson(Map<String, dynamic> json) {
     try {
       return Medication(
@@ -175,6 +189,7 @@ class Medication {
     }
   }
 
+  /// Create a copy of this medication with updated fields
   Medication copyWith({
     String? name,
     String? dosage,
@@ -204,5 +219,6 @@ class Medication {
     );
   }
 
+  /// Check if medication needs to be refilled based on current quantity and threshold
   bool needsRefill() => currentQuantity < refillThreshold;
 }

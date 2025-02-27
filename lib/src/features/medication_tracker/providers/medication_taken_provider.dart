@@ -3,10 +3,11 @@
 //  Provider to manage taken medications with database persistence
 //
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:nokken/src/features/medication_tracker/models/medication.dart';
+//import 'package:nokken/src/features/medication_tracker/models/medication.dart';
 import 'package:nokken/src/features/medication_tracker/providers/medication_state.dart';
 import 'package:nokken/src/services/database_service.dart';
 
+/// Notifier for tracking which medications have been taken
 class MedicationTakenNotifier extends StateNotifier<Set<String>> {
   final DatabaseService _databaseService;
 
@@ -14,7 +15,7 @@ class MedicationTakenNotifier extends StateNotifier<Set<String>> {
       : _databaseService = databaseService,
         super({});
 
-  // Load taken medications for a specific date
+  /// Load taken medications for a specific date
   Future<void> loadTakenMedicationsForDate(DateTime date) async {
     try {
       final takenMeds = await _databaseService.getTakenMedicationsForDate(date);
@@ -25,7 +26,7 @@ class MedicationTakenNotifier extends StateNotifier<Set<String>> {
     }
   }
 
-  // Set a medication as taken or not taken
+  /// Set a medication as taken or not taken
   Future<void> setMedicationTaken(
       String medicationId, DateTime date, String timeSlot, bool taken) async {
     final key = '$medicationId-${date.toIso8601String()}-$timeSlot';
@@ -47,7 +48,7 @@ class MedicationTakenNotifier extends StateNotifier<Set<String>> {
     }
   }
 
-  // Clear expired data (optional maintenance function)
+  /// Clear expired data (optional maintenance function)
   Future<void> clearOldData(int olderThanDays) async {
     final cutoffDate = DateTime.now().subtract(Duration(days: olderThanDays));
     try {
@@ -59,14 +60,19 @@ class MedicationTakenNotifier extends StateNotifier<Set<String>> {
   }
 }
 
-// Provider definitions
+//----------------------------------------------------------------------------
+// PROVIDER DEFINITIONS
+//----------------------------------------------------------------------------
+
+/// Provider for tracking which medications have been taken
 final medicationTakenProvider =
     StateNotifierProvider<MedicationTakenNotifier, Set<String>>((ref) {
   final databaseService = ref.watch(databaseServiceProvider);
   return MedicationTakenNotifier(databaseService: databaseService);
 });
 
-// Provider to check if a specific medication is taken
+/// Provider to check if a specific medication is taken
+/// Key format: '{medicationId}-{ISO date}-{timeSlot}'
 final isMedicationTakenProvider = Provider.family<bool, String>((ref, key) {
   final takenMedications = ref.watch(medicationTakenProvider);
   return takenMedications.contains(key);

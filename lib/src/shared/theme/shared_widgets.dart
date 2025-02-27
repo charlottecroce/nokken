@@ -1,12 +1,18 @@
-// lib/src/common/ui_constants.dart
+//
+//  shared_widgets.dart
+//  Reusable UI components
+//
 import 'package:flutter/material.dart';
 import 'package:nokken/src/shared/theme/app_theme.dart';
 
 class SharedWidgets {
+  /// Creates a vertical spacer with customizable height
+  /// Default height is the standard spacing value from AppTheme
   static Widget verticalSpace([double height = AppTheme.spacing]) {
     return SizedBox(height: height);
   }
 
+  /// Builds a section header with standardized styling
   static Widget buildSectionHeader(String title) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
@@ -17,6 +23,8 @@ class SharedWidgets {
     );
   }
 
+  /// Creates a standardized card with title and content
+  /// Used for displaying grouped information throughout the app
   static Widget basicCard({
     required BuildContext context,
     required String title,

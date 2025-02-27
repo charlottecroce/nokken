@@ -317,7 +317,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                                       Padding(
                                         padding: const EdgeInsets.only(left: 8),
                                         child: Icon(
-                                          AppIcons.getIcon('check_circle'),
+                                          AppIcons.getIcon('success'),
                                           color: AppColors.tertiary,
                                           size: 16,
                                         ),
