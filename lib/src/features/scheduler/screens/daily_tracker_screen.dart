@@ -1,6 +1,3 @@
-//
-//  daily_tracker_screen.dart
-//
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nokken/src/features/medication_tracker/models/medication.dart';
@@ -11,6 +8,7 @@ import 'package:nokken/src/shared/theme/shared_widgets.dart';
 import 'package:nokken/src/shared/theme/app_theme.dart';
 import 'package:nokken/src/shared/constants/date_constants.dart';
 import 'package:nokken/src/shared/theme/app_icons.dart';
+import 'package:nokken/src/shared/utils/date_time_formatter.dart';
 
 // Provider to track the selected date
 final selectedDateProvider = StateProvider<DateTime>((ref) => DateTime.now());
@@ -18,9 +16,7 @@ final selectedDateProvider = StateProvider<DateTime>((ref) => DateTime.now());
 final slideDirectionProvider = StateProvider<bool>((ref) => true);
 
 class DailyTrackerScreen extends ConsumerStatefulWidget {
-  final DateTime? selectedDate_FromMonthView;
-
-  const DailyTrackerScreen({super.key, this.selectedDate_FromMonthView});
+  const DailyTrackerScreen({super.key});
 
   @override
   // ignore: library_private_types_in_public_api
@@ -31,14 +27,6 @@ class _DailyTrackerScreenState extends ConsumerState<DailyTrackerScreen> {
   @override
   void initState() {
     super.initState();
-
-    // Set selected date if provided
-    if (widget.selectedDate_FromMonthView != null) {
-      Future.microtask(() {
-        ref.read(selectedDateProvider.notifier).state =
-            widget.selectedDate_FromMonthView!;
-      });
-    }
   }
 
   @override
@@ -86,7 +74,9 @@ class _DailyTrackerScreenState extends ConsumerState<DailyTrackerScreen> {
       appBar: AppBar(
         title: const Text('Schedule'),
         leading: IconButton(
-            onPressed: () => NavigationService.goToCalendar(context),
+            onPressed: () => NavigationService.goToCalendar(context).then((_) {
+                  _loadTakenMedicationsForCurrentDate();
+                }),
             icon: Icon(AppIcons.getIcon('calendar'))),
       ),
       body: Column(
@@ -150,7 +140,9 @@ class _DailyTrackerScreenState extends ConsumerState<DailyTrackerScreen> {
 
     for (final med in medications) {
       for (final time in med.timeOfDay) {
-        final timeStr = TimeOfDay.fromDateTime(time).format(context);
+        // Always use AM/PM format for time
+        final timeStr =
+            DateTimeFormatter.formatTimeToAMPM(TimeOfDay.fromDateTime(time));
         groups.putIfAbsent(timeStr, () => []).add(med);
       }
     }
@@ -161,33 +153,8 @@ class _DailyTrackerScreenState extends ConsumerState<DailyTrackerScreen> {
               medications: e.value,
             ))
         .toList()
-      ..sort((a, b) => _compareTimeSlots(a.timeSlot, b.timeSlot));
-  }
-
-  static int _compareTimeSlots(String a, String b) {
-    final timeA = _parseTimeString(a);
-    final timeB = _parseTimeString(b);
-    return timeA.hour * 60 + timeA.minute - (timeB.hour * 60 + timeB.minute);
-  }
-
-  static TimeOfDay _parseTimeString(String timeStr) {
-    final isPM = timeStr.toLowerCase().contains('pm');
-    final cleanTime =
-        timeStr.toLowerCase().replaceAll(RegExp(r'[ap]m'), '').trim();
-
-    final parts = cleanTime.split(':');
-    if (parts.length != 2) return const TimeOfDay(hour: 0, minute: 0);
-
-    var hour = int.tryParse(parts[0]) ?? 0;
-    final minute = int.tryParse(parts[1]) ?? 0;
-
-    if (isPM && hour != 12) hour += 12;
-    if (!isPM && hour == 12) hour = 0;
-
-    return TimeOfDay(
-      hour: hour.clamp(0, 23),
-      minute: minute.clamp(0, 59),
-    );
+      ..sort(
+          (a, b) => DateTimeFormatter.compareTimeSlots(a.timeSlot, b.timeSlot));
   }
 }
 
@@ -212,7 +179,7 @@ class _DateSelector extends ConsumerWidget {
               onPressed: () => _changeDate(ref, -1),
             ),
             Text(
-              DateConstants.formatDate(selectedDate),
+              DateTimeFormatter.formatDateMMMDDYYYY(selectedDate),
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: AppColors.onPrimary,
                   ),
@@ -279,12 +246,21 @@ class _TimeGroupItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Get the appropriate time icon
+    final IconData timeIcon = DateTimeFormatter.getTimeIcon(timeGroup.timeSlot);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(vertical: AppTheme.spacing),
-          child: Text(timeGroup.timeSlot, style: AppTextStyles.titleMedium),
+          child: Row(
+            children: [
+              Icon(timeIcon, size: 20, color: AppColors.primary),
+              const SizedBox(width: 8),
+              Text(timeGroup.timeSlot, style: AppTextStyles.titleMedium),
+            ],
+          ),
         ),
         Card(
           child: Padding(
@@ -292,15 +268,13 @@ class _TimeGroupItem extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ...timeGroup.medications
-                    .map(
-                      (med) => _MedicationListTile(
-                        medication: med,
-                        timeSlot: timeGroup.timeSlot,
-                        selectedDate: selectedDate,
-                      ),
-                    )
-                    .toList(),
+                ...timeGroup.medications.map(
+                  (med) => _MedicationListTile(
+                    medication: med,
+                    timeSlot: timeGroup.timeSlot,
+                    selectedDate: selectedDate,
+                  ),
+                ),
               ],
             ),
           ),

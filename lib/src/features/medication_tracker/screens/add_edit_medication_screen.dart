@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nokken/src/services/navigation_service.dart';
 import 'package:nokken/src/shared/constants/date_constants.dart';
+import 'package:nokken/src/shared/utils/date_time_formatter.dart';
 import 'package:nokken/src/shared/theme/app_icons.dart';
 import 'package:nokken/src/shared/theme/app_theme.dart';
 import 'package:nokken/src/shared/theme/shared_widgets.dart';
@@ -675,10 +676,6 @@ class TimingSection extends StatelessWidget {
     );
   }
 
-  String _formatDate(DateTime date) {
-    return '${date.month}/${date.day}/${date.year}';
-  }
-
   Future<void> _selectStartDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -698,7 +695,7 @@ class TimingSection extends StatelessWidget {
         const SizedBox(height: 8),
         ListTile(
           title: Text(
-            'Start Date: ${_formatDate(selectedStartDate)}',
+            'Start Date: ${DateTimeFormatter.formatDateDDMMYY(selectedStartDate)}',
           ),
           trailing: const Icon(Icons.calendar_today),
           onTap: () => _selectStartDate(context),

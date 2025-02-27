@@ -1,10 +1,10 @@
 import 'package:nokken/src/features/medication_tracker/models/medication.dart';
 
-class ArgsCalendarDaily {
+/*class ArgsCalendarDaily {
   final DateTime selectedDay;
 
   ArgsCalendarDaily({required this.selectedDay});
-}
+}*/
 
 class ArgsMedicaitonDetails {
   final Medication medication;

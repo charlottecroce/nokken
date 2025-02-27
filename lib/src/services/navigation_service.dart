@@ -21,10 +21,8 @@ class NavigationService {
     Navigator.of(context).popUntil((route) => route.isFirst);
   }
 
-  static void goToDailyTracker(BuildContext context, DateTime? selectedDay) {
-    Navigator.pushReplacementNamed(context, RouteNames.calendar,
-        arguments:
-            ArgsCalendarDaily(selectedDay: selectedDay ?? DateTime.now()));
+  static void goToDailyTracker(BuildContext context) {
+    Navigator.pushNamed(context, RouteNames.dailyTracker);
   }
 
   static void goToMedicationList(BuildContext context) {
@@ -49,8 +47,9 @@ class NavigationService {
     );
   }
 
-  static void goToCalendar(BuildContext context) {
-    Navigator.pushNamed(context, RouteNames.calendar);
+  // Returning a Future allows a '.then(...' action. needed to load DB when calendar pops
+  static Future<void> goToCalendar(BuildContext context) {
+    return Navigator.pushNamed(context, RouteNames.calendar);
   }
 
   static void goToSettings(BuildContext context) {

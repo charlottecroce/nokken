@@ -15,12 +15,7 @@ class AppRouter {
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
       case RouteNames.dailyTracker:
-        final args = settings.arguments as ArgsCalendarDaily;
-        return MaterialPageRoute(
-          builder: (_) => DailyTrackerScreen(
-            selectedDate_FromMonthView: args.selectedDay,
-          ),
-        );
+        return MaterialPageRoute(builder: (_) => DailyTrackerScreen());
 
       case RouteNames.calendar:
         return MaterialPageRoute(builder: (_) => const CalendarScreen());

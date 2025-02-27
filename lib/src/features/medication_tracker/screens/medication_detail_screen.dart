@@ -10,6 +10,7 @@ import 'package:nokken/src/services/navigation_service.dart';
 import 'package:nokken/src/shared/theme/app_theme.dart';
 import 'package:nokken/src/shared/theme/shared_widgets.dart';
 import 'package:nokken/src/shared/constants/date_constants.dart';
+import 'package:nokken/src/shared/utils/date_time_formatter.dart';
 
 class MedicationDetailScreen extends ConsumerWidget {
   final Medication medication;
@@ -18,35 +19,6 @@ class MedicationDetailScreen extends ConsumerWidget {
     super.key,
     required this.medication,
   });
-
-  String _formatDays(Set<String> days) {
-    if (days.length == 7 && DateConstants.orderedDays.every(days.contains)) {
-      return 'Everyday';
-    }
-
-    final sortedDays = days.toList()
-      ..sort((a, b) => DateConstants.orderedDays
-          .indexOf(a)
-          .compareTo(DateConstants.orderedDays.indexOf(b)));
-
-    return sortedDays.map((day) => DateConstants.dayNames[day]).join(', ');
-  }
-
-  String _formatFrequency() {
-    if (medication.medicationType == MedicationType.injection) {
-      return 'every week';
-    }
-    if (medication.injectionDetails?.frequency == InjectionFrequency.biweekly) {
-      return 'Once every 2 weeks';
-    }
-    String frequencyText = medication.frequency == 1
-        ? 'once'
-        : medication.frequency == 2
-            ? 'twice'
-            : '${medication.frequency} times';
-
-    return '$frequencyText a day';
-  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -116,7 +88,8 @@ class MedicationDetailScreen extends ConsumerWidget {
                   SharedWidgets.verticalSpace(AppTheme.cardPadding),
                   _buildInfoRow('Dosage', medication.dosage),
                   SharedWidgets.verticalSpace(),
-                  _buildInfoRow('Frequency', _formatFrequency()),
+                  _buildInfoRow('Frequency',
+                      DateTimeFormatter.formatMedicationFrequency(medication)),
                   SharedWidgets.verticalSpace(),
                   if (medication.currentQuantity > 0 &&
                       medication.refillThreshold > 0)
@@ -137,7 +110,9 @@ class MedicationDetailScreen extends ConsumerWidget {
                   Icon(AppIcons.getIcon('calendar')),
                   SharedWidgets.verticalSpace(),
                   Expanded(
-                    child: Text(_formatDays(medication.daysOfWeek),
+                    child: Text(
+                        DateTimeFormatter.formatDaysOfWeek(
+                            medication.daysOfWeek),
                         style: AppTextStyles.bodyLarge),
                   ),
                 ],
