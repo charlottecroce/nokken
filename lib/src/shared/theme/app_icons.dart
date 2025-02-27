@@ -12,6 +12,14 @@ class AppIcons {
     'profile': (outlined: Icons.person_outline, filled: Icons.person),
     'menu': (outlined: Icons.menu_outlined, filled: Icons.menu),
 
+    'sun': (outlined: Icons.wb_sunny_outlined, filled: Icons.wb_sunny),
+    'twilight': (
+      outlined: Icons.wb_twilight_outlined,
+      filled: Icons.wb_twilight
+    ),
+
+    'night': (outlined: Icons.bedtime_outlined, filled: Icons.bedtime),
+
     'check_circle': (
       outlined: Icons.check_circle_outline,
       filled: Icons.check_circle

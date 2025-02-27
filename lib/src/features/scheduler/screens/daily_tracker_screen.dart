@@ -1,6 +1,3 @@
-//
-//  daily_tracker_screen.dart
-//
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nokken/src/features/medication_tracker/models/medication.dart';
@@ -142,7 +139,8 @@ class _DailyTrackerScreenState extends ConsumerState<DailyTrackerScreen> {
 
     for (final med in medications) {
       for (final time in med.timeOfDay) {
-        final timeStr = TimeOfDay.fromDateTime(time).format(context);
+        // Always use AM/PM format for time
+        final timeStr = _formatTimeToAMPM(TimeOfDay.fromDateTime(time));
         groups.putIfAbsent(timeStr, () => []).add(med);
       }
     }
@@ -154,6 +152,30 @@ class _DailyTrackerScreenState extends ConsumerState<DailyTrackerScreen> {
             ))
         .toList()
       ..sort((a, b) => _compareTimeSlots(a.timeSlot, b.timeSlot));
+  }
+
+  // Helper function to always format time in AM/PM
+  static String _formatTimeToAMPM(TimeOfDay time) {
+    final int hour = time.hourOfPeriod == 0 ? 12 : time.hourOfPeriod;
+    final String minute = time.minute.toString().padLeft(2, '0');
+    final String period = time.period == DayPeriod.am ? 'AM' : 'PM';
+    return '$hour:$minute $period';
+  }
+
+  // Helper function to determine which icon to show based on the time
+  static IconData _getTimeIcon(String timeSlot) {
+    final timeOfDay = _parseTimeString(timeSlot);
+    final hour = timeOfDay.hour;
+
+    if (hour >= 5 && hour < 9) {
+      return AppIcons.getFilled('twilight');
+    } else if (hour >= 9 && hour < 17) {
+      return AppIcons.getFilled('sun');
+    } else if (hour >= 17 && hour < 21) {
+      return AppIcons.getFilled('twilight');
+    } else {
+      return AppIcons.getFilled('night');
+    }
   }
 
   static int _compareTimeSlots(String a, String b) {
@@ -271,12 +293,22 @@ class _TimeGroupItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Get the appropriate time icon
+    final IconData timeIcon =
+        _DailyTrackerScreenState._getTimeIcon(timeGroup.timeSlot);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(vertical: AppTheme.spacing),
-          child: Text(timeGroup.timeSlot, style: AppTextStyles.titleMedium),
+          child: Row(
+            children: [
+              Icon(timeIcon, size: 20, color: AppColors.primary),
+              const SizedBox(width: 8),
+              Text(timeGroup.timeSlot, style: AppTextStyles.titleMedium),
+            ],
+          ),
         ),
         Card(
           child: Padding(
@@ -284,15 +316,13 @@ class _TimeGroupItem extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ...timeGroup.medications
-                    .map(
-                      (med) => _MedicationListTile(
-                        medication: med,
-                        timeSlot: timeGroup.timeSlot,
-                        selectedDate: selectedDate,
-                      ),
-                    )
-                    .toList(),
+                ...timeGroup.medications.map(
+                  (med) => _MedicationListTile(
+                    medication: med,
+                    timeSlot: timeGroup.timeSlot,
+                    selectedDate: selectedDate,
+                  ),
+                ),
               ],
             ),
           ),
