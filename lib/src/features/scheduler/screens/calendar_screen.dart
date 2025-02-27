@@ -368,9 +368,9 @@ class _MedicationCalendarState extends State<MedicationCalendar> {
 
   /// Update the set of dates that have injections due
   void _updateInjectionDates() {
-    _injectionDueDates = _calculateInjectionDueDates(widget.medications);
+    _injectionDueDates = MedicationScheduleService.calculateInjectionDueDates(
+        widget.medications);
   }
-
   // Rest of the MedicationCalendar implementation remains unchanged
   // In a complete refactoring, we would update this to use MedicationScheduleService
 
@@ -565,96 +565,5 @@ class _MedicationCalendarState extends State<MedicationCalendar> {
       );
       return normalizedInjectionDate.isAtSameMomentAs(normalizedDate);
     });
-  }
-}
-
-//----------------------------------------------------------------------------
-// INJECTION DATE CALCULATION HELPERS
-//----------------------------------------------------------------------------
-// future refactoring: move this to MedicationScheduleService
-
-/// Calculate which days have injections due based on medication schedules
-Set<DateTime> _calculateInjectionDueDates(List<Medication> medications) {
-  Set<DateTime> injectionDates = {};
-  final now = DateTime.now();
-  final today =
-      DateTime(now.year, now.month, now.day); // Normalize to start of day
-
-  // Look back a year and ahead a year (total 730 days)
-  final startDate = today.subtract(const Duration(days: 365));
-  const daysToCalculate = 730; // 365 days back + 365 days forward
-
-  for (var medication in medications) {
-    if (medication.medicationType == MedicationType.injection) {
-      // Use medication's start date if it's later than our lookback date
-      final medicationStartDate = DateTime(medication.startDate.year,
-          medication.startDate.month, medication.startDate.day);
-
-      // Use the later of our lookback date or the medication start date
-      final calculationStartDate = medicationStartDate.isAfter(startDate)
-          ? medicationStartDate
-          : startDate;
-
-      if (medication.injectionDetails?.frequency == InjectionFrequency.weekly) {
-        _addWeeklyInjections(
-          injectionDates,
-          medication.daysOfWeek,
-          calculationStartDate,
-          daysToCalculate,
-          7, // Every 7 days
-        );
-      } else if (medication.injectionDetails?.frequency ==
-          InjectionFrequency.biweekly) {
-        _addWeeklyInjections(
-          injectionDates,
-          medication.daysOfWeek,
-          calculationStartDate,
-          daysToCalculate,
-          14, // Every 14 days
-        );
-      }
-    }
-  }
-  return injectionDates;
-}
-
-/// Add injection dates based on frequency and selected days
-void _addWeeklyInjections(
-  Set<DateTime> dates,
-  Set<String> daysOfWeek,
-  DateTime startDate,
-  int daysToLookAhead,
-  int frequency,
-) {
-  // Existing implementation remains unchanged
-  // Convert days of week to int representation (0-6)
-  Set<int> weekdayNumbers = daysOfWeek
-      .map((day) => DateConstants.dayAbbreviationToWeekday(day))
-      .toSet();
-
-  // Calculate reference date for biweekly calculation - normalized to start of day
-  final referenceDate =
-      DateTime(startDate.year, startDate.month, startDate.day);
-
-  // Look through each day in the period
-  for (int i = 0; i < daysToLookAhead; i++) {
-    DateTime currentDate = startDate.add(Duration(days: i));
-
-    // Check if this day matches any of the target weekdays
-    if (weekdayNumbers.contains(currentDate.weekday % 7)) {
-      // For biweekly, we need to check if this is the right week
-      bool isCorrectFrequencyWeek = true;
-
-      if (frequency == 14) {
-        // Calculate days since reference date
-        final daysSinceReference = currentDate.difference(referenceDate).inDays;
-        // Check if we're in the correct week
-        isCorrectFrequencyWeek = (daysSinceReference ~/ 7) % 2 == 0;
-      }
-
-      if (isCorrectFrequencyWeek) {
-        dates.add(currentDate);
-      }
-    }
   }
 }
