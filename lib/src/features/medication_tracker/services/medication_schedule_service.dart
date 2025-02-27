@@ -10,30 +10,9 @@ import 'package:nokken/src/shared/utils/date_time_formatter.dart';
 
 class MedicationScheduleService {
   /// Check if a medication is scheduled for the specified date
+  /// Check if a medication is scheduled for the specified date
   static bool isMedicationDueOnDate(Medication medication, DateTime date) {
-    // Normalize dates to remove time component
-    final normalizedDate = DateTime(date.year, date.month, date.day);
-    final startDate = DateTime(medication.startDate.year,
-        medication.startDate.month, medication.startDate.day);
-
-    // Basic date validation - not scheduled before start date
-    if (normalizedDate.isBefore(startDate)) {
-      return false;
-    }
-
-    // Check day of week
-    final dayAbbr = DateConstants.dayMap[date.weekday] ?? '';
-    if (!medication.daysOfWeek.contains(dayAbbr)) {
-      return false;
-    }
-
-    // Handle biweekly injections
-    if (medication.medicationType == MedicationType.injection &&
-        medication.injectionDetails?.frequency == InjectionFrequency.biweekly) {
-      return _isBiweeklyScheduled(startDate, normalizedDate);
-    }
-
-    return true;
+    return medication.isDueOnDate(date);
   }
 
   /// Get all medications due on a specific date
@@ -42,15 +21,6 @@ class MedicationScheduleService {
     return allMedications
         .where((med) => isMedicationDueOnDate(med, date))
         .toList();
-  }
-
-  /// Helper for determining biweekly schedule
-  static bool _isBiweeklyScheduled(DateTime startDate, DateTime checkDate) {
-    // Calculate weeks since start
-    final daysSince = checkDate.difference(startDate).inDays;
-    final weeksSince = daysSince ~/ 7;
-
-    return weeksSince % 2 == 0;
   }
 
   /// Get all doses due on a specific date

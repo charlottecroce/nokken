@@ -3,6 +3,7 @@
 //  Core model for medication data
 //
 import 'package:uuid/uuid.dart';
+import 'package:nokken/src/shared/constants/date_constants.dart';
 import 'package:nokken/src/services/validation_service.dart';
 
 /// Types of medications supported
@@ -218,6 +219,38 @@ class Medication {
       medicationType: medicationType ?? this.medicationType,
       injectionDetails: injectionDetails ?? this.injectionDetails,
     );
+  }
+
+  /// Check if this medication is due on the specified date
+  bool isDueOnDate(DateTime date) {
+    // Normalize dates to remove time component
+    final normalizedDate = DateTime(date.year, date.month, date.day);
+    final startDate =
+        DateTime(this.startDate.year, this.startDate.month, this.startDate.day);
+
+    // Basic date validation - not scheduled before start date
+    if (normalizedDate.isBefore(startDate)) {
+      return false;
+    }
+
+    // Check day of week
+    final dayAbbr = DateConstants.dayMap[date.weekday] ?? '';
+    if (!daysOfWeek.contains(dayAbbr)) {
+      return false;
+    }
+
+    // Handle biweekly injections
+    if (medicationType == MedicationType.injection &&
+        injectionDetails?.frequency == InjectionFrequency.biweekly) {
+      // Calculate weeks since start
+      final daysSince = normalizedDate.difference(startDate).inDays;
+      final weeksSince = daysSince ~/ 7;
+
+      // Is this an "on" week or "off" week?
+      return weeksSince % 2 == 0;
+    }
+
+    return true;
   }
 
   /// Check if medication needs to be refilled based on current quantity and threshold

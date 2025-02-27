@@ -134,17 +134,8 @@ class _DailyTrackerScreenState extends ConsumerState<DailyTrackerScreen> {
       List<Medication> medications, DateTime date) {
     if (medications.isEmpty) return const [];
 
-    // Get day abbreviation for the selected date
-    final weekday = DateConstants.orderedDays[date.weekday % 7];
-
-    return medications
-        .where((med) =>
-            // Check if this medication should be taken on this day of the week
-            med.daysOfWeek.contains(weekday) &&
-            // Check if the date is on or after the medication start date
-            !date.isBefore(DateTime(
-                med.startDate.year, med.startDate.month, med.startDate.day)))
-        .toList();
+    // Use the MedicationScheduleService which now uses the model's isDueOnDate method
+    return MedicationScheduleService.getMedicationsForDate(medications, date);
   }
 
   /// Groups medications by time slot for organized display
