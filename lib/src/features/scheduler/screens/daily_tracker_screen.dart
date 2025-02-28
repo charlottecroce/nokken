@@ -1,6 +1,6 @@
 //
 //  daily_tracker_screen.dart
-//  Screen for tracking daily medications
+//  Screen for tracking daily medications and appointments
 //
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,6 +9,8 @@ import 'package:nokken/src/features/medication_tracker/models/medication_dose.da
 import 'package:nokken/src/features/medication_tracker/providers/medication_state.dart';
 import 'package:nokken/src/features/medication_tracker/providers/medication_taken_provider.dart';
 import 'package:nokken/src/features/medication_tracker/services/medication_schedule_service.dart';
+import 'package:nokken/src/features/bloodwork_tracker/models/bloodwork.dart';
+import 'package:nokken/src/features/bloodwork_tracker/providers/bloodwork_state.dart';
 import 'package:nokken/src/services/navigation_service.dart';
 import 'package:nokken/src/shared/theme/shared_widgets.dart';
 import 'package:nokken/src/shared/theme/app_theme.dart';
@@ -21,6 +23,19 @@ final selectedDateProvider = StateProvider<DateTime>((ref) => DateTime.now());
 
 /// Provider to track slide direction for day-change animation
 final slideDirectionProvider = StateProvider<bool>((ref) => true);
+
+/// Provider for bloodwork records on selected date
+final bloodworkForSelectedDateProvider =
+    Provider.family<List<Bloodwork>, DateTime>((ref, date) {
+  final bloodworkRecords = ref.watch(bloodworkRecordsProvider);
+  return bloodworkRecords.where((record) {
+    // Compare just the date part (not time)
+    final recordDate =
+        DateTime(record.date.year, record.date.month, record.date.day);
+    final selectedDate = DateTime(date.year, date.month, date.day);
+    return recordDate.isAtSameMomentAs(selectedDate);
+  }).toList();
+});
 
 class DailyTrackerScreen extends ConsumerStatefulWidget {
   const DailyTrackerScreen({super.key});
@@ -61,6 +76,10 @@ class _DailyTrackerScreenState extends ConsumerState<DailyTrackerScreen> {
         ref.watch(medicationStateProvider.select((state) => state.medications));
     final selectedDate = ref.watch(selectedDateProvider);
 
+    // Get bloodwork records for the selected date
+    final bloodworkRecords =
+        ref.watch(bloodworkForSelectedDateProvider(selectedDate));
+
     // Listen for date changes to reload taken medications
     ref.listen(selectedDateProvider, (previous, next) {
       if (previous != next) {
@@ -76,6 +95,10 @@ class _DailyTrackerScreenState extends ConsumerState<DailyTrackerScreen> {
     final medicationsForDay = _getMedicationsForDay(medications, selectedDate);
     final groupedMedications =
         _groupMedicationsByTime(medicationsForDay, context);
+
+    // Create a merged content model for the day (medications + appointments)
+    final bool hasContent =
+        groupedMedications.isNotEmpty || bloodworkRecords.isNotEmpty;
 
     return Scaffold(
       appBar: AppBar(
@@ -117,10 +140,12 @@ class _DailyTrackerScreenState extends ConsumerState<DailyTrackerScreen> {
                   );
                 }
               },
-              child: _MedicationsList(
+              child: _DailyScheduleList(
                 key: ValueKey<DateTime>(selectedDate),
                 groupedMedications: groupedMedications,
+                bloodworkRecords: bloodworkRecords,
                 selectedDate: selectedDate,
+                hasContent: hasContent,
               ),
             ),
           ),
@@ -220,36 +245,284 @@ class _DateSelector extends ConsumerWidget {
   }
 }
 
-/// List of medications grouped by time
-class _MedicationsList extends ConsumerWidget {
-  const _MedicationsList({
+/// Daily schedule list showing both medications and appointments
+class _DailyScheduleList extends ConsumerWidget {
+  const _DailyScheduleList({
     super.key,
     required this.groupedMedications,
+    required this.bloodworkRecords,
     required this.selectedDate,
+    required this.hasContent,
   });
 
   final List<MedicationTimeGroup> groupedMedications;
+  final List<Bloodwork> bloodworkRecords;
   final DateTime selectedDate;
+  final bool hasContent;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Show empty state if no medications are scheduled
-    if (groupedMedications.isEmpty) {
+    // Show empty state if no content is scheduled
+    if (!hasContent) {
       return Center(
         child: Text(
-          'No medications scheduled for this day',
+          'No medications or appointments scheduled for this day',
+          textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.bodyLarge,
         ),
       );
     }
 
-    // Show grouped medications by time
+    // Combine medications and appointments into a chronologically sorted list
+    final sortedItems = _getSortedScheduleItems();
+
+    // Show the sorted schedule
     return ListView.builder(
       padding: AppTheme.standardCardPadding,
-      itemCount: groupedMedications.length,
-      itemBuilder: (context, index) => _TimeGroupItem(
-        timeGroup: groupedMedications[index],
-        selectedDate: selectedDate,
+      itemCount: sortedItems.length,
+      itemBuilder: (context, index) {
+        final item = sortedItems[index];
+
+        if (item is _AppointmentItem) {
+          return _buildAppointmentSection(item.bloodwork);
+        } else if (item is _MedicationGroupItem) {
+          return _TimeGroupItem(
+            timeGroup: item.timeGroup,
+            selectedDate: selectedDate,
+          );
+        }
+
+        return const SizedBox.shrink();
+      },
+    );
+  }
+
+  /// Builds the appointment section UI
+  Widget _buildAppointmentSection(Bloodwork bloodwork) {
+    // Format the appointment time
+    final timeOfDay = TimeOfDay.fromDateTime(bloodwork.date);
+    final timeStr = DateTimeFormatter.formatTimeToAMPM(timeOfDay);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Appointment time header
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: AppTheme.spacing),
+          child: Row(
+            children: [
+              Icon(DateTimeFormatter.getTimeIcon(timeStr),
+                  size: 20,
+                  color: _getAppointmentColor(bloodwork.appointmentType)),
+              const SizedBox(width: 8),
+              Text(timeStr,
+                  style: AppTextStyles.titleMedium.copyWith(
+                      color: _getAppointmentColor(bloodwork.appointmentType))),
+            ],
+          ),
+        ),
+        // Appointment card
+        _AppointmentCard(bloodwork: bloodwork),
+      ],
+    );
+  }
+
+  /// Returns a color based on the appointment type
+  Color _getAppointmentColor(AppointmentType type) {
+    switch (type) {
+      case AppointmentType.bloodwork:
+        return Colors.red;
+      case AppointmentType.appointment:
+        return Colors.blue;
+      case AppointmentType.surgery:
+        return Colors.purple;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  /// Sorts schedule items chronologically
+  List<_ScheduleItem> _getSortedScheduleItems() {
+    final List<_ScheduleItem> items = [];
+
+    // Add medication groups
+    for (final group in groupedMedications) {
+      items.add(_MedicationGroupItem(timeGroup: group));
+    }
+
+    // Add bloodwork appointments
+    for (final bloodwork in bloodworkRecords) {
+      items.add(_AppointmentItem(bloodwork: bloodwork));
+    }
+
+    // Sort by time
+    items.sort((a, b) {
+      final timeA = a is _MedicationGroupItem
+          ? DateTimeFormatter.parseTimeString(a.timeGroup.timeSlot)
+          : TimeOfDay.fromDateTime((a as _AppointmentItem).bloodwork.date);
+
+      final timeB = b is _MedicationGroupItem
+          ? DateTimeFormatter.parseTimeString(b.timeGroup.timeSlot)
+          : TimeOfDay.fromDateTime((b as _AppointmentItem).bloodwork.date);
+
+      return (timeA.hour * 60 + timeA.minute) -
+          (timeB.hour * 60 + timeB.minute);
+    });
+
+    return items;
+  }
+}
+
+/// Card displaying a medical appointment
+class _AppointmentCard extends StatelessWidget {
+  final Bloodwork bloodwork;
+
+  const _AppointmentCard({required this.bloodwork});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDateInFuture = DateTime(
+      bloodwork.date.year,
+      bloodwork.date.month,
+      bloodwork.date.day,
+    ).isAfter(DateTime(
+      DateTime.now().year,
+      DateTime.now().month,
+      DateTime.now().day,
+    ));
+
+    // Get appointment specific details
+    final String appointmentTitle;
+    final IconData appointmentIcon;
+    final Color appointmentColor;
+
+    switch (bloodwork.appointmentType) {
+      case AppointmentType.bloodwork:
+        appointmentTitle = 'Lab Appointment';
+        appointmentIcon = Icons.science_outlined;
+        appointmentColor = Colors.red;
+        break;
+      case AppointmentType.appointment:
+        appointmentTitle = 'Doctor Appointment';
+        appointmentIcon = Icons.medical_services_outlined;
+        appointmentColor = Colors.blue;
+        break;
+      case AppointmentType.surgery:
+        appointmentTitle = 'Surgery';
+        appointmentIcon = Icons.medical_information_outlined;
+        appointmentColor = Colors.purple;
+        break;
+      default:
+        appointmentTitle = 'Medical Appointment';
+        appointmentIcon = Icons.event_note_outlined;
+        appointmentColor = Colors.grey;
+    }
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Appointment type icon
+            Icon(appointmentIcon, color: appointmentColor),
+
+            SharedWidgets.verticalSpace(16),
+
+            // Appointment details
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  InkWell(
+                    onTap: () => NavigationService.goToBloodworkAddEdit(
+                      context,
+                      bloodwork: bloodwork,
+                    ),
+                    child: Row(
+                      children: [
+                        Text(
+                          appointmentTitle,
+                          style: AppTextStyles.titleLarge,
+                        ),
+                        if (isDateInFuture) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: AppColors.info.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                  color: AppColors.info.withOpacity(0.3)),
+                            ),
+                            child: Text(
+                              'Scheduled',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppColors.info,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+
+                  // Display location if available
+                  if (bloodwork.location?.isNotEmpty == true) ...[
+                    SharedWidgets.verticalSpace(8),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.location_on_outlined,
+                          size: 16,
+                          color: Colors.grey,
+                        ),
+                        SharedWidgets.verticalSpace(6),
+                        Text(
+                          bloodwork.location!,
+                          style: AppTextStyles.bodyMedium,
+                        ),
+                      ],
+                    ),
+                  ],
+
+                  // Display doctor if available
+                  if (bloodwork.doctor?.isNotEmpty == true) ...[
+                    SharedWidgets.verticalSpace(4),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.person_outlined,
+                          size: 16,
+                          color: Colors.grey,
+                        ),
+                        SharedWidgets.verticalSpace(6),
+                        Text(
+                          bloodwork.doctor!,
+                          style: AppTextStyles.bodyMedium,
+                        ),
+                      ],
+                    ),
+                  ],
+
+                  // Display notes if any
+                  if (bloodwork.notes?.isNotEmpty == true) ...[
+                    SharedWidgets.verticalSpace(8),
+                    Text(
+                      'Notes: ${bloodwork.notes}',
+                      style: AppTextStyles.bodySmall,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ],
+              ),
+            )
+          ],
+        ),
       ),
     );
   }
@@ -267,6 +540,9 @@ class _TimeGroupItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Determine the group color based on medication types
+    Color timeGroupColor = _getTimeGroupColor();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -276,32 +552,58 @@ class _TimeGroupItem extends StatelessWidget {
           child: Row(
             children: [
               Icon(DateTimeFormatter.getTimeIcon(timeGroup.timeSlot),
-                  size: 20, color: AppColors.primary),
+                  size: 20, color: timeGroupColor),
               const SizedBox(width: 8),
-              Text(timeGroup.timeSlot, style: AppTextStyles.titleMedium),
+              Text(
+                timeGroup.timeSlot,
+                style:
+                    AppTextStyles.titleMedium.copyWith(color: timeGroupColor),
+              ),
             ],
           ),
         ),
-        // Card containing medications for this time slot
-        Card(
-          child: Padding(
-            padding: AppTheme.standardCardPadding,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                ...timeGroup.medications.map(
-                  (med) => _MedicationListTile(
-                    medication: med,
-                    timeSlot: timeGroup.timeSlot,
-                    selectedDate: selectedDate,
-                  ),
+        // List of medications for this time slot (now each med is its own card)
+        Column(
+          children: timeGroup.medications
+              .map(
+                (med) => _MedicationListTile(
+                  medication: med,
+                  timeSlot: timeGroup.timeSlot,
+                  selectedDate: selectedDate,
                 ),
-              ],
-            ),
-          ),
+              )
+              .toList(),
         ),
       ],
     );
+  }
+
+  /// Determine color based on the types of medications in this group
+  Color _getTimeGroupColor() {
+    bool hasOral = false;
+    bool hasInjection = false;
+
+    for (final med in timeGroup.medications) {
+      if (med.medicationType == MedicationType.oral) {
+        hasOral = true;
+      } else if (med.medicationType == MedicationType.injection) {
+        hasInjection = true;
+      }
+    }
+
+    // If there's a mix of types, use white (or a neutral color)
+    if (hasOral && hasInjection) {
+      return Colors.grey;
+    }
+    // Otherwise, use the specific type color
+    else if (hasOral) {
+      return Colors.blue;
+    } else if (hasInjection) {
+      return Colors.orange;
+    }
+
+    // Default fallback color
+    return AppColors.primary;
   }
 }
 
@@ -327,65 +629,142 @@ class _MedicationListTile extends ConsumerWidget {
     // Check if this medication is taken
     final isTaken = ref.watch(isDoseTakenProvider(dose));
 
-    return ListTile(
-      title: Padding(
-        padding: const EdgeInsets.only(right: 24.0), // push left
-        child: Align(
-          alignment: Alignment.centerLeft,
-          child: IntrinsicWidth(
-            child: TextButton(
-              style: TextButton.styleFrom(textStyle: AppTextStyles.titleMedium),
-              child: Text(medication.name),
-              onPressed: () => NavigationService.goToMedicationDetails(context,
-                  medication: medication),
-            ),
+    // Determine icon and color based on medication type
+    final IconData medicationIcon =
+        medication.medicationType == MedicationType.oral
+            ? AppIcons.getOutlined('medication')
+            : AppIcons.getOutlined('vaccine');
+
+    // Set color based on medication type
+    final Color medicationColor =
+        medication.medicationType == MedicationType.oral
+            ? Colors.blue
+            : Colors.orange;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4.0),
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Medication type icon
+              Icon(medicationIcon, color: medicationColor),
+
+              SharedWidgets.verticalSpace(16),
+
+              // Medication details
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Medication name with link
+                    InkWell(
+                      onTap: () => NavigationService.goToMedicationDetails(
+                        context,
+                        medication: medication,
+                      ),
+                      child: Row(
+                        children: [
+                          Text(
+                            medication.name,
+                            style: AppTextStyles.titleLarge,
+                          ),
+                          // Show refill indicator if needed
+                          if (medication.needsRefill()) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: AppColors.error.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                    color: AppColors.error.withOpacity(0.3)),
+                              ),
+                              child: Text(
+                                'Refill Needed',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.error,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+
+                    // Medication dosage
+                    SharedWidgets.verticalSpace(8),
+                    Text(
+                      medication.dosage,
+                      style: AppTextStyles.bodyMedium,
+                    ),
+
+                    // Show quantity with warning color if refill needed
+                    if (medication.currentQuantity > 0) ...[
+                      SharedWidgets.verticalSpace(4),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.inventory_2_outlined,
+                            size: 16,
+                            color: medication.needsRefill()
+                                ? AppColors.error
+                                : Colors.grey,
+                          ),
+                          SharedWidgets.verticalSpace(6),
+                          Text(
+                            'Remaining: ${medication.currentQuantity}',
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              color: medication.needsRefill()
+                                  ? AppColors.error
+                                  : null,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+
+                    // Show taken status
+                    SharedWidgets.verticalSpace(8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        // Status text
+                        Text(
+                          isTaken ? 'Taken' : 'Not taken',
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            fontWeight: FontWeight.w500,
+                            color: isTaken ? AppColors.tertiary : Colors.grey,
+                          ),
+                        ),
+
+                        // Checkbox to mark medication as taken
+                        Checkbox(
+                          value: isTaken,
+                          onChanged: (bool? value) =>
+                              _handleTakenChange(value, ref, dose),
+                          fillColor: WidgetStateProperty.resolveWith((states) {
+                            if (states.contains(WidgetState.selected)) {
+                              return AppColors.tertiary;
+                            }
+                            return AppColors.surfaceContainer;
+                          }),
+                          checkColor: AppColors.onTertiary,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ),
-      subtitle: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            medication.dosage,
-            style: AppTextStyles.bodyMedium,
-          ),
-          // Show quantity with warning color if refill needed
-          if (medication.currentQuantity > 0 && medication.refillThreshold > 0)
-            Text(
-              'Remaining: ${medication.currentQuantity}',
-              style: TextStyle(
-                fontSize: AppTextStyles.bodyMedium.fontSize,
-                fontWeight: AppTextStyles.bodyMedium.fontWeight,
-                fontFamily: AppTextStyles.bodyMedium.fontFamily,
-                color: medication.currentQuantity <= medication.refillThreshold
-                    ? AppColors.error
-                    : AppColors.onSurfaceVariant,
-              ),
-            ),
-        ],
-      ),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Checkbox to mark medication as taken
-          Transform.scale(
-            scale: 1.5,
-            child: Checkbox(
-              value: isTaken,
-              onChanged: (bool? value) => _handleTakenChange(value, ref, dose),
-              fillColor: WidgetStateProperty.resolveWith((states) {
-                if (states.contains(WidgetState.selected)) {
-                  return AppColors.tertiary;
-                }
-                return AppColors.surfaceContainer;
-              }),
-              checkColor: AppColors.onTertiary,
-            ),
-          ),
-        ],
-      ),
-      // Subtle background color for taken medications
-      tileColor: isTaken ? AppColors.tertiary.withAlpha(40) : null,
     );
   }
 
@@ -422,6 +801,23 @@ class _MedicationListTile extends ConsumerWidget {
         .read(medicationStateProvider.notifier)
         .updateMedicationQuantity(medication, value);
   }
+}
+
+/// Base class for schedule items
+abstract class _ScheduleItem {}
+
+/// A medication group item
+class _MedicationGroupItem extends _ScheduleItem {
+  final MedicationTimeGroup timeGroup;
+
+  _MedicationGroupItem({required this.timeGroup});
+}
+
+/// An appointment item
+class _AppointmentItem extends _ScheduleItem {
+  final Bloodwork bloodwork;
+
+  _AppointmentItem({required this.bloodwork});
 }
 
 /// Data model for grouping medications by time slot
