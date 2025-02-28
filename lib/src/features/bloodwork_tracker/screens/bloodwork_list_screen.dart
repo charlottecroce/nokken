@@ -26,7 +26,10 @@ class SectionWithStickyHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (records.isEmpty) return const SizedBox.shrink();
+    // FIX: Return a SliverToBoxAdapter instead of SizedBox.shrink for empty records
+    if (records.isEmpty) {
+      return SliverToBoxAdapter(child: const SizedBox());
+    }
 
     return SliverStickyHeader(
       header: Container(
@@ -55,8 +58,8 @@ class SectionWithStickyHeader extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
                 color: title == 'Upcoming'
-                    ? Colors.blue.withOpacity(0.1)
-                    : Colors.grey.withOpacity(0.1),
+                    ? Colors.blue.withAlpha(20)
+                    : Colors.grey.withAlpha(20),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
@@ -98,13 +101,13 @@ class BloodworkListScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Medical Records'),
+        title: const Text('Appointments'),
         automaticallyImplyLeading: false,
         actions: [
           IconButton(
             icon: const Icon(Icons.analytics),
-            onPressed: () => NavigationService.goToBloodworkGraph(context),
-            tooltip: 'View Hormone Graph',
+            onPressed: () => NavigationService.goToBloodLevelList(context),
+            tooltip: 'View Hormone Levels',
           ),
         ],
       ),
@@ -183,13 +186,13 @@ class BloodworkListScreen extends ConsumerWidget {
           ),
           SharedWidgets.verticalSpace(),
           Text(
-            'No medical records yet',
+            'No appointments yet',
             style: AppTheme.titleLarge,
           ),
           SharedWidgets.verticalSpace(),
           ElevatedButton(
             onPressed: () => NavigationService.goToBloodworkAddEdit(context),
-            child: const Text('Add Medical Record'),
+            child: const Text('Add Appointment'),
           ),
         ],
       ),
@@ -219,7 +222,7 @@ class BloodworkListTile extends StatelessWidget {
   String _getAppointmentTypeText() {
     switch (bloodwork.appointmentType) {
       case AppointmentType.bloodwork:
-        return 'Lab Results';
+        return 'Bloodwork';
       case AppointmentType.appointment:
         return 'Appointment';
       case AppointmentType.surgery:
@@ -275,9 +278,14 @@ class BloodworkListTile extends StatelessWidget {
         contentPadding: AppTheme.standardCardPadding,
         title: Row(
           children: [
-            Text(
-              DateTimeFormatter.formatDateMMMDDYYYY(bloodwork.date),
-              style: AppTextStyles.titleMedium,
+            Flexible(
+              // Added Flexible to prevent overflow
+              child: Text(
+                DateTimeFormatter.formatDateMMMDDYYYY(bloodwork.date),
+                style: AppTextStyles.titleMedium,
+                overflow:
+                    TextOverflow.ellipsis, // Added ellipsis for long dates
+              ),
             ),
             if (isFutureDate) ...[
               const SizedBox(width: 8),
@@ -313,11 +321,15 @@ class BloodworkListTile extends StatelessWidget {
                   color: appointmentTypeColor,
                 ),
                 const SizedBox(width: 6),
-                Text(
-                  appointmentTypeText,
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: appointmentTypeColor,
-                    fontWeight: FontWeight.w500,
+                Flexible(
+                  // Added Flexible to prevent overflow
+                  child: Text(
+                    appointmentTypeText,
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: appointmentTypeColor,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    overflow: TextOverflow.ellipsis, // Added ellipsis
                   ),
                 ),
               ],
@@ -332,11 +344,15 @@ class BloodworkListTile extends StatelessWidget {
                   color: appointmentTypeColor,
                 ),
                 const SizedBox(width: 6),
-                Text(
-                  timeStr,
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: appointmentTypeColor,
-                    fontWeight: FontWeight.w500,
+                Flexible(
+                  // Added Flexible to prevent overflow
+                  child: Text(
+                    timeStr,
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: appointmentTypeColor,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    overflow: TextOverflow.ellipsis, // Added ellipsis
                   ),
                 ),
               ],
@@ -353,9 +369,13 @@ class BloodworkListTile extends StatelessWidget {
                     color: Colors.grey,
                   ),
                   const SizedBox(width: 6),
-                  Text(
-                    bloodwork.location!,
-                    style: AppTextStyles.bodyMedium,
+                  Flexible(
+                    // Added Flexible
+                    child: Text(
+                      bloodwork.location!,
+                      style: AppTextStyles.bodyMedium,
+                      overflow: TextOverflow.ellipsis, // Added ellipsis
+                    ),
                   ),
                 ],
               ),
@@ -372,9 +392,13 @@ class BloodworkListTile extends StatelessWidget {
                     color: Colors.grey,
                   ),
                   const SizedBox(width: 6),
-                  Text(
-                    bloodwork.doctor!,
-                    style: AppTextStyles.bodyMedium,
+                  Flexible(
+                    // Added Flexible
+                    child: Text(
+                      bloodwork.doctor!,
+                      style: AppTextStyles.bodyMedium,
+                      overflow: TextOverflow.ellipsis, // Added ellipsis
+                    ),
                   ),
                 ],
               ),
@@ -390,13 +414,30 @@ class BloodworkListTile extends StatelessWidget {
             // Otherwise show hormone levels if available and if this is bloodwork
             else if (bloodwork.appointmentType ==
                 AppointmentType.bloodwork) ...[
-              if (bloodwork.estrogen != null)
-                Text(
-                    'Estrogen: ${bloodwork.estrogen!.toStringAsFixed(1)} pg/mL'),
-              if (bloodwork.testosterone != null)
-                Text(
-                    'Testosterone: ${bloodwork.testosterone!.toStringAsFixed(1)} ng/dL'),
+              // Display hormone readings if available
+              if (bloodwork.hormoneReadings.isNotEmpty)
+                ...bloodwork.hormoneReadings.take(2).map((reading) => Text(
+                    '${reading.name}: ${reading.value.toStringAsFixed(1)} ${reading.unit}',
+                    overflow: TextOverflow.ellipsis)), // Added ellipsis
+
+              // Show count if there are more readings
+              if (bloodwork.hormoneReadings.length > 2)
+                Text('...and ${bloodwork.hormoneReadings.length - 2} more',
+                    style: AppTextStyles.bodySmall),
+
+              // For backward compatibility
+              if (bloodwork.hormoneReadings.isEmpty) ...[
+                if (bloodwork.estrogen != null)
+                  Text(
+                      'Estrogen: ${bloodwork.estrogen!.toStringAsFixed(1)} pg/mL',
+                      overflow: TextOverflow.ellipsis), // Added ellipsis
+                if (bloodwork.testosterone != null)
+                  Text(
+                      'Testosterone: ${bloodwork.testosterone!.toStringAsFixed(1)} ng/dL',
+                      overflow: TextOverflow.ellipsis), // Added ellipsis
+              ],
             ],
+
             // Display notes if any
             if (bloodwork.notes?.isNotEmpty == true) ...[
               SharedWidgets.verticalSpace(),

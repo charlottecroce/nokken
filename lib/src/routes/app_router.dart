@@ -13,6 +13,7 @@ import 'package:nokken/src/features/medication_tracker/screens/add_edit_medicati
 import 'package:nokken/src/features/bloodwork_tracker/screens/bloodwork_list_screen.dart';
 import 'package:nokken/src/features/bloodwork_tracker/screens/add_edit_bloodwork_screen.dart';
 import 'package:nokken/src/features/bloodwork_tracker/screens/bloodwork_graph_screen.dart';
+import 'package:nokken/src/features/bloodwork_tracker/screens/blood_level_list_screen.dart';
 import 'package:nokken/src/features/settings/screens/settings_screen.dart';
 
 /// Router class that handles all navigation within the app
@@ -54,6 +55,9 @@ class AppRouter {
       case RouteNames.bloodworkList:
         return MaterialPageRoute(builder: (_) => const BloodworkListScreen());
 
+      case RouteNames.bloodLevelList:
+        return MaterialPageRoute(builder: (_) => const BloodLevelListScreen());
+
       case RouteNames.bloodworkAddEdit:
         if (settings.arguments == null) {
           return MaterialPageRoute(
@@ -68,7 +72,16 @@ class AppRouter {
         );
 
       case RouteNames.bloodworkGraph:
-        return MaterialPageRoute(builder: (_) => const BloodworkGraphScreen());
+        if (settings.arguments == null) {
+          return MaterialPageRoute(
+              builder: (_) => const BloodworkGraphScreen());
+        }
+        final args = settings.arguments as ArgsBloodworkGraph;
+        return MaterialPageRoute(
+          builder: (_) => BloodworkGraphScreen(
+            selectedHormone: args.selectedHormone,
+          ),
+        );
 
       case RouteNames.settings:
         return MaterialPageRoute(builder: (_) => const SettingsScreen());

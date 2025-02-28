@@ -214,12 +214,17 @@ class _DateSelector extends ConsumerWidget {
               color: AppColors.onPrimary,
               onPressed: () => _changeDate(ref, -1),
             ),
-            // Current date display
-            Text(
-              DateTimeFormatter.formatDateMMMDDYYYY(selectedDate),
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: AppColors.onPrimary,
-                  ),
+            // Current date display - wrapped in Flexible
+            Flexible(
+              child: Text(
+                DateTimeFormatter.formatDateMMMDDYYYY(selectedDate),
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: AppColors.onPrimary,
+                    ),
+                textAlign: TextAlign.center, // Center the text
+                overflow: TextOverflow
+                    .ellipsis, // Add ellipsis if text is too long. not ideal but prevents errors
+              ),
             ),
             // Next day button
             IconButton(

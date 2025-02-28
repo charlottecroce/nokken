@@ -12,7 +12,12 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 
 class BloodworkGraphScreen extends ConsumerStatefulWidget {
-  const BloodworkGraphScreen({super.key});
+  final String? selectedHormone;
+
+  const BloodworkGraphScreen({
+    super.key,
+    this.selectedHormone,
+  });
 
   @override
   ConsumerState<BloodworkGraphScreen> createState() =>
@@ -32,10 +37,69 @@ class _BloodworkGraphScreenState extends ConsumerState<BloodworkGraphScreen>
     'All Time'
   ];
 
+  // Available hormone types
+  late List<String> _hormoneTypes;
+  late String _selectedHormone;
+
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+
+    // Initialize with the selected hormone or default to first available
+    _selectedHormone = widget.selectedHormone ?? '';
+
+    // Extract hormone types from data
+    final bloodworkRecords = ref.read(bloodworkTypeRecordsProvider);
+    _hormoneTypes = _extractHormoneTypes(bloodworkRecords);
+
+    // If no selected hormone or selected hormone not in the list, use first one
+    if (_selectedHormone.isEmpty || !_hormoneTypes.contains(_selectedHormone)) {
+      _selectedHormone = _hormoneTypes.isNotEmpty ? _hormoneTypes[0] : '';
+    }
+
+    // Initialize tab controller with the number of available hormone types
+    _tabController = TabController(
+      length: _hormoneTypes.length,
+      vsync: this,
+      initialIndex: _selectedHormone.isNotEmpty
+          ? _hormoneTypes.indexOf(_selectedHormone)
+          : 0,
+    );
+
+    // Listen to tab changes
+    _tabController.addListener(() {
+      if (_tabController.indexIsChanging) return;
+      if (_hormoneTypes.isNotEmpty) {
+        setState(() {
+          _selectedHormone = _hormoneTypes[_tabController.index];
+        });
+      }
+    });
+  }
+
+  /// Extract all available hormone types from records
+  List<String> _extractHormoneTypes(List<Bloodwork> records) {
+    // Set to store unique hormone types
+    final Set<String> hormoneSet = {};
+
+    // Extract from hormone readings
+    for (final record in records) {
+      for (final reading in record.hormoneReadings) {
+        hormoneSet.add(reading.name);
+      }
+    }
+
+    // For backward compatibility
+    if (records.any((record) => record.estrogen != null)) {
+      hormoneSet.add('Estrogen');
+    }
+    if (records.any((record) => record.testosterone != null)) {
+      hormoneSet.add('Testosterone');
+    }
+
+    // Sort alphabetically
+    final hormoneList = hormoneSet.toList()..sort();
+    return hormoneList;
   }
 
   @override
@@ -78,6 +142,31 @@ class _BloodworkGraphScreenState extends ConsumerState<BloodworkGraphScreen>
     final isLoading = ref.watch(bloodworkLoadingProvider);
     final error = ref.watch(bloodworkErrorProvider);
 
+    // Check if we need to update the hormone types and tabs
+    final newHormoneTypes = _extractHormoneTypes(bloodworkRecords);
+    if (newHormoneTypes.length != _hormoneTypes.length ||
+        !newHormoneTypes.every((e) => _hormoneTypes.contains(e))) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        setState(() {
+          _hormoneTypes = newHormoneTypes;
+          // Try to keep the selected hormone if possible
+          final selectedIndex = newHormoneTypes.contains(_selectedHormone)
+              ? newHormoneTypes.indexOf(_selectedHormone)
+              : 0;
+
+          // Recreate tab controller with new length
+          _tabController.dispose();
+          _tabController = TabController(
+            length: newHormoneTypes.length,
+            vsync: this,
+            initialIndex: selectedIndex,
+          );
+          _selectedHormone =
+              newHormoneTypes.isNotEmpty ? newHormoneTypes[selectedIndex] : '';
+        });
+      });
+    }
+
     // Get filtered data based on time range
     final filteredRecords = _getFilteredData(bloodworkRecords);
 
@@ -86,13 +175,12 @@ class _BloodworkGraphScreenState extends ConsumerState<BloodworkGraphScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Hormone Levels'),
+        title: Text(
+            _selectedHormone.isNotEmpty ? _selectedHormone : 'Blood Levels'),
         bottom: TabBar(
           controller: _tabController,
-          tabs: const [
-            Tab(text: 'Estrogen'),
-            Tab(text: 'Testosterone'),
-          ],
+          isScrollable: _hormoneTypes.length > 2,
+          tabs: _hormoneTypes.map((type) => Tab(text: type)).toList(),
         ),
         actions: [
           // Time range filter dropdown
@@ -130,7 +218,7 @@ class _BloodworkGraphScreenState extends ConsumerState<BloodworkGraphScreen>
             )
           : isLoading
               ? const Center(child: CircularProgressIndicator())
-              : chronologicalRecords.isEmpty
+              : _selectedHormone.isEmpty || chronologicalRecords.isEmpty
                   ? Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -159,25 +247,80 @@ class _BloodworkGraphScreenState extends ConsumerState<BloodworkGraphScreen>
                     )
                   : TabBarView(
                       controller: _tabController,
-                      children: [
-                        // Estrogen Chart
-                        _buildChartContainer(
-                          chronologicalRecords,
-                          'Estrogen (pg/mL)',
-                          AppColors.secondary,
-                          (record) => record.estrogen,
-                        ),
-
-                        // Testosterone Chart
-                        _buildChartContainer(
-                          chronologicalRecords,
-                          'Testosterone (ng/dL)',
-                          AppColors.tertiary,
-                          (record) => record.testosterone,
-                        ),
-                      ],
+                      children: _hormoneTypes
+                          .map(
+                            (hormoneType) => _buildChartContainer(
+                              chronologicalRecords,
+                              hormoneType,
+                              _getHormoneColor(hormoneType),
+                              (record) => _getHormoneValue(record, hormoneType),
+                              _getHormoneUnit(
+                                  chronologicalRecords, hormoneType),
+                            ),
+                          )
+                          .toList(),
                     ),
     );
+  }
+
+  /// Get the appropriate color for this hormone type
+  Color _getHormoneColor(String hormoneType) {
+    switch (hormoneType) {
+      case 'Estrogen':
+        return AppColors.secondary;
+      case 'Testosterone':
+        return AppColors.tertiary;
+      default:
+        // Generate consistent colors for other hormones
+        final hash = hormoneType.hashCode;
+        return Color.fromARGB(
+          255,
+          (hash & 0xFF),
+          ((hash >> 8) & 0xFF),
+          ((hash >> 16) & 0xFF),
+        );
+    }
+  }
+
+  /// Get the hormone value from a record
+  double? _getHormoneValue(Bloodwork record, String hormoneType) {
+    // First check in hormone readings
+    for (final reading in record.hormoneReadings) {
+      if (reading.name == hormoneType) {
+        return reading.value;
+      }
+    }
+
+    // For backward compatibility
+    if (hormoneType == 'Estrogen') {
+      return record.estrogen;
+    } else if (hormoneType == 'Testosterone') {
+      return record.testosterone;
+    }
+
+    return null;
+  }
+
+  /// Get the unit for this hormone type
+  String _getHormoneUnit(List<Bloodwork> records, String hormoneType) {
+    // First try to find it in the data
+    for (final record in records) {
+      for (final reading in record.hormoneReadings) {
+        if (reading.name == hormoneType) {
+          return reading.unit;
+        }
+      }
+    }
+
+    // Fall back to default units
+    switch (hormoneType) {
+      case 'Estrogen':
+        return 'pg/mL';
+      case 'Testosterone':
+        return 'ng/dL';
+      default:
+        return HormoneTypes.getDefaultUnit(hormoneType);
+    }
   }
 
   Widget _buildChartContainer(
@@ -185,6 +328,7 @@ class _BloodworkGraphScreenState extends ConsumerState<BloodworkGraphScreen>
     String title,
     Color lineColor,
     double? Function(Bloodwork) valueGetter,
+    String unit,
   ) {
     // Filter out records with null values for this hormone
     final validRecords =
@@ -202,7 +346,7 @@ class _BloodworkGraphScreenState extends ConsumerState<BloodworkGraphScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            title,
+            '$title ($unit)',
             style: AppTextStyles.titleMedium,
           ),
           const SizedBox(height: 8),
@@ -212,7 +356,7 @@ class _BloodworkGraphScreenState extends ConsumerState<BloodworkGraphScreen>
           ),
           const SizedBox(height: 24),
           Expanded(
-            child: _buildLineChart(validRecords, lineColor, valueGetter),
+            child: _buildLineChart(validRecords, lineColor, valueGetter, unit),
           ),
         ],
       ),
@@ -223,6 +367,7 @@ class _BloodworkGraphScreenState extends ConsumerState<BloodworkGraphScreen>
     List<Bloodwork> records,
     Color lineColor,
     double? Function(Bloodwork) valueGetter,
+    String unit,
   ) {
     // Get all values to calculate min and max for Y axis
     final values = records
@@ -288,7 +433,7 @@ class _BloodworkGraphScreenState extends ConsumerState<BloodworkGraphScreen>
         ),
         borderData: FlBorderData(
           show: true,
-          border: Border.all(color: AppColors.outline.withOpacity(0.5)),
+          border: Border.all(color: AppColors.outline.withAlpha(150)),
         ),
         minX: 0,
         maxX: records.length - 1.0,
@@ -304,13 +449,13 @@ class _BloodworkGraphScreenState extends ConsumerState<BloodworkGraphScreen>
             dotData: FlDotData(show: true),
             belowBarData: BarAreaData(
               show: true,
-              color: lineColor.withOpacity(0.2),
+              color: lineColor.withAlpha(40),
             ),
           ),
         ],
         lineTouchData: LineTouchData(
           touchTooltipData: LineTouchTooltipData(
-            tooltipBgColor: AppColors.surface.withOpacity(0.8),
+            tooltipBgColor: AppColors.surface.withAlpha(80),
             getTooltipItems: (touchedSpots) {
               return touchedSpots.map((spot) {
                 final index = spot.x.toInt();
@@ -319,7 +464,7 @@ class _BloodworkGraphScreenState extends ConsumerState<BloodworkGraphScreen>
                   final value = valueGetter(record)!;
                   final date = DateFormat('MM/dd/yyyy').format(record.date);
                   return LineTooltipItem(
-                    '$date\n${value.toStringAsFixed(1)}',
+                    '$date\n${value.toStringAsFixed(1)} $unit',
                     AppTextStyles.bodySmall,
                   );
                 }

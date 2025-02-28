@@ -35,3 +35,11 @@ class ArgsBloodworkAddEdit {
 
   ArgsBloodworkAddEdit({this.bloodwork});
 }
+
+/// Arguments for the bloodwork graph screen
+/// Contains the selected hormone to display
+class ArgsBloodworkGraph {
+  final String? selectedHormone;
+
+  ArgsBloodworkGraph({this.selectedHormone});
+}
