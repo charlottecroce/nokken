@@ -1,27 +1,107 @@
 //
 //  medication_list_screen.dart
-//  Screen that displays user medications in a list
+//  Screen that displays user medications in a list with sticky headers
 //
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_sticky_header/flutter_sticky_header.dart';
 import 'package:nokken/src/features/medication_tracker/models/medication.dart';
 import 'package:nokken/src/features/medication_tracker/providers/medication_state.dart';
 import 'package:nokken/src/services/navigation_service.dart';
+import 'package:nokken/src/shared/utils/date_time_formatter.dart';
 import 'package:nokken/src/shared/theme/shared_widgets.dart';
 import 'package:nokken/src/shared/theme/app_icons.dart';
 import 'package:nokken/src/shared/theme/app_theme.dart';
-import 'package:nokken/src/shared/utils/date_time_formatter.dart';
+
+/// This widget adds a sticky header decorator for each medication type section
+class MedicationSectionWithStickyHeader extends StatelessWidget {
+  final String title;
+  final List<Medication> medications;
+  final MedicationType type;
+
+  const MedicationSectionWithStickyHeader({
+    Key? key,
+    required this.title,
+    required this.medications,
+    required this.type,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    // Don't return SizedBox.shrink() - that's not a sliver widget
+    // Instead, we'll handle empty sections at the CustomScrollView level
+
+    return SliverStickyHeader(
+      header: Container(
+        color: AppColors.surfaceContainer,
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+        child: Row(
+          children: [
+            // Icon based on medication type
+            Icon(
+              type == MedicationType.oral
+                  ? AppIcons.getIcon('medication')
+                  : AppIcons.getIcon('vaccine'),
+              size: 20,
+              color: type == MedicationType.oral ? Colors.blue : Colors.green,
+            ),
+            const SizedBox(width: 8),
+            // Section title
+            Text(
+              title,
+              style: AppTextStyles.titleMedium.copyWith(
+                color: type == MedicationType.oral ? Colors.blue : Colors.green,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            // Count badge
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: type == MedicationType.oral
+                    ? Colors.blue.withOpacity(0.1)
+                    : Colors.green.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                '${medications.length}',
+                style: TextStyle(
+                  fontSize: 12,
+                  color:
+                      type == MedicationType.oral ? Colors.blue : Colors.green,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      sliver: SliverList(
+        delegate: SliverChildBuilderDelegate(
+          (context, index) =>
+              MedicationListTile(medication: medications[index]),
+          childCount: medications.length,
+        ),
+      ),
+    );
+  }
+}
 
 class MedicationListScreen extends ConsumerWidget {
   const MedicationListScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Watch for changes to medication data
-    final medications = ref.watch(sortedMedicationsProvider);
+    // Watch for changes to medication data using the grouped provider
+    final groupedMedications = ref.watch(groupedMedicationTypeProvider);
     final isLoading = ref.watch(medicationsLoadingProvider);
     final error = ref.watch(medicationsErrorProvider);
     final needsRefill = ref.watch(medicationsByNeedRefillProvider);
+
+    // Check if there are any medications
+    final bool hasMedications = groupedMedications['oral']!.isNotEmpty ||
+        groupedMedications['injection']!.isNotEmpty;
 
     return Scaffold(
       appBar: AppBar(
@@ -86,14 +166,31 @@ class MedicationListScreen extends ConsumerWidget {
             Expanded(
               child: isLoading
                   ? const Center(child: CircularProgressIndicator())
-                  : medications.isEmpty
+                  : !hasMedications
                       ? _buildEmptyState(context)
-                      : ListView.builder(
-                          itemCount: medications.length,
-                          itemBuilder: (context, index) {
-                            final medication = medications[index];
-                            return MedicationListTile(medication: medication);
-                          },
+                      : CustomScrollView(
+                          slivers: [
+                            // Only add sections that have medications
+                            if (groupedMedications['oral']!.isNotEmpty)
+                              MedicationSectionWithStickyHeader(
+                                title: 'Oral Medications',
+                                medications: groupedMedications['oral']!,
+                                type: MedicationType.oral,
+                              ),
+
+                            if (groupedMedications['injection']!.isNotEmpty)
+                              MedicationSectionWithStickyHeader(
+                                title: 'Injectable Medications',
+                                medications: groupedMedications['injection']!,
+                                type: MedicationType.injection,
+                              ),
+
+                            // If we need spacing at the bottom, add a sliver padding
+                            const SliverPadding(
+                              padding:
+                                  EdgeInsets.only(bottom: 80), // Space for FAB
+                            ),
+                          ],
                         ),
             ),
           ],
