@@ -247,11 +247,11 @@ class BloodworkListTile extends StatelessWidget {
   Color _getAppointmentTypeColor() {
     switch (bloodwork.appointmentType) {
       case AppointmentType.bloodwork:
-        return Colors.red;
+        return AppTheme.bloodworkColor;
       case AppointmentType.appointment:
-        return Colors.blue;
+        return AppTheme.doctorApptColor;
       case AppointmentType.surgery:
-        return Colors.purple;
+        return AppTheme.surgeryColor;
       default:
         return Colors.grey;
     }

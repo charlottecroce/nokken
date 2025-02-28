@@ -248,17 +248,17 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       case AppointmentType.bloodwork:
         appointmentTitle = 'Lab Appointment';
         appointmentIcon = Icons.science_outlined;
-        appointmentColor = Colors.red;
+        appointmentColor = AppTheme.bloodworkColor;
         break;
       case AppointmentType.appointment:
         appointmentTitle = 'Doctor Appointment';
         appointmentIcon = Icons.medical_services_outlined;
-        appointmentColor = Colors.blue;
+        appointmentColor = AppTheme.doctorApptColor;
         break;
       case AppointmentType.surgery:
         appointmentTitle = 'Surgery';
         appointmentIcon = Icons.medical_information_outlined;
-        appointmentColor = Colors.purple;
+        appointmentColor = AppTheme.surgeryColor;
         break;
       default:
         appointmentTitle = 'Medical Appointment';
@@ -751,14 +751,13 @@ class _MedicationCalendarViewState extends State<_MedicationCalendarView> {
                 margin: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border:
-                      Border.all(color: AppTheme.injectionDueColor, width: 2),
+                  border: Border.all(color: AppTheme.injectionColor, width: 2),
                 ),
                 child: Center(
                   child: Text(
                     '${day.day}',
                     style: const TextStyle(
-                      color: AppTheme.injectionDueColor,
+                      color: AppTheme.injectionColor,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -777,9 +776,7 @@ class _MedicationCalendarViewState extends State<_MedicationCalendarView> {
             // Determine border color based on what's happening on this day
             Color borderColor = hasBloodwork
                 ? AppTheme.bloodworkColor
-                : (hasInjection
-                    ? AppTheme.injectionDueColor
-                    : Colors.transparent);
+                : (hasInjection ? AppTheme.injectionColor : Colors.transparent);
             bool hasBorder = hasInjection || hasBloodwork;
 
             return Container(
@@ -790,7 +787,7 @@ class _MedicationCalendarViewState extends State<_MedicationCalendarView> {
                 color: hasBorder
                     ? (hasBloodwork
                         ? AppTheme.bloodworkColor
-                        : AppTheme.injectionDueColor)
+                        : AppTheme.injectionColor)
                     : AppColors.primary,
                 border:
                     hasBorder ? Border.all(color: borderColor, width: 2) : null,
@@ -817,7 +814,7 @@ class _MedicationCalendarViewState extends State<_MedicationCalendarView> {
             if (hasBloodwork) {
               borderColor = AppTheme.bloodworkColor;
             } else if (hasInjection) {
-              borderColor = AppTheme.injectionDueColor;
+              borderColor = AppTheme.injectionColor;
             } else {
               borderColor = AppColors.primary;
             }
@@ -839,7 +836,7 @@ class _MedicationCalendarViewState extends State<_MedicationCalendarView> {
                     color: hasBloodwork
                         ? AppTheme.bloodworkColor
                         : (hasInjection
-                            ? AppTheme.injectionDueColor
+                            ? AppTheme.injectionColor
                             : AppColors.primary),
                     fontWeight: FontWeight.bold,
                   ),
@@ -881,14 +878,13 @@ class _MedicationCalendarViewState extends State<_MedicationCalendarView> {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
-                      color: AppTheme.injectionDueColor.withAlpha(160),
-                      width: 2),
+                      color: AppTheme.injectionColor.withAlpha(160), width: 2),
                 ),
                 child: Center(
                   child: Text(
                     '${day.day}',
                     style: TextStyle(
-                      color: AppTheme.injectionDueColor.withAlpha(160),
+                      color: AppTheme.injectionColor.withAlpha(160),
                       fontWeight: FontWeight.bold,
                     ),
                   ),

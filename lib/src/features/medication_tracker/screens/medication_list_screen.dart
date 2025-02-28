@@ -43,14 +43,18 @@ class MedicationSectionWithStickyHeader extends StatelessWidget {
                   ? AppIcons.getIcon('medication')
                   : AppIcons.getIcon('vaccine'),
               size: 20,
-              color: type == MedicationType.oral ? Colors.blue : Colors.green,
+              color: type == MedicationType.oral
+                  ? AppTheme.oralMedColor
+                  : AppTheme.injectionColor,
             ),
             const SizedBox(width: 8),
             // Section title
             Text(
               title,
               style: AppTextStyles.titleMedium.copyWith(
-                color: type == MedicationType.oral ? Colors.blue : Colors.green,
+                color: type == MedicationType.oral
+                    ? AppTheme.oralMedColor
+                    : AppTheme.injectionColor,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -60,16 +64,17 @@ class MedicationSectionWithStickyHeader extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
                 color: type == MedicationType.oral
-                    ? Colors.blue.withOpacity(0.1)
-                    : Colors.green.withOpacity(0.1),
+                    ? AppTheme.oralMedColor.withAlpha(20)
+                    : AppTheme.injectionColor.withAlpha(20),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
                 '${medications.length}',
                 style: TextStyle(
                   fontSize: 12,
-                  color:
-                      type == MedicationType.oral ? Colors.blue : Colors.green,
+                  color: type == MedicationType.oral
+                      ? AppTheme.oralMedColor
+                      : AppTheme.injectionColor,
                   fontWeight: FontWeight.bold,
                 ),
               ),
