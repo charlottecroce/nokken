@@ -7,6 +7,7 @@ import 'package:nokken/src/features/medication_tracker/models/medication.dart';
 import 'package:nokken/src/routes/route_arguments.dart';
 import 'package:nokken/src/routes/route_names.dart';
 import 'package:nokken/src/features/medication_tracker/screens/medication_detail_screen.dart';
+import 'package:nokken/src/features/bloodwork_tracker/models/bloodwork.dart';
 
 /// Abstracts navigation logic for consistent behavior throughout the app
 class NavigationService {
@@ -64,6 +65,28 @@ class NavigationService {
       context,
       RouteNames.medicationAddEdit,
       arguments: ArgsMedicaitonAddEdit(medication: medication),
+    );
+  }
+
+  /// Navigate to bloodwork list screen
+  static void goToBloodworkList(BuildContext context) {
+    Navigator.pushNamed(context, RouteNames.bloodworkList);
+  }
+
+  /// Navigate to bloodwork graph screen
+  static void goToBloodworkGraph(BuildContext context) {
+    Navigator.pushNamed(context, RouteNames.bloodworkGraph);
+  }
+
+  /// Navigate to add/edit bloodwork screen
+  /// If bloodwork is null, screen opens in 'add' mode
+  /// If bloodwork is provided, screen opens in 'edit' mode
+  static void goToBloodworkAddEdit(BuildContext context,
+      {Bloodwork? bloodwork}) {
+    Navigator.pushNamed(
+      context,
+      RouteNames.bloodworkAddEdit,
+      arguments: ArgsBloodworkAddEdit(bloodwork: bloodwork),
     );
   }
 

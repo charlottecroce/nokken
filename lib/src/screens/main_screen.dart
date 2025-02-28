@@ -4,6 +4,7 @@
 //
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:nokken/src/features/bloodwork_tracker/screens/bloodwork_list_screen.dart';
 import 'package:nokken/src/features/settings/screens/settings_screen.dart';
 import 'package:nokken/src/shared/theme/shared_widgets.dart';
 import 'package:nokken/src/features/scheduler/screens/daily_tracker_screen.dart';
@@ -46,7 +47,7 @@ class MainScreen extends ConsumerWidget {
       const MedicationListScreen(),
       buildComingSoon('Feature 1'),
       DailyTrackerScreen(),
-      buildComingSoon('Feature 2'),
+      const BloodworkListScreen(),
       const SettingsScreen()
     ];
 
@@ -106,17 +107,17 @@ class MainScreen extends ConsumerWidget {
               ),
               label: 'Daily Tracker',
             ),
-            // Placeholder for future feature
+            // Bloodwork tab
             NavigationDestination(
               icon: Padding(
                 padding: AppTheme.navigationBarPadding,
-                child: Icon(AppIcons.getOutlined('menu')),
+                child: Icon(AppIcons.getOutlined('vial')),
               ),
               selectedIcon: Padding(
                 padding: AppTheme.navigationBarPadding,
-                child: Icon(AppIcons.getFilled('menu')),
+                child: Icon(AppIcons.getFilled('vial')),
               ),
-              label: 'coming soon',
+              label: 'Bloodwork',
             ),
             // Settings tab
             NavigationDestination(

@@ -10,6 +10,9 @@ import 'package:nokken/src/features/scheduler/screens/calendar_screen.dart';
 import 'package:nokken/src/features/medication_tracker/screens/medication_list_screen.dart';
 import 'package:nokken/src/features/medication_tracker/screens/medication_detail_screen.dart';
 import 'package:nokken/src/features/medication_tracker/screens/add_edit_medication_screen.dart';
+import 'package:nokken/src/features/bloodwork_tracker/screens/bloodwork_list_screen.dart';
+import 'package:nokken/src/features/bloodwork_tracker/screens/add_edit_bloodwork_screen.dart';
+import 'package:nokken/src/features/bloodwork_tracker/screens/bloodwork_graph_screen.dart';
 import 'package:nokken/src/features/settings/screens/settings_screen.dart';
 
 /// Router class that handles all navigation within the app
@@ -47,6 +50,25 @@ class AppRouter {
             medication: args.medication,
           ),
         );
+
+      case RouteNames.bloodworkList:
+        return MaterialPageRoute(builder: (_) => const BloodworkListScreen());
+
+      case RouteNames.bloodworkAddEdit:
+        if (settings.arguments == null) {
+          return MaterialPageRoute(
+            builder: (_) => const AddEditBloodworkScreen(), // No args = Add new
+          );
+        }
+        final args = settings.arguments as ArgsBloodworkAddEdit;
+        return MaterialPageRoute(
+          builder: (_) => AddEditBloodworkScreen(
+            bloodwork: args.bloodwork,
+          ),
+        );
+
+      case RouteNames.bloodworkGraph:
+        return MaterialPageRoute(builder: (_) => const BloodworkGraphScreen());
 
       case RouteNames.settings:
         return MaterialPageRoute(builder: (_) => const SettingsScreen());

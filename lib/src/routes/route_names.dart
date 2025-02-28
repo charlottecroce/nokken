@@ -11,5 +11,8 @@ class RouteNames {
   static const String medicationList = '/medication/list';
   static const String medicationDetails = '/medication/details';
   static const String medicationAddEdit = '/medication/add-edit';
+  static const String bloodworkList = '/bloodwork/list';
+  static const String bloodworkAddEdit = '/bloodwork/add-edit';
+  static const String bloodworkGraph = '/bloodwork/graph';
   static const String settings = '/settings';
 }
