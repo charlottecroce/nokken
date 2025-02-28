@@ -36,6 +36,7 @@ class _AddEditBloodworkScreenState
 
   // State variables
   late DateTime _selectedDate;
+  late TimeOfDay _selectedTime;
   bool _isLoading = false;
 
   @override
@@ -46,7 +47,14 @@ class _AddEditBloodworkScreenState
 
   /// Initialize all form fields with either existing bloodwork data or defaults
   void _initializeFields() {
-    _selectedDate = widget.bloodwork?.date ?? DateTime.now();
+    // Initialize date and time
+    if (widget.bloodwork?.date != null) {
+      _selectedDate = widget.bloodwork!.date;
+      _selectedTime = TimeOfDay.fromDateTime(widget.bloodwork!.date);
+    } else {
+      _selectedDate = DateTime.now();
+      _selectedTime = TimeOfDay.now();
+    }
 
     _estrogenController = TextEditingController(
       text: widget.bloodwork?.estrogen?.toString() ?? '',
@@ -84,6 +92,115 @@ class _AddEditBloodworkScreenState
         _selectedDate = picked;
       });
     }
+  }
+
+  /// Build time input field
+  Widget _buildTimeInput(BuildContext context) {
+    final isPM = _selectedTime.hour >= 12;
+    final hour12 = _selectedTime.hour > 12
+        ? _selectedTime.hour - 12
+        : (_selectedTime.hour == 0 ? 12 : _selectedTime.hour);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 80,
+            child: Text(
+              'Time:',
+              style: const TextStyle(fontSize: 16),
+            ),
+          ),
+          // Hour input
+          SizedBox(
+            width: 45,
+            child: TextFormField(
+              initialValue: hour12.toString(),
+              keyboardType: TextInputType.number,
+              textAlign: TextAlign.center,
+              decoration: AppTheme.defaultTextFieldDecoration,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(2),
+              ],
+              onChanged: (value) {
+                if (value.isNotEmpty) {
+                  final newHour = int.parse(value);
+                  if (newHour >= 1 && newHour <= 12) {
+                    final hour24 = isPM
+                        ? (newHour == 12 ? 12 : newHour + 12)
+                        : (newHour == 12 ? 0 : newHour);
+                    setState(() {
+                      _selectedTime =
+                          TimeOfDay(hour: hour24, minute: _selectedTime.minute);
+                    });
+                  }
+                }
+              },
+            ),
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 8),
+            child: Text(':', style: TextStyle(fontSize: 20)),
+          ),
+          // Minute input
+          SizedBox(
+            width: 45,
+            child: TextFormField(
+              initialValue: _selectedTime.minute.toString().padLeft(2, '0'),
+              keyboardType: TextInputType.number,
+              textAlign: TextAlign.center,
+              decoration: AppTheme.defaultTextFieldDecoration,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(2),
+              ],
+              onChanged: (value) {
+                if (value.isNotEmpty) {
+                  final newMinute = int.parse(value);
+                  if (newMinute >= 0 && newMinute < 60) {
+                    setState(() {
+                      _selectedTime = TimeOfDay(
+                          hour: _selectedTime.hour, minute: newMinute);
+                    });
+                  }
+                }
+              },
+            ),
+          ),
+          const SizedBox(width: 12),
+          // AM/PM toggle
+          TextButton(
+            onPressed: () {
+              final currentHour = _selectedTime.hour;
+              final hour12 = currentHour > 12
+                  ? currentHour - 12
+                  : (currentHour == 0 ? 12 : currentHour);
+
+              final newIsPM = !isPM;
+              final newHour = newIsPM
+                  ? (hour12 == 12 ? 12 : hour12 + 12)
+                  : (hour12 == 12 ? 0 : hour12);
+
+              setState(() {
+                _selectedTime =
+                    TimeOfDay(hour: newHour, minute: _selectedTime.minute);
+              });
+            },
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              side: BorderSide(color: AppColors.outline),
+            ),
+            child: Text(
+              isPM ? 'PM' : 'AM',
+              style: const TextStyle(fontSize: 16),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   /// Check if selected date is in the future
@@ -138,10 +255,19 @@ class _AddEditBloodworkScreenState
               ? double.tryParse(_testosteroneController.text)
               : null);
 
+      // Create a DateTime that includes both date and time
+      final dateTime = DateTime(
+        _selectedDate.year,
+        _selectedDate.month,
+        _selectedDate.day,
+        _selectedTime.hour,
+        _selectedTime.minute,
+      );
+
       // Create bloodwork object from form data
       final bloodwork = Bloodwork(
         id: widget.bloodwork?.id, // null for new, existing id for updates
-        date: _selectedDate,
+        date: dateTime,
         estrogen: estrogen,
         testosterone: testosterone,
         notes: _notesController.text.trim(),
@@ -208,7 +334,7 @@ class _AddEditBloodworkScreenState
             // Date selection
             SharedWidgets.basicCard(
               context: context,
-              title: 'Lab Date',
+              title: 'Lab Date and Time',
               children: [
                 ListTile(
                   title: Text(
@@ -217,6 +343,8 @@ class _AddEditBloodworkScreenState
                   trailing: const Icon(Icons.calendar_today),
                   onTap: () => _selectDate(context),
                 ),
+                // Add the time picker
+                _buildTimeInput(context),
               ],
             ),
             SharedWidgets.verticalSpace(AppTheme.cardSpacing),

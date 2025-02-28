@@ -234,6 +234,11 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       DateTime.now().day,
     ));
 
+    // Format the appointment time
+    final timeOfDay = TimeOfDay.fromDateTime(bloodwork.date);
+    final timeStr = DateTimeFormatter.formatTimeToAMPM(timeOfDay);
+    final timeIcon = DateTimeFormatter.getTimeIcon(timeStr);
+
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       child: Padding(
@@ -286,7 +291,29 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                       ],
                     ),
                   ),
-                  SharedWidgets.verticalSpace(),
+
+                  // Display appointment time with appropriate icon
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
+                    child: Row(
+                      children: [
+                        Icon(
+                          timeIcon,
+                          size: 16,
+                          color: Colors.red,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          timeStr,
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: Colors.red,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
                   // If future date, show scheduled message
                   if (isDateInFuture)
                     Text(

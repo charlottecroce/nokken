@@ -136,6 +136,10 @@ class BloodworkListTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isFutureDate = _isDateInFuture();
+    // Format the time for display
+    final timeOfDay = TimeOfDay.fromDateTime(bloodwork.date);
+    final timeStr = DateTimeFormatter.formatTimeToAMPM(timeOfDay);
+    final timeIcon = DateTimeFormatter.getTimeIcon(timeStr);
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -152,9 +156,9 @@ class BloodworkListTile extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: AppColors.info.withOpacity(0.1),
+                  color: AppColors.info.withAlpha(20),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.info.withOpacity(0.3)),
+                  border: Border.all(color: AppColors.info.withAlpha(40)),
                 ),
                 child: Text(
                   'Scheduled',
@@ -172,6 +176,25 @@ class BloodworkListTile extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             SharedWidgets.verticalSpace(),
+            // Display appointment time with icon
+            Row(
+              children: [
+                Icon(
+                  timeIcon,
+                  size: 16,
+                  color: Colors.red,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  timeStr,
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: Colors.red,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+            SharedWidgets.verticalSpace(4),
             // If future date, show scheduled message
             if (isFutureDate)
               Text(
