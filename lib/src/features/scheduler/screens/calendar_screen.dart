@@ -561,10 +561,6 @@ class _MedicationCalendarViewState extends State<_MedicationCalendarView> {
 
   @override
   Widget build(BuildContext context) {
-    // Define colors for visual indicators
-    const Color injectionDueColor = AppTheme.orangeDark;
-    const Color bloodworkColor = Colors.red;
-
     return Padding(
       padding: AppTheme.standardScreenMargins,
       child: TableCalendar(
@@ -642,13 +638,13 @@ class _MedicationCalendarViewState extends State<_MedicationCalendarView> {
                 margin: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(color: bloodworkColor, width: 2),
+                  border: Border.all(color: AppTheme.bloodworkColor, width: 2),
                 ),
                 child: Center(
                   child: Text(
                     '${day.day}',
                     style: const TextStyle(
-                      color: bloodworkColor,
+                      color: AppTheme.bloodworkColor,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -662,13 +658,14 @@ class _MedicationCalendarViewState extends State<_MedicationCalendarView> {
                 margin: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(color: injectionDueColor, width: 2),
+                  border:
+                      Border.all(color: AppTheme.injectionDueColor, width: 2),
                 ),
                 child: Center(
                   child: Text(
                     '${day.day}',
                     style: const TextStyle(
-                      color: injectionDueColor,
+                      color: AppTheme.injectionDueColor,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -686,8 +683,10 @@ class _MedicationCalendarViewState extends State<_MedicationCalendarView> {
 
             // Determine border color based on what's happening on this day
             Color borderColor = hasBloodwork
-                ? bloodworkColor
-                : (hasInjection ? injectionDueColor : Colors.transparent);
+                ? AppTheme.bloodworkColor
+                : (hasInjection
+                    ? AppTheme.injectionDueColor
+                    : Colors.transparent);
             bool hasBorder = hasInjection || hasBloodwork;
 
             return Container(
@@ -696,7 +695,9 @@ class _MedicationCalendarViewState extends State<_MedicationCalendarView> {
                 shape: BoxShape.circle,
                 // Change the background color when selected day has special events
                 color: hasBorder
-                    ? (hasBloodwork ? bloodworkColor : injectionDueColor)
+                    ? (hasBloodwork
+                        ? AppTheme.bloodworkColor
+                        : AppTheme.injectionDueColor)
                     : AppColors.primary,
                 border:
                     hasBorder ? Border.all(color: borderColor, width: 2) : null,
@@ -721,9 +722,9 @@ class _MedicationCalendarViewState extends State<_MedicationCalendarView> {
             // Determine border color
             Color borderColor;
             if (hasBloodwork) {
-              borderColor = bloodworkColor;
+              borderColor = AppTheme.bloodworkColor;
             } else if (hasInjection) {
-              borderColor = injectionDueColor;
+              borderColor = AppTheme.injectionDueColor;
             } else {
               borderColor = AppColors.primary;
             }
@@ -743,9 +744,9 @@ class _MedicationCalendarViewState extends State<_MedicationCalendarView> {
                   '${day.day}',
                   style: TextStyle(
                     color: hasBloodwork
-                        ? bloodworkColor
+                        ? AppTheme.bloodworkColor
                         : (hasInjection
-                            ? injectionDueColor
+                            ? AppTheme.injectionDueColor
                             : AppColors.primary),
                     fontWeight: FontWeight.bold,
                   ),
@@ -766,13 +767,13 @@ class _MedicationCalendarViewState extends State<_MedicationCalendarView> {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
-                      color: bloodworkColor.withAlpha(160), width: 2),
+                      color: AppTheme.bloodworkColor.withAlpha(160), width: 2),
                 ),
                 child: Center(
                   child: Text(
                     '${day.day}',
                     style: TextStyle(
-                      color: bloodworkColor.withAlpha(160),
+                      color: AppTheme.bloodworkColor.withAlpha(160),
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -787,13 +788,14 @@ class _MedicationCalendarViewState extends State<_MedicationCalendarView> {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
-                      color: injectionDueColor.withAlpha(160), width: 2),
+                      color: AppTheme.injectionDueColor.withAlpha(160),
+                      width: 2),
                 ),
                 child: Center(
                   child: Text(
                     '${day.day}',
                     style: TextStyle(
-                      color: injectionDueColor.withAlpha(160),
+                      color: AppTheme.injectionDueColor.withAlpha(160),
                       fontWeight: FontWeight.bold,
                     ),
                   ),

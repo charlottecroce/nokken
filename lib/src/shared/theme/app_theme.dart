@@ -215,6 +215,12 @@ class AppTheme {
   static const Color darkgrey = Color.fromARGB(255, 29, 29, 29);
 
   //----------------------------------------------------------------------------
+  // CALENDAR NOTIFICATION COLORS
+  //----------------------------------------------------------------------------
+  static const bloodworkColor = Color.fromARGB(255, 143, 5, 5);
+  static const injectionDueColor = Color.fromARGB(255, 212, 132, 20);
+
+  //----------------------------------------------------------------------------
   // DARK THEME COLORS
   //----------------------------------------------------------------------------
   static const Color greyDark = Color.fromARGB(255, 39, 39, 39);
