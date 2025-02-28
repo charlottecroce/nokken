@@ -2,6 +2,8 @@
 //  bloodwork_state.dart
 //  State management for bloodwork using Riverpod
 //
+
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nokken/src/features/bloodwork_tracker/models/bloodwork.dart';
 import 'package:nokken/src/features/medication_tracker/providers/medication_state.dart';
@@ -171,10 +173,16 @@ final bloodworkErrorProvider = Provider<String?>((ref) {
   return ref.watch(bloodworkStateProvider).error;
 });
 
-/// Provider for bloodwork records sorted by date (most recent first)
+/// Provider for bloodwork records sorted by date (most recent first) that are bloodwork type
 final sortedBloodworkProvider = Provider<List<Bloodwork>>((ref) {
   final records = ref.watch(bloodworkStateProvider).bloodworkRecords;
-  return [...records]..sort((a, b) => b.date.compareTo(a.date));
+  // Filter only records that are bloodwork type
+  final bloodworkRecords = records
+      .where((record) => record.appointmentType == AppointmentType.bloodwork)
+      .toList();
+
+  // Sort by date (most recent first)
+  return [...bloodworkRecords]..sort((a, b) => b.date.compareTo(a.date));
 });
 
 /// Provider for getting all bloodwork dates for calendar display
@@ -184,4 +192,22 @@ final bloodworkDatesProvider = Provider<Set<DateTime>>((ref) {
     final date = record.date;
     return DateTime(date.year, date.month, date.day);
   }).toSet();
+});
+
+/// Provider for getting different colors for different appointment types in calendar
+/// TODO: map to AppTheme instead
+final appointmentTypeColorsProvider =
+    Provider<Map<AppointmentType, Color>>((ref) {
+  return {
+    AppointmentType.bloodwork: Colors.red,
+    AppointmentType.appointment: Colors.blue,
+    AppointmentType.surgery: Colors.purple,
+  };
+});
+
+/// Provider for filtered bloodwork records by appointment type
+final filteredBloodworkByTypeProvider =
+    Provider.family<List<Bloodwork>, AppointmentType>((ref, type) {
+  final records = ref.watch(bloodworkStateProvider).bloodworkRecords;
+  return records.where((record) => record.appointmentType == type).toList();
 });

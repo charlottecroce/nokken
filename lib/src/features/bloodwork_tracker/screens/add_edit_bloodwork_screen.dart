@@ -32,11 +32,14 @@ class _AddEditBloodworkScreenState
   // Controllers that need disposal
   late final TextEditingController _estrogenController;
   late final TextEditingController _testosteroneController;
+  late final TextEditingController _locationController;
+  late final TextEditingController _doctorController;
   late final TextEditingController _notesController;
 
   // State variables
   late DateTime _selectedDate;
   late TimeOfDay _selectedTime;
+  late AppointmentType _selectedAppointmentType;
   bool _isLoading = false;
 
   @override
@@ -56,12 +59,24 @@ class _AddEditBloodworkScreenState
       _selectedTime = TimeOfDay.now();
     }
 
+    // Initialize appointment type
+    _selectedAppointmentType =
+        widget.bloodwork?.appointmentType ?? AppointmentType.bloodwork;
+
     _estrogenController = TextEditingController(
       text: widget.bloodwork?.estrogen?.toString() ?? '',
     );
 
     _testosteroneController = TextEditingController(
       text: widget.bloodwork?.testosterone?.toString() ?? '',
+    );
+
+    _locationController = TextEditingController(
+      text: widget.bloodwork?.location ?? '',
+    );
+
+    _doctorController = TextEditingController(
+      text: widget.bloodwork?.doctor ?? '',
     );
 
     _notesController = TextEditingController(
@@ -74,6 +89,8 @@ class _AddEditBloodworkScreenState
   void dispose() {
     _estrogenController.dispose();
     _testosteroneController.dispose();
+    _locationController.dispose();
+    _doctorController.dispose();
     _notesController.dispose();
     super.dispose();
   }
@@ -212,13 +229,94 @@ class _AddEditBloodworkScreenState
     return selectedDate.isAfter(today);
   }
 
+  /// Build appointment type radio buttons
+  Widget _buildAppointmentTypeSelector() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Appointment Type',
+          style: AppTextStyles.titleSmall,
+        ),
+        SharedWidgets.verticalSpace(),
+        // Bloodwork radio
+        RadioListTile<AppointmentType>(
+          title: const Text('Bloodwork'),
+          value: AppointmentType.bloodwork,
+          groupValue: _selectedAppointmentType,
+          onChanged: (AppointmentType? value) {
+            if (value != null) {
+              setState(() {
+                _selectedAppointmentType = value;
+              });
+            }
+          },
+        ),
+        // Regular appointment radio
+        RadioListTile<AppointmentType>(
+          title: const Text('Appointment'),
+          value: AppointmentType.appointment,
+          groupValue: _selectedAppointmentType,
+          onChanged: (AppointmentType? value) {
+            if (value != null) {
+              setState(() {
+                _selectedAppointmentType = value;
+              });
+            }
+          },
+        ),
+        // Surgery radio
+        RadioListTile<AppointmentType>(
+          title: const Text('Surgery'),
+          value: AppointmentType.surgery,
+          groupValue: _selectedAppointmentType,
+          onChanged: (AppointmentType? value) {
+            if (value != null) {
+              setState(() {
+                _selectedAppointmentType = value;
+              });
+            }
+          },
+        ),
+      ],
+    );
+  }
+
+  /// Build location and doctor fields
+  Widget _buildLocationDoctorFields() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Location field
+        TextFormField(
+          controller: _locationController,
+          decoration: AppTheme.defaultTextFieldDecoration.copyWith(
+            labelText: 'Location (optional)',
+            hintText: 'Enter appointment location',
+          ),
+        ),
+        SharedWidgets.verticalSpace(),
+
+        // Doctor field
+        TextFormField(
+          controller: _doctorController,
+          decoration: AppTheme.defaultTextFieldDecoration.copyWith(
+            labelText: 'Healthcare Provider (optional)',
+            hintText: 'Enter doctor or provider name',
+          ),
+        ),
+      ],
+    );
+  }
+
   /// Save or update bloodwork data
   Future<void> _saveBloodwork() async {
     // Validate form before proceeding
     if (!_formKey.currentState!.validate()) return;
 
-    // Only validate hormone values for past/present dates
-    if (!_isDateInFuture()) {
+    // Only validate hormone values for past/present dates with bloodwork appointment type
+    if (!_isDateInFuture() &&
+        _selectedAppointmentType == AppointmentType.bloodwork) {
       final estrogen = _estrogenController.text.isNotEmpty
           ? double.tryParse(_estrogenController.text)
           : null;
@@ -230,7 +328,7 @@ class _AddEditBloodworkScreenState
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text(
-                'Please enter at least one hormone level for past or present dates'),
+                'Please enter at least one hormone level for past or present bloodwork dates'),
             backgroundColor: AppColors.error,
           ),
         );
@@ -242,14 +340,16 @@ class _AddEditBloodworkScreenState
     setState(() => _isLoading = true);
 
     try {
-      // For future dates, hormone levels will be null
-      final estrogen = _isDateInFuture()
+      // For future dates or non-bloodwork types, hormone levels will be null
+      final estrogen = (_isDateInFuture() ||
+              _selectedAppointmentType != AppointmentType.bloodwork)
           ? null
           : (_estrogenController.text.isNotEmpty
               ? double.tryParse(_estrogenController.text)
               : null);
 
-      final testosterone = _isDateInFuture()
+      final testosterone = (_isDateInFuture() ||
+              _selectedAppointmentType != AppointmentType.bloodwork)
           ? null
           : (_testosteroneController.text.isNotEmpty
               ? double.tryParse(_testosteroneController.text)
@@ -268,9 +368,18 @@ class _AddEditBloodworkScreenState
       final bloodwork = Bloodwork(
         id: widget.bloodwork?.id, // null for new, existing id for updates
         date: dateTime,
+        appointmentType: _selectedAppointmentType,
         estrogen: estrogen,
         testosterone: testosterone,
-        notes: _notesController.text.trim(),
+        location: _locationController.text.trim().isNotEmpty
+            ? _locationController.text.trim()
+            : null,
+        doctor: _doctorController.text.trim().isNotEmpty
+            ? _doctorController.text.trim()
+            : null,
+        notes: _notesController.text.trim().isNotEmpty
+            ? _notesController.text.trim()
+            : null,
       );
 
       // If bloodwork is null, we're adding new
@@ -309,7 +418,9 @@ class _AddEditBloodworkScreenState
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          widget.bloodwork == null ? 'Add Lab Results' : 'Edit Lab Results',
+          widget.bloodwork == null
+              ? 'Add Medical Record'
+              : 'Edit Medical Record',
         ),
         actions: [
           // Show loading indicator or save button
@@ -334,7 +445,7 @@ class _AddEditBloodworkScreenState
             // Date selection
             SharedWidgets.basicCard(
               context: context,
-              title: 'Lab Date and Time',
+              title: 'Date and Time',
               children: [
                 ListTile(
                   title: Text(
@@ -349,106 +460,119 @@ class _AddEditBloodworkScreenState
             ),
             SharedWidgets.verticalSpace(AppTheme.cardSpacing),
 
-            // Hormone levels
+            // Appointment type selection
             SharedWidgets.basicCard(
               context: context,
-              title: 'Hormone Levels',
+              title: 'Appointment Details',
               children: [
-                // Future date warning if applicable
-                if (_isDateInFuture())
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 16.0),
-                    child: Container(
-                      padding: const EdgeInsets.all(8.0),
-                      decoration: BoxDecoration(
-                        color: AppColors.info.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(4.0),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.info_outline, color: AppColors.info),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'This is a future date. Hormone levels can be added after the lab date occurs.',
-                              style: TextStyle(color: AppColors.info),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                // Estrogen field
-                TextFormField(
-                  controller: _estrogenController,
-                  decoration: AppTheme.defaultTextFieldDecoration.copyWith(
-                    labelText: 'Estrogen (pg/mL)',
-                    hintText: _isDateInFuture()
-                        ? 'Cannot add levels for future dates'
-                        : 'Enter estrogen level',
-                    // Disable the field for future dates
-                    enabled: !_isDateInFuture(),
-                  ),
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*$')),
-                  ],
-                  validator: (value) {
-                    if (_isDateInFuture()) {
-                      return null; // Skip validation for future dates
-                    }
-
-                    if (value != null && value.isNotEmpty) {
-                      final number = double.tryParse(value);
-                      if (number == null) {
-                        return 'Please enter a valid number';
-                      }
-                      if (number < 0) {
-                        return 'Value cannot be negative';
-                      }
-                    }
-                    return null;
-                  },
-                ),
-                SharedWidgets.verticalSpace(),
-
-                // Testosterone field
-                TextFormField(
-                  controller: _testosteroneController,
-                  decoration: AppTheme.defaultTextFieldDecoration.copyWith(
-                    labelText: 'Testosterone (ng/dL)',
-                    hintText: _isDateInFuture()
-                        ? 'Cannot add levels for future dates'
-                        : 'Enter testosterone level',
-                    // Disable the field for future dates
-                    enabled: !_isDateInFuture(),
-                  ),
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*$')),
-                  ],
-                  validator: (value) {
-                    if (_isDateInFuture()) {
-                      return null; // Skip validation for future dates
-                    }
-
-                    if (value != null && value.isNotEmpty) {
-                      final number = double.tryParse(value);
-                      if (number == null) {
-                        return 'Please enter a valid number';
-                      }
-                      if (number < 0) {
-                        return 'Value cannot be negative';
-                      }
-                    }
-                    return null;
-                  },
-                ),
+                _buildAppointmentTypeSelector(),
+                SharedWidgets.verticalSpace(AppTheme.cardSpacing),
+                _buildLocationDoctorFields(),
               ],
             ),
+            SharedWidgets.verticalSpace(AppTheme.cardSpacing),
+
+            // Hormone levels (only shown for bloodwork type)
+            if (_selectedAppointmentType == AppointmentType.bloodwork)
+              SharedWidgets.basicCard(
+                context: context,
+                title: 'Hormone Levels',
+                children: [
+                  // Future date warning if applicable
+                  if (_isDateInFuture())
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 16.0),
+                      child: Container(
+                        padding: const EdgeInsets.all(8.0),
+                        decoration: BoxDecoration(
+                          color: AppColors.info.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(4.0),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.info_outline, color: AppColors.info),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'This is a future date. Hormone levels can be added after the lab date occurs.',
+                                style: TextStyle(color: AppColors.info),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                  // Estrogen field
+                  TextFormField(
+                    controller: _estrogenController,
+                    decoration: AppTheme.defaultTextFieldDecoration.copyWith(
+                      labelText: 'Estrogen (pg/mL)',
+                      hintText: _isDateInFuture()
+                          ? 'Cannot add levels for future dates'
+                          : 'Enter estrogen level',
+                      // Disable the field for future dates
+                      enabled: !_isDateInFuture(),
+                    ),
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*$')),
+                    ],
+                    validator: (value) {
+                      if (_isDateInFuture()) {
+                        return null; // Skip validation for future dates
+                      }
+
+                      if (value != null && value.isNotEmpty) {
+                        final number = double.tryParse(value);
+                        if (number == null) {
+                          return 'Please enter a valid number';
+                        }
+                        if (number < 0) {
+                          return 'Value cannot be negative';
+                        }
+                      }
+                      return null;
+                    },
+                  ),
+                  SharedWidgets.verticalSpace(),
+
+                  // Testosterone field
+                  TextFormField(
+                    controller: _testosteroneController,
+                    decoration: AppTheme.defaultTextFieldDecoration.copyWith(
+                      labelText: 'Testosterone (ng/dL)',
+                      hintText: _isDateInFuture()
+                          ? 'Cannot add levels for future dates'
+                          : 'Enter testosterone level',
+                      // Disable the field for future dates
+                      enabled: !_isDateInFuture(),
+                    ),
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*$')),
+                    ],
+                    validator: (value) {
+                      if (_isDateInFuture()) {
+                        return null; // Skip validation for future dates
+                      }
+
+                      if (value != null && value.isNotEmpty) {
+                        final number = double.tryParse(value);
+                        if (number == null) {
+                          return 'Please enter a valid number';
+                        }
+                        if (number < 0) {
+                          return 'Value cannot be negative';
+                        }
+                      }
+                      return null;
+                    },
+                  ),
+                ],
+              ),
             SharedWidgets.verticalSpace(AppTheme.cardSpacing),
 
             // Notes section

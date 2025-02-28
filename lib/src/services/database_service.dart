@@ -151,12 +151,16 @@ class DatabaseService {
       )
     ''');
 
+    // Updated bloodwork table with new fields
     await db.execute('''
       CREATE TABLE bloodwork(
         id TEXT PRIMARY KEY,
         date TEXT NOT NULL,
+        appointmentType TEXT NOT NULL,
         estrogen REAL,
         testosterone REAL,
+        location TEXT,
+        doctor TEXT,
         notes TEXT
       )
     ''');
@@ -409,22 +413,39 @@ class DatabaseService {
     return {
       'id': bloodwork.id,
       'date': bloodwork.date.toIso8601String(),
+      'appointmentType': bloodwork.appointmentType.toString(),
       'estrogen': bloodwork.estrogen,
       'testosterone': bloodwork.testosterone,
+      'location': bloodwork.location,
+      'doctor': bloodwork.doctor,
       'notes': bloodwork.notes,
     };
   }
 
   /// Convert a database map to a Bloodwork object
   Bloodwork _mapToBloodwork(Map<String, dynamic> map) {
+    // Parse appointment type from string
+    AppointmentType parsedType;
+    try {
+      parsedType = AppointmentType.values.firstWhere(
+          (e) => e.toString() == map['appointmentType'],
+          orElse: () => AppointmentType.bloodwork);
+    } catch (_) {
+      // For backward compatibility with old records without appointmentType
+      parsedType = AppointmentType.bloodwork;
+    }
+
     return Bloodwork(
       id: map['id'] as String,
       date: DateTime.parse(map['date'] as String),
+      appointmentType: parsedType,
       estrogen:
           map['estrogen'] != null ? (map['estrogen'] as num).toDouble() : null,
       testosterone: map['testosterone'] != null
           ? (map['testosterone'] as num).toDouble()
           : null,
+      location: map['location'] as String?,
+      doctor: map['doctor'] as String?,
       notes: map['notes'] as String?,
     );
   }

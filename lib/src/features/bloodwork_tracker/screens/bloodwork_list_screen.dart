@@ -133,6 +133,48 @@ class BloodworkListTile extends StatelessWidget {
     return recordDate.isAfter(today);
   }
 
+  /// Get appointment type text to display
+  String _getAppointmentTypeText() {
+    switch (bloodwork.appointmentType) {
+      case AppointmentType.bloodwork:
+        return 'Lab Results';
+      case AppointmentType.appointment:
+        return 'Appointment';
+      case AppointmentType.surgery:
+        return 'Surgery';
+      default:
+        return 'Medical Record';
+    }
+  }
+
+  /// Get appointment type icon
+  IconData _getAppointmentTypeIcon() {
+    switch (bloodwork.appointmentType) {
+      case AppointmentType.bloodwork:
+        return Icons.science_outlined;
+      case AppointmentType.appointment:
+        return Icons.medical_services_outlined;
+      case AppointmentType.surgery:
+        return Icons.medical_information_outlined;
+      default:
+        return Icons.event_note_outlined;
+    }
+  }
+
+  /// Get appointment type color -- in future, map to AppTheme
+  Color _getAppointmentTypeColor() {
+    switch (bloodwork.appointmentType) {
+      case AppointmentType.bloodwork:
+        return Colors.red;
+      case AppointmentType.appointment:
+        return Colors.blue;
+      case AppointmentType.surgery:
+        return Colors.purple;
+      default:
+        return Colors.grey;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isFutureDate = _isDateInFuture();
@@ -140,6 +182,10 @@ class BloodworkListTile extends StatelessWidget {
     final timeOfDay = TimeOfDay.fromDateTime(bloodwork.date);
     final timeStr = DateTimeFormatter.formatTimeToAMPM(timeOfDay);
     final timeIcon = DateTimeFormatter.getTimeIcon(timeStr);
+
+    final appointmentTypeText = _getAppointmentTypeText();
+    final appointmentTypeIcon = _getAppointmentTypeIcon();
+    final appointmentTypeColor = _getAppointmentTypeColor();
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -176,33 +222,92 @@ class BloodworkListTile extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             SharedWidgets.verticalSpace(),
-            // Display appointment time with icon
+            // Display appointment type
             Row(
               children: [
                 Icon(
-                  timeIcon,
+                  appointmentTypeIcon,
                   size: 16,
-                  color: Colors.red,
+                  color: appointmentTypeColor,
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  timeStr,
+                  appointmentTypeText,
                   style: AppTextStyles.bodyMedium.copyWith(
-                    color: Colors.red,
+                    color: appointmentTypeColor,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
             ),
             SharedWidgets.verticalSpace(4),
+            // Display appointment time with icon
+            Row(
+              children: [
+                Icon(
+                  timeIcon,
+                  size: 16,
+                  color: appointmentTypeColor,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  timeStr,
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: appointmentTypeColor,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+            SharedWidgets.verticalSpace(4),
+
+            // Display location if available
+            if (bloodwork.location?.isNotEmpty == true) ...[
+              Row(
+                children: [
+                  Icon(
+                    Icons.location_on_outlined,
+                    size: 16,
+                    color: Colors.grey,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    bloodwork.location!,
+                    style: AppTextStyles.bodyMedium,
+                  ),
+                ],
+              ),
+              SharedWidgets.verticalSpace(2),
+            ],
+
+            // Display doctor if available
+            if (bloodwork.doctor?.isNotEmpty == true) ...[
+              Row(
+                children: [
+                  Icon(
+                    Icons.person_outlined,
+                    size: 16,
+                    color: Colors.grey,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    bloodwork.doctor!,
+                    style: AppTextStyles.bodyMedium,
+                  ),
+                ],
+              ),
+              SharedWidgets.verticalSpace(2),
+            ],
+
             // If future date, show scheduled message
             if (isFutureDate)
               Text(
-                'Lab appointment scheduled',
+                'Scheduled',
                 style: AppTextStyles.bodyMedium,
               )
-            // Otherwise show hormone levels
-            else ...[
+            // Otherwise show hormone levels if available and if this is bloodwork
+            else if (bloodwork.appointmentType ==
+                AppointmentType.bloodwork) ...[
               if (bloodwork.estrogen != null)
                 Text(
                     'Estrogen: ${bloodwork.estrogen!.toStringAsFixed(1)} pg/mL'),
