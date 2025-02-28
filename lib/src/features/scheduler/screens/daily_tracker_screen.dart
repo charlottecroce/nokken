@@ -331,11 +331,11 @@ class _DailyScheduleList extends ConsumerWidget {
   Color _getAppointmentColor(AppointmentType type) {
     switch (type) {
       case AppointmentType.bloodwork:
-        return Colors.red;
+        return AppTheme.bloodworkColor;
       case AppointmentType.appointment:
-        return Colors.blue;
+        return AppTheme.doctorApptColor;
       case AppointmentType.surgery:
-        return Colors.purple;
+        return AppTheme.surgeryColor;
       default:
         return Colors.grey;
     }
@@ -400,17 +400,17 @@ class _AppointmentCard extends StatelessWidget {
       case AppointmentType.bloodwork:
         appointmentTitle = 'Lab Appointment';
         appointmentIcon = Icons.science_outlined;
-        appointmentColor = Colors.red;
+        appointmentColor = AppTheme.bloodworkColor;
         break;
       case AppointmentType.appointment:
         appointmentTitle = 'Doctor Appointment';
         appointmentIcon = Icons.medical_services_outlined;
-        appointmentColor = Colors.blue;
+        appointmentColor = AppTheme.doctorApptColor;
         break;
       case AppointmentType.surgery:
         appointmentTitle = 'Surgery';
         appointmentIcon = Icons.medical_information_outlined;
-        appointmentColor = Colors.purple;
+        appointmentColor = AppTheme.surgeryColor;
         break;
       default:
         appointmentTitle = 'Medical Appointment';
@@ -451,10 +451,10 @@ class _AppointmentCard extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 8, vertical: 2),
                             decoration: BoxDecoration(
-                              color: AppColors.info.withOpacity(0.1),
+                              color: AppColors.info.withAlpha(20),
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                  color: AppColors.info.withOpacity(0.3)),
+                                  color: AppColors.info.withAlpha(50)),
                             ),
                             child: Text(
                               'Scheduled',
@@ -597,9 +597,9 @@ class _TimeGroupItem extends StatelessWidget {
     }
     // Otherwise, use the specific type color
     else if (hasOral) {
-      return Colors.blue;
+      return AppTheme.oralMedColor;
     } else if (hasInjection) {
-      return Colors.orange;
+      return AppTheme.injectionColor;
     }
 
     // Default fallback color
@@ -638,8 +638,8 @@ class _MedicationListTile extends ConsumerWidget {
     // Set color based on medication type
     final Color medicationColor =
         medication.medicationType == MedicationType.oral
-            ? Colors.blue
-            : Colors.orange;
+            ? AppTheme.oralMedColor
+            : AppTheme.injectionColor;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 4.0),
@@ -678,10 +678,10 @@ class _MedicationListTile extends ConsumerWidget {
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 8, vertical: 2),
                               decoration: BoxDecoration(
-                                color: AppColors.error.withOpacity(0.1),
+                                color: AppColors.error.withAlpha(20),
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                    color: AppColors.error.withOpacity(0.3)),
+                                    color: AppColors.error.withAlpha(50)),
                               ),
                               child: Text(
                                 'Refill Needed',
@@ -785,10 +785,6 @@ class _MedicationListTile extends ConsumerWidget {
       );
       return;
     }
-
-    // Normalize the date to prevent time-related issues
-    final normalizedDate =
-        DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
 
     // Update taken medications in database and state
     ref.read(medicationTakenProvider.notifier).setMedicationTaken(

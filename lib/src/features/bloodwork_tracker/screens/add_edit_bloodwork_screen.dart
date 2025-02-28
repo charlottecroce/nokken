@@ -483,9 +483,9 @@ class _AddEditBloodworkScreenState
                     Padding(
                       padding: const EdgeInsets.only(bottom: 16.0),
                       child: Container(
-                        padding: const EdgeInsets.all(8.0),
+                        padding: AppTheme.standardCardPadding,
                         decoration: BoxDecoration(
-                          color: AppColors.info.withOpacity(0.1),
+                          color: AppColors.info.withAlpha(20),
                           borderRadius: BorderRadius.circular(4.0),
                         ),
                         child: Row(
