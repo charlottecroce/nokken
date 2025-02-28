@@ -26,9 +26,29 @@ class SectionWithStickyHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // FIX: Return a SliverToBoxAdapter instead of SizedBox.shrink for empty records
+    // Return a SliverToBoxAdapter instead of SizedBox.shrink for empty records
     if (records.isEmpty) {
       return SliverToBoxAdapter(child: const SizedBox());
+    }
+
+    // Determine icon and color based on section title
+    IconData sectionIcon;
+    Color sectionColor;
+
+    switch (title) {
+      case 'Today':
+        sectionIcon = Icons.today;
+        sectionColor = AppTheme.greenDark;
+        break;
+      case 'Upcoming':
+        sectionIcon = Icons.event;
+        sectionColor = Colors.blue;
+        break;
+      case 'Past':
+      default:
+        sectionIcon = Icons.history;
+        sectionColor = Colors.grey;
+        break;
     }
 
     return SliverStickyHeader(
@@ -39,16 +59,16 @@ class SectionWithStickyHeader extends StatelessWidget {
           children: [
             // Icon based on section
             Icon(
-              title == 'Upcoming' ? Icons.event : Icons.history,
+              sectionIcon,
               size: 20,
-              color: title == 'Upcoming' ? Colors.blue : Colors.grey,
+              color: sectionColor,
             ),
             const SizedBox(width: 8),
             // Section title
             Text(
               title,
               style: AppTextStyles.titleMedium.copyWith(
-                color: title == 'Upcoming' ? Colors.blue : Colors.grey,
+                color: sectionColor,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -57,16 +77,14 @@ class SectionWithStickyHeader extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
-                color: title == 'Upcoming'
-                    ? Colors.blue.withAlpha(20)
-                    : Colors.grey.withAlpha(20),
+                color: sectionColor.withAlpha(20),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
                 '${records.length}',
                 style: TextStyle(
                   fontSize: 12,
-                  color: title == 'Upcoming' ? Colors.blue : Colors.grey,
+                  color: sectionColor,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -96,7 +114,9 @@ class BloodworkListScreen extends ConsumerWidget {
     final error = ref.watch(bloodworkErrorProvider);
 
     // Check if there are any records at all
+    // Check if there are any records at all
     final bool hasRecords = groupedRecords['upcoming']!.isNotEmpty ||
+        groupedRecords['today']!.isNotEmpty ||
         groupedRecords['past']!.isNotEmpty;
 
     return Scaffold(
@@ -148,6 +168,12 @@ class BloodworkListScreen extends ConsumerWidget {
                       ? _buildEmptyState(context)
                       : CustomScrollView(
                           slivers: [
+                            // Today section with sticky header
+                            SectionWithStickyHeader(
+                              title: 'Today',
+                              records: groupedRecords['today']!,
+                            ),
+
                             // Upcoming section with sticky header
                             SectionWithStickyHeader(
                               title: 'Upcoming',

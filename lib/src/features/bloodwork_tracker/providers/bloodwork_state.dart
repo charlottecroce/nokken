@@ -201,7 +201,7 @@ final bloodworkDatesProvider = Provider<Set<DateTime>>((ref) {
   }).toSet();
 });
 
-/// Provider that groups and sorts bloodwork records into upcoming and past sections
+/// Provider that groups and sorts bloodwork records into upcoming, today, and past sections
 final groupedBloodworkProvider = Provider<Map<String, List<Bloodwork>>>((ref) {
   final records = ref.watch(bloodworkStateProvider).bloodworkRecords;
   final now = DateTime.now();
@@ -210,6 +210,7 @@ final groupedBloodworkProvider = Provider<Map<String, List<Bloodwork>>>((ref) {
   // Initialize the result map with empty lists
   final result = {
     'upcoming': <Bloodwork>[],
+    'today': <Bloodwork>[],
     'past': <Bloodwork>[],
   };
 
@@ -220,6 +221,8 @@ final groupedBloodworkProvider = Provider<Map<String, List<Bloodwork>>>((ref) {
 
     if (recordDate.isAfter(today)) {
       result['upcoming']!.add(record);
+    } else if (recordDate.isAtSameMomentAs(today)) {
+      result['today']!.add(record);
     } else {
       result['past']!.add(record);
     }
@@ -227,6 +230,9 @@ final groupedBloodworkProvider = Provider<Map<String, List<Bloodwork>>>((ref) {
 
   // Sort upcoming appointments (earliest first)
   result['upcoming']!.sort((a, b) => a.date.compareTo(b.date));
+
+  // Sort today's appointments (earliest first)
+  result['today']!.sort((a, b) => a.date.compareTo(b.date));
 
   // Sort past appointments (latest first)
   result['past']!.sort((a, b) => b.date.compareTo(a.date));

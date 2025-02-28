@@ -86,30 +86,13 @@ class _AddEditBloodworkScreenState
   /// Initialize hormone reading controllers from existing bloodwork or defaults
   void _initializeHormoneControllers() {
     if (widget.bloodwork != null) {
-      // First try to use hormone readings
+      // Try to use hormone readings
       if (widget.bloodwork!.hormoneReadings.isNotEmpty) {
         for (final reading in widget.bloodwork!.hormoneReadings) {
           _addHormoneField(
             name: reading.name,
             value: reading.value.toString(),
             unit: reading.unit,
-          );
-        }
-      } else {
-        // Fall back to legacy estrogen/testosterone fields if present
-        if (widget.bloodwork!.estrogen != null) {
-          _addHormoneField(
-            name: 'Estrogen',
-            value: widget.bloodwork!.estrogen.toString(),
-            unit: 'pg/mL',
-          );
-        }
-
-        if (widget.bloodwork!.testosterone != null) {
-          _addHormoneField(
-            name: 'Testosterone',
-            value: widget.bloodwork!.testosterone.toString(),
-            unit: 'ng/dL',
           );
         }
       }

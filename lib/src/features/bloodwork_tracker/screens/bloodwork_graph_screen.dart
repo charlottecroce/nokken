@@ -8,6 +8,7 @@ import 'package:nokken/src/features/bloodwork_tracker/models/bloodwork.dart';
 import 'package:nokken/src/features/bloodwork_tracker/providers/bloodwork_state.dart';
 import 'package:nokken/src/shared/theme/app_theme.dart';
 import 'package:nokken/src/shared/utils/date_time_formatter.dart';
+import 'package:nokken/src/shared/theme/shared_widgets.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 
@@ -228,12 +229,12 @@ class _BloodworkGraphScreenState extends ConsumerState<BloodworkGraphScreen>
                             size: 64,
                             color: AppColors.secondary,
                           ),
-                          const SizedBox(height: 16),
+                          SharedWidgets.verticalSpace(16),
                           const Text(
                             'No bloodwork data available for the selected time range',
                             textAlign: TextAlign.center,
                           ),
-                          const SizedBox(height: 8),
+                          SharedWidgets.verticalSpace(8),
                           const Text(
                             'Only lab appointments with hormone levels are shown in graphs',
                             textAlign: TextAlign.center,
@@ -349,12 +350,12 @@ class _BloodworkGraphScreenState extends ConsumerState<BloodworkGraphScreen>
             '$title ($unit)',
             style: AppTextStyles.titleMedium,
           ),
-          const SizedBox(height: 8),
+          SharedWidgets.verticalSpace(8),
           Text(
             'Time range: $_selectedTimeRange',
             style: AppTextStyles.bodySmall,
           ),
-          const SizedBox(height: 24),
+          SharedWidgets.verticalSpace(24),
           Expanded(
             child: _buildLineChart(validRecords, lineColor, valueGetter, unit),
           ),

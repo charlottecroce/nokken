@@ -11,6 +11,7 @@ import 'package:nokken/src/features/bloodwork_tracker/providers/bloodwork_state.
 import 'package:nokken/src/services/navigation_service.dart';
 import 'package:nokken/src/shared/theme/app_theme.dart';
 import 'package:nokken/src/shared/utils/date_time_formatter.dart';
+import 'package:nokken/src/shared/theme/shared_widgets.dart';
 
 /// Screen that shows an overview of all hormone levels
 class BloodLevelListScreen extends ConsumerWidget {
@@ -84,12 +85,12 @@ class BloodLevelListScreen extends ConsumerWidget {
             size: 64,
             color: AppColors.secondary,
           ),
-          const SizedBox(height: 16),
+          SharedWidgets.verticalSpace(16),
           const Text(
             'No hormone data available',
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 8),
+          SharedWidgets.horizontalSpace(),
           const Text(
             'Add bloodwork with hormone levels\nto see them displayed here',
             textAlign: TextAlign.center,
@@ -172,7 +173,7 @@ class _HormoneLevelTile extends StatelessWidget {
                               : Colors.green,
                           size: 16,
                         ),
-                      const SizedBox(width: 4),
+                      SharedWidgets.horizontalSpace(4),
                       Text(
                         '${lastReading.value.toStringAsFixed(1)} $unit',
                         style: AppTextStyles.titleMedium,
@@ -182,7 +183,7 @@ class _HormoneLevelTile extends StatelessWidget {
                 ],
               ),
 
-              const SizedBox(height: 8),
+              SharedWidgets.horizontalSpace(),
 
               // Date of last reading
               Text(
@@ -190,7 +191,7 @@ class _HormoneLevelTile extends StatelessWidget {
                 style: AppTextStyles.bodySmall,
               ),
 
-              const SizedBox(height: 16),
+              SharedWidgets.verticalSpace(16),
 
               // Mini chart
               SizedBox(
