@@ -73,7 +73,8 @@ class _BloodworkGraphScreenState extends ConsumerState<BloodworkGraphScreen>
 
   @override
   Widget build(BuildContext context) {
-    final bloodworkRecords = ref.watch(sortedBloodworkProvider);
+    // Use the bloodwork-type only provider for hormone graphs
+    final bloodworkRecords = ref.watch(bloodworkTypeRecordsProvider);
     final isLoading = ref.watch(bloodworkLoadingProvider);
     final error = ref.watch(bloodworkErrorProvider);
 
@@ -130,9 +131,31 @@ class _BloodworkGraphScreenState extends ConsumerState<BloodworkGraphScreen>
           : isLoading
               ? const Center(child: CircularProgressIndicator())
               : chronologicalRecords.isEmpty
-                  ? const Center(
-                      child:
-                          Text('No data available for the selected time range'),
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.science_outlined,
+                            size: 64,
+                            color: AppColors.secondary,
+                          ),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'No bloodwork data available for the selected time range',
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Only lab appointments with hormone levels are shown in graphs',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        ],
+                      ),
                     )
                   : TabBarView(
                       controller: _tabController,

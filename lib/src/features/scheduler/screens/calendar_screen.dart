@@ -239,6 +239,33 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     final timeStr = DateTimeFormatter.formatTimeToAMPM(timeOfDay);
     final timeIcon = DateTimeFormatter.getTimeIcon(timeStr);
 
+    // Get appointment specific details
+    final String appointmentTitle;
+    final IconData appointmentIcon;
+    final Color appointmentColor;
+
+    switch (bloodwork.appointmentType) {
+      case AppointmentType.bloodwork:
+        appointmentTitle = 'Lab Appointment';
+        appointmentIcon = Icons.science_outlined;
+        appointmentColor = Colors.red;
+        break;
+      case AppointmentType.appointment:
+        appointmentTitle = 'Doctor Appointment';
+        appointmentIcon = Icons.medical_services_outlined;
+        appointmentColor = Colors.blue;
+        break;
+      case AppointmentType.surgery:
+        appointmentTitle = 'Surgery';
+        appointmentIcon = Icons.medical_information_outlined;
+        appointmentColor = Colors.purple;
+        break;
+      default:
+        appointmentTitle = 'Medical Appointment';
+        appointmentIcon = Icons.event_note_outlined;
+        appointmentColor = Colors.grey;
+    }
+
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       child: Padding(
@@ -246,12 +273,12 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Bloodwork icon
-            Icon(Icons.science_outlined, color: Colors.red),
+            // Appointment type icon
+            Icon(appointmentIcon, color: appointmentColor),
 
             SharedWidgets.verticalSpace(16),
 
-            // Bloodwork details
+            // Appointment details
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -264,7 +291,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     child: Row(
                       children: [
                         Text(
-                          'Lab Appointment',
+                          appointmentTitle,
                           style: AppTextStyles.titleLarge,
                         ),
                         if (isDateInFuture) ...[
@@ -300,13 +327,13 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                         Icon(
                           timeIcon,
                           size: 16,
-                          color: Colors.red,
+                          color: appointmentColor,
                         ),
-                        const SizedBox(width: 6),
+                        SharedWidgets.verticalSpace(6),
                         Text(
                           timeStr,
                           style: AppTextStyles.bodyMedium.copyWith(
-                            color: Colors.red,
+                            color: appointmentColor,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -314,14 +341,53 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     ),
                   ),
 
+                  // Display location if available
+                  if (bloodwork.location?.isNotEmpty == true) ...[
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.location_on_outlined,
+                          size: 16,
+                          color: Colors.grey,
+                        ),
+                        SharedWidgets.verticalSpace(6),
+                        Text(
+                          bloodwork.location!,
+                          style: AppTextStyles.bodyMedium,
+                        ),
+                      ],
+                    ),
+                    SharedWidgets.verticalSpace(2),
+                  ],
+
+                  // Display doctor if available
+                  if (bloodwork.doctor?.isNotEmpty == true) ...[
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.person_outlined,
+                          size: 16,
+                          color: Colors.grey,
+                        ),
+                        SharedWidgets.verticalSpace(6),
+                        Text(
+                          bloodwork.doctor!,
+                          style: AppTextStyles.bodyMedium,
+                        ),
+                      ],
+                    ),
+                    SharedWidgets.verticalSpace(2),
+                  ],
+
                   // If future date, show scheduled message
                   if (isDateInFuture)
                     Text(
-                      'Lab appointment scheduled',
+                      'Appointment scheduled',
                       style: AppTextStyles.bodyMedium,
                     )
-                  // Otherwise show hormone levels if available
-                  else ...[
+                  // Otherwise show hormone levels if bloodwork type
+                  else if (bloodwork.appointmentType ==
+                      AppointmentType.bloodwork) ...[
                     if (bloodwork.estrogen != null)
                       Text(
                           'Estrogen: ${bloodwork.estrogen!.toStringAsFixed(1)} pg/mL'),
