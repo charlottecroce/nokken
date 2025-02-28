@@ -3,6 +3,7 @@
 // Classes for passing typed arguments to routes
 //
 import 'package:nokken/src/features/medication_tracker/models/medication.dart';
+import 'package:nokken/src/features/bloodwork_tracker/models/bloodwork.dart';
 
 /* 
 class ArgsCalendarDaily {
@@ -25,4 +26,12 @@ class ArgsMedicaitonAddEdit {
   final Medication? medication;
 
   ArgsMedicaitonAddEdit({this.medication});
+}
+
+/// Arguments for the bloodwork add/edit screen
+/// Can be null when adding a new bloodwork record
+class ArgsBloodworkAddEdit {
+  final Bloodwork? bloodwork;
+
+  ArgsBloodworkAddEdit({this.bloodwork});
 }

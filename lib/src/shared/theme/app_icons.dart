@@ -112,6 +112,7 @@ class AppIcons {
       filled: Icons.medical_services
     ),
     'vaccine': (outlined: Icons.vaccines_outlined, filled: Icons.vaccines),
+    'vial': (outlined: Icons.science_outlined, filled: Icons.science),
 
     // Status
     'success': (

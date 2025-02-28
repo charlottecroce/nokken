@@ -9,9 +9,10 @@ import 'package:nokken/src/shared/theme/shared_widgets.dart';
 import 'package:nokken/src/shared/utils/date_time_formatter.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:nokken/src/features/medication_tracker/models/medication.dart';
-import 'package:nokken/src/features/medication_tracker/models/medication_dose.dart'; // Add new model import
-import 'package:nokken/src/features/medication_tracker/services/medication_schedule_service.dart'; // Add service import
+import 'package:nokken/src/features/medication_tracker/models/medication_dose.dart';
+import 'package:nokken/src/features/medication_tracker/services/medication_schedule_service.dart';
 import 'package:nokken/src/features/medication_tracker/providers/medication_taken_provider.dart';
+import 'package:nokken/src/features/bloodwork_tracker/providers/bloodwork_state.dart';
 import 'package:nokken/src/services/database_service.dart';
 import 'package:nokken/src/services/navigation_service.dart';
 import 'package:nokken/src/shared/theme/app_icons.dart';
@@ -331,7 +332,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 //----------------------------------------------------------------------------
 
 /// Custom calendar widget showing medication schedules with visual indicators
-class MedicationCalendar extends StatefulWidget {
+class MedicationCalendar extends ConsumerWidget {
   final List<Medication> medications;
   final Function(DateTime) onDaySelected;
 
@@ -342,13 +343,36 @@ class MedicationCalendar extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _MedicationCalendarState createState() => _MedicationCalendarState();
+  Widget build(BuildContext context, WidgetRef ref) {
+    return _MedicationCalendarView(
+      medications: medications,
+      onDaySelected: onDaySelected,
+      ref: ref,
+    );
+  }
 }
 
-class _MedicationCalendarState extends State<MedicationCalendar> {
+class _MedicationCalendarView extends StatefulWidget {
+  final List<Medication> medications;
+  final Function(DateTime) onDaySelected;
+  final WidgetRef ref;
+
+  const _MedicationCalendarView({
+    Key? key,
+    required this.medications,
+    required this.onDaySelected,
+    required this.ref,
+  }) : super(key: key);
+
+  @override
+  _MedicationCalendarViewState createState() => _MedicationCalendarViewState();
+}
+
+class _MedicationCalendarViewState extends State<_MedicationCalendarView> {
   late DateTime _focusedDay;
   late DateTime _selectedDay;
   late Set<DateTime> _injectionDueDates;
+  late Set<DateTime> _bloodworkDates;
 
   @override
   void initState() {
@@ -356,13 +380,15 @@ class _MedicationCalendarState extends State<MedicationCalendar> {
     _focusedDay = DateTime.now();
     _selectedDay = DateTime.now();
     _updateInjectionDates();
+    _updateBloodworkDates();
   }
 
   @override
-  void didUpdateWidget(MedicationCalendar oldWidget) {
+  void didUpdateWidget(_MedicationCalendarView oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.medications != oldWidget.medications) {
       _updateInjectionDates();
+      _updateBloodworkDates();
     }
   }
 
@@ -371,17 +397,50 @@ class _MedicationCalendarState extends State<MedicationCalendar> {
     _injectionDueDates = MedicationScheduleService.calculateInjectionDueDates(
         widget.medications);
   }
-  // Rest of the MedicationCalendar implementation remains unchanged
-  // In a complete refactoring, we would update this to use MedicationScheduleService
+
+  /// Update the set of dates that have bloodwork recorded
+  void _updateBloodworkDates() {
+    _bloodworkDates = widget.ref.read(bloodworkDatesProvider);
+  }
+
+  /// Check if a date has an injection due
+  bool _hasInjectionDue(DateTime date) {
+    // Compare just the date part, not time
+    final normalizedDate = DateTime(date.year, date.month, date.day);
+    return _injectionDueDates.any((injectionDate) {
+      final normalizedInjectionDate = DateTime(
+        injectionDate.year,
+        injectionDate.month,
+        injectionDate.day,
+      );
+      return normalizedInjectionDate.isAtSameMomentAs(normalizedDate);
+    });
+  }
+
+  /// Check if a date has bloodwork tests
+  bool _hasBloodworkOnDate(DateTime date) {
+    // Compare just the date part, not time
+    final normalizedDate = DateTime(date.year, date.month, date.day);
+    return _bloodworkDates.any((labDate) {
+      final normalizedLabDate = DateTime(
+        labDate.year,
+        labDate.month,
+        labDate.day,
+      );
+      return normalizedLabDate.isAtSameMomentAs(normalizedDate);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Existing build method code stays the same
+    // Define colors for visual indicators
     const Color injectionDueColor = AppTheme.orangeDark;
+    const Color bloodworkColor = Colors.red;
+
     return Padding(
       padding: AppTheme.standardScreenMargins,
       child: TableCalendar(
-        // Existing TableCalendar configuration
+        // Calendar configuration
         firstDay: DateTime.now().subtract(const Duration(days: 365)),
         lastDay: DateTime.now().add(const Duration(days: 365)),
         focusedDay: _focusedDay,
@@ -444,10 +503,32 @@ class _MedicationCalendarState extends State<MedicationCalendar> {
           _focusedDay = focusedDay;
         },
         calendarBuilders: CalendarBuilders(
-          // Existing builders remain unchanged
+          // Default builder for regular days
           defaultBuilder: (context, day, focusedDay) {
-            bool hasInjection = _hasInjectionDue(day, _injectionDueDates);
+            bool hasInjection = _hasInjectionDue(day);
+            bool hasBloodwork = _hasBloodworkOnDate(day);
 
+            // Check for bloodwork days
+            if (hasBloodwork) {
+              return Container(
+                margin: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: bloodworkColor, width: 2),
+                ),
+                child: Center(
+                  child: Text(
+                    '${day.day}',
+                    style: const TextStyle(
+                      color: bloodworkColor,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              );
+            }
+
+            // Check for injection days
             if (hasInjection) {
               return Container(
                 margin: const EdgeInsets.all(4),
@@ -466,20 +547,31 @@ class _MedicationCalendarState extends State<MedicationCalendar> {
                 ),
               );
             }
+
             return null; // Use default rendering for other days
           },
+
+          // Builder for selected days
           selectedBuilder: (context, day, focusedDay) {
-            bool hasInjection = _hasInjectionDue(day, _injectionDueDates);
+            bool hasInjection = _hasInjectionDue(day);
+            bool hasBloodwork = _hasBloodworkOnDate(day);
+
+            // Determine border color based on what's happening on this day
+            Color borderColor = hasBloodwork
+                ? bloodworkColor
+                : (hasInjection ? injectionDueColor : Colors.transparent);
+            bool hasBorder = hasInjection || hasBloodwork;
 
             return Container(
               margin: const EdgeInsets.all(4),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                // Change the background color when selected day has injection
-                color: hasInjection ? injectionDueColor : AppColors.primary,
-                border: hasInjection
-                    ? Border.all(color: injectionDueColor, width: 2)
-                    : null,
+                // Change the background color when selected day has special events
+                color: hasBorder
+                    ? (hasBloodwork ? bloodworkColor : injectionDueColor)
+                    : AppColors.primary,
+                border:
+                    hasBorder ? Border.all(color: borderColor, width: 2) : null,
               ),
               child: Center(
                 child: Text(
@@ -492,8 +584,21 @@ class _MedicationCalendarState extends State<MedicationCalendar> {
               ),
             );
           },
+
+          // Builder for today
           todayBuilder: (context, day, focusedDay) {
-            bool hasInjection = _hasInjectionDue(day, _injectionDueDates);
+            bool hasInjection = _hasInjectionDue(day);
+            bool hasBloodwork = _hasBloodworkOnDate(day);
+
+            // Determine border color
+            Color borderColor;
+            if (hasBloodwork) {
+              borderColor = bloodworkColor;
+            } else if (hasInjection) {
+              borderColor = injectionDueColor;
+            } else {
+              borderColor = AppColors.primary;
+            }
 
             return Container(
               margin: const EdgeInsets.all(4),
@@ -501,24 +606,53 @@ class _MedicationCalendarState extends State<MedicationCalendar> {
                 shape: BoxShape.circle,
                 color: AppColors.primary.withAlpha(40),
                 border: Border.all(
-                  color: hasInjection ? injectionDueColor : AppColors.primary,
-                  width: hasInjection ? 2 : 1.5,
+                  color: borderColor,
+                  width: hasBloodwork || hasInjection ? 2 : 1.5,
                 ),
               ),
               child: Center(
                 child: Text(
                   '${day.day}',
                   style: TextStyle(
-                    color: hasInjection ? injectionDueColor : AppColors.primary,
+                    color: hasBloodwork
+                        ? bloodworkColor
+                        : (hasInjection
+                            ? injectionDueColor
+                            : AppColors.primary),
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
             );
           },
-          outsideBuilder: (context, day, focusedDay) {
-            bool hasInjection = _hasInjectionDue(day, _injectionDueDates);
 
+          // Builder for days outside the current month
+          outsideBuilder: (context, day, focusedDay) {
+            bool hasInjection = _hasInjectionDue(day);
+            bool hasBloodwork = _hasBloodworkOnDate(day);
+
+            // Bloodwork outside current month
+            if (hasBloodwork) {
+              return Container(
+                margin: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                      color: bloodworkColor.withAlpha(160), width: 2),
+                ),
+                child: Center(
+                  child: Text(
+                    '${day.day}',
+                    style: TextStyle(
+                      color: bloodworkColor.withAlpha(160),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              );
+            }
+
+            // Injection outside current month
             if (hasInjection) {
               return Container(
                 margin: const EdgeInsets.all(4),
@@ -539,6 +673,7 @@ class _MedicationCalendarState extends State<MedicationCalendar> {
               );
             }
 
+            // Regular days outside current month
             return Center(
               child: Text(
                 '${day.day}',
@@ -551,19 +686,5 @@ class _MedicationCalendarState extends State<MedicationCalendar> {
         ),
       ),
     );
-  }
-
-  /// Check if a date has an injection due
-  bool _hasInjectionDue(DateTime date, Set<DateTime> injectionDates) {
-    // Compare just the date part, not time
-    final normalizedDate = DateTime(date.year, date.month, date.day);
-    return injectionDates.any((injectionDate) {
-      final normalizedInjectionDate = DateTime(
-        injectionDate.year,
-        injectionDate.month,
-        injectionDate.day,
-      );
-      return normalizedInjectionDate.isAtSameMomentAs(normalizedDate);
-    });
   }
 }

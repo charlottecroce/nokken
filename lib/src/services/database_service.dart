@@ -5,6 +5,7 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart' as path;
 import 'package:nokken/src/features/medication_tracker/models/medication.dart';
+import 'package:nokken/src/features/bloodwork_tracker/models/bloodwork.dart';
 
 /// Custom exception for database-related errors
 class DatabaseException implements Exception {
@@ -147,6 +148,16 @@ class DatabaseService {
         time_slot TEXT NOT NULL,
         taken INTEGER NOT NULL,
         PRIMARY KEY (medication_id, date, time_slot)
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE bloodwork(
+        id TEXT PRIMARY KEY,
+        date TEXT NOT NULL,
+        estrogen REAL,
+        testosterone REAL,
+        notes TEXT
       )
     ''');
   }
@@ -386,6 +397,112 @@ class DatabaseService {
       );
     } catch (e) {
       throw DatabaseException('Failed to delete old taken medications', e);
+    }
+  }
+
+//----------------------------------------------------------------------------
+// BLOODWORK CRUD OPERATIONS
+//----------------------------------------------------------------------------
+
+  /// Convert a Bloodwork object to a database map
+  Map<String, dynamic> _bloodworkToMap(Bloodwork bloodwork) {
+    return {
+      'id': bloodwork.id,
+      'date': bloodwork.date.toIso8601String(),
+      'estrogen': bloodwork.estrogen,
+      'testosterone': bloodwork.testosterone,
+      'notes': bloodwork.notes,
+    };
+  }
+
+  /// Convert a database map to a Bloodwork object
+  Bloodwork _mapToBloodwork(Map<String, dynamic> map) {
+    return Bloodwork(
+      id: map['id'] as String,
+      date: DateTime.parse(map['date'] as String),
+      estrogen:
+          map['estrogen'] != null ? (map['estrogen'] as num).toDouble() : null,
+      testosterone: map['testosterone'] != null
+          ? (map['testosterone'] as num).toDouble()
+          : null,
+      notes: map['notes'] as String?,
+    );
+  }
+
+  /// Insert a new bloodwork record into the database
+  Future<void> insertBloodwork(Bloodwork bloodwork) async {
+    try {
+      final db = await database;
+      await db.insert(
+        'bloodwork',
+        _bloodworkToMap(bloodwork),
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    } catch (e) {
+      throw DatabaseException('Failed to insert bloodwork', e);
+    }
+  }
+
+  /// Update an existing bloodwork record in the database
+  Future<void> updateBloodwork(Bloodwork bloodwork) async {
+    try {
+      final db = await database;
+      await db.update(
+        'bloodwork',
+        _bloodworkToMap(bloodwork),
+        where: 'id = ?',
+        whereArgs: [bloodwork.id],
+      );
+    } catch (e) {
+      throw DatabaseException('Failed to update bloodwork', e);
+    }
+  }
+
+  /// Delete a bloodwork record
+  Future<void> deleteBloodwork(String id) async {
+    try {
+      final db = await database;
+      await db.delete(
+        'bloodwork',
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+    } catch (e) {
+      throw DatabaseException('Failed to delete bloodwork', e);
+    }
+  }
+
+  /// Get all bloodwork records from the database
+  Future<List<Bloodwork>> getAllBloodwork() async {
+    try {
+      final db = await database;
+      final List<Map<String, dynamic>> maps = await db.query(
+        'bloodwork',
+        orderBy: 'date DESC', // Most recent first
+      );
+      return maps.map(_mapToBloodwork).toList();
+    } catch (e) {
+      throw DatabaseException('Failed to fetch bloodwork records', e);
+    }
+  }
+
+  /// Get a specific bloodwork record by ID
+  Future<Bloodwork?> getBloodworkById(String id) async {
+    try {
+      final db = await database;
+      final List<Map<String, dynamic>> maps = await db.query(
+        'bloodwork',
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+
+      if (maps.isEmpty) {
+        return null;
+      }
+
+      return _mapToBloodwork(maps.first);
+    } catch (e) {
+      throw DatabaseException('Failed to fetch bloodwork', e);
     }
   }
 }
