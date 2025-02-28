@@ -393,12 +393,11 @@ class _AddEditBloodworkScreenState
         children: [
           // Hormone type dropdown
           Expanded(
-            flex: 3,
+            flex: 5,
             child: DropdownButtonFormField<String>(
               value: nameController.text,
-              decoration: AppTheme.defaultTextFieldDecoration.copyWith(
-                labelText: 'Hormone',
-              ),
+              decoration: AppTheme.defaultTextFieldDecoration,
+              style: AppTextStyles.bodyMedium,
               items: _availableHormoneTypes.map((type) {
                 return DropdownMenuItem<String>(
                   value: type,
@@ -419,7 +418,7 @@ class _AddEditBloodworkScreenState
             ),
           ),
 
-          const SizedBox(width: 8),
+          SharedWidgets.horizontalSpace(2),
 
           // Hormone value input
           Expanded(
@@ -427,14 +426,11 @@ class _AddEditBloodworkScreenState
             child: TextFormField(
               controller: valueController,
               keyboardType: TextInputType.numberWithOptions(decimal: true),
-              decoration: AppTheme.defaultTextFieldDecoration.copyWith(
-                labelText: 'Value',
-                hintText: _isDateInFuture() ? 'Future date' : 'Enter value',
-                enabled: !_isDateInFuture(),
-              ),
+              decoration: AppTheme.defaultTextFieldDecoration,
               inputFormatters: [
                 FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*$')),
               ],
+              style: AppTextStyles.bodySmall,
               validator: _isDateInFuture()
                   ? null
                   : (value) {
@@ -453,16 +449,16 @@ class _AddEditBloodworkScreenState
             ),
           ),
 
-          const SizedBox(width: 8),
+          SharedWidgets.horizontalSpace(2),
 
           // Unit input (with default)
           Expanded(
             flex: 2,
             child: TextFormField(
               controller: unitController,
-              decoration: AppTheme.defaultTextFieldDecoration.copyWith(
-                labelText: 'Unit',
-              ),
+              decoration: AppTheme.defaultTextFieldDecoration,
+              readOnly: true,
+              style: AppTextStyles.bodySmall,
             ),
           ),
 
@@ -680,6 +676,7 @@ class _AddEditBloodworkScreenState
                 ),
                 // Add the time picker
                 _buildTimeInput(context),
+                _buildLocationDoctorFields(),
               ],
             ),
             SharedWidgets.verticalSpace(AppTheme.cardSpacing),
@@ -691,7 +688,6 @@ class _AddEditBloodworkScreenState
               children: [
                 _buildAppointmentTypeSelector(),
                 SharedWidgets.verticalSpace(AppTheme.cardSpacing),
-                _buildLocationDoctorFields(),
               ],
             ),
             SharedWidgets.verticalSpace(AppTheme.cardSpacing),
