@@ -4,6 +4,7 @@
 //
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_sticky_header/flutter_sticky_header.dart';
 import 'package:nokken/src/features/bloodwork_tracker/models/bloodwork.dart';
 import 'package:nokken/src/features/bloodwork_tracker/providers/bloodwork_state.dart';
 import 'package:nokken/src/services/navigation_service.dart';
@@ -12,19 +13,92 @@ import 'package:nokken/src/shared/theme/app_icons.dart';
 import 'package:nokken/src/shared/theme/app_theme.dart';
 import 'package:nokken/src/shared/utils/date_time_formatter.dart';
 
+/// This widget adds a sticky header decorator for each section
+class SectionWithStickyHeader extends StatelessWidget {
+  final String title;
+  final List<Bloodwork> records;
+
+  const SectionWithStickyHeader({
+    Key? key,
+    required this.title,
+    required this.records,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    if (records.isEmpty) return const SizedBox.shrink();
+
+    return SliverStickyHeader(
+      header: Container(
+        color: AppColors.surfaceContainer,
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+        child: Row(
+          children: [
+            // Icon based on section
+            Icon(
+              title == 'Upcoming' ? Icons.event : Icons.history,
+              size: 20,
+              color: title == 'Upcoming' ? Colors.blue : Colors.grey,
+            ),
+            const SizedBox(width: 8),
+            // Section title
+            Text(
+              title,
+              style: AppTextStyles.titleMedium.copyWith(
+                color: title == 'Upcoming' ? Colors.blue : Colors.grey,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            // Count badge
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: title == 'Upcoming'
+                    ? Colors.blue.withOpacity(0.1)
+                    : Colors.grey.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                '${records.length}',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: title == 'Upcoming' ? Colors.blue : Colors.grey,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      sliver: SliverList(
+        delegate: SliverChildBuilderDelegate(
+          (context, index) => BloodworkListTile(bloodwork: records[index]),
+          childCount: records.length,
+        ),
+      ),
+    );
+  }
+}
+
+/// Main bloodwork list screen with sections
 class BloodworkListScreen extends ConsumerWidget {
   const BloodworkListScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Watch for changes to bloodwork data
-    final bloodworkRecords = ref.watch(sortedBloodworkProvider);
+    // Watch for changes to bloodwork data using the grouped provider
+    final groupedRecords = ref.watch(groupedBloodworkProvider);
     final isLoading = ref.watch(bloodworkLoadingProvider);
     final error = ref.watch(bloodworkErrorProvider);
 
+    // Check if there are any records at all
+    final bool hasRecords = groupedRecords['upcoming']!.isNotEmpty ||
+        groupedRecords['past']!.isNotEmpty;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Bloodwork Records'),
+        title: const Text('Medical Records'),
         automaticallyImplyLeading: false,
         actions: [
           IconButton(
@@ -67,14 +141,22 @@ class BloodworkListScreen extends ConsumerWidget {
             Expanded(
               child: isLoading
                   ? const Center(child: CircularProgressIndicator())
-                  : bloodworkRecords.isEmpty
+                  : !hasRecords
                       ? _buildEmptyState(context)
-                      : ListView.builder(
-                          itemCount: bloodworkRecords.length,
-                          itemBuilder: (context, index) {
-                            final bloodwork = bloodworkRecords[index];
-                            return BloodworkListTile(bloodwork: bloodwork);
-                          },
+                      : CustomScrollView(
+                          slivers: [
+                            // Upcoming section with sticky header
+                            SectionWithStickyHeader(
+                              title: 'Upcoming',
+                              records: groupedRecords['upcoming']!,
+                            ),
+
+                            // Past section with sticky header
+                            SectionWithStickyHeader(
+                              title: 'Past',
+                              records: groupedRecords['past']!,
+                            ),
+                          ],
                         ),
             ),
           ],
@@ -95,19 +177,19 @@ class BloodworkListScreen extends ConsumerWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            Icons.science_outlined,
+            Icons.event_note_outlined,
             size: 64,
             color: AppColors.secondary,
           ),
           SharedWidgets.verticalSpace(),
           Text(
-            'No bloodwork records yet',
+            'No medical records yet',
             style: AppTheme.titleLarge,
           ),
           SharedWidgets.verticalSpace(),
           ElevatedButton(
             onPressed: () => NavigationService.goToBloodworkAddEdit(context),
-            child: const Text('Add Lab Results'),
+            child: const Text('Add Medical Record'),
           ),
         ],
       ),

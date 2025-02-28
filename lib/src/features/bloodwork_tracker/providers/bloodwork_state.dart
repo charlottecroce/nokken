@@ -173,10 +173,17 @@ final bloodworkErrorProvider = Provider<String?>((ref) {
   return ref.watch(bloodworkStateProvider).error;
 });
 
-/// Provider for bloodwork records sorted by date (most recent first) that are bloodwork type
+/// Provider for all medical records sorted by date (most recent first)
 final sortedBloodworkProvider = Provider<List<Bloodwork>>((ref) {
   final records = ref.watch(bloodworkStateProvider).bloodworkRecords;
-  // Filter only records that are bloodwork type
+  // Sort by date (most recent first)
+  return [...records]..sort((a, b) => b.date.compareTo(a.date));
+});
+
+/// Provider for bloodwork-type records only (for graph display)
+final bloodworkTypeRecordsProvider = Provider<List<Bloodwork>>((ref) {
+  final records = ref.watch(bloodworkStateProvider).bloodworkRecords;
+  // Filter only records that are bloodwork type for hormone graphs
   final bloodworkRecords = records
       .where((record) => record.appointmentType == AppointmentType.bloodwork)
       .toList();
@@ -194,8 +201,40 @@ final bloodworkDatesProvider = Provider<Set<DateTime>>((ref) {
   }).toSet();
 });
 
+/// Provider that groups and sorts bloodwork records into upcoming and past sections
+final groupedBloodworkProvider = Provider<Map<String, List<Bloodwork>>>((ref) {
+  final records = ref.watch(bloodworkStateProvider).bloodworkRecords;
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+
+  // Initialize the result map with empty lists
+  final result = {
+    'upcoming': <Bloodwork>[],
+    'past': <Bloodwork>[],
+  };
+
+  // Categorize each record
+  for (final record in records) {
+    final recordDate =
+        DateTime(record.date.year, record.date.month, record.date.day);
+
+    if (recordDate.isAfter(today)) {
+      result['upcoming']!.add(record);
+    } else {
+      result['past']!.add(record);
+    }
+  }
+
+  // Sort upcoming appointments (earliest first)
+  result['upcoming']!.sort((a, b) => a.date.compareTo(b.date));
+
+  // Sort past appointments (latest first)
+  result['past']!.sort((a, b) => b.date.compareTo(a.date));
+
+  return result;
+});
+
 /// Provider for getting different colors for different appointment types in calendar
-/// TODO: map to AppTheme instead
 final appointmentTypeColorsProvider =
     Provider<Map<AppointmentType, Color>>((ref) {
   return {
