@@ -12,6 +12,12 @@ class SharedWidgets {
     return SizedBox(height: height);
   }
 
+  static Widget horizontalSpace([double width = AppTheme.spacing]) {
+    return SizedBox(
+      width: width,
+    );
+  }
+
   /// Builds a section header with standardized styling
   static Widget buildSectionHeader(String title) {
     return Padding(
