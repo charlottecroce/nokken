@@ -12,6 +12,7 @@ import 'package:nokken/src/features/medication_tracker/models/medication.dart';
 import 'package:nokken/src/features/medication_tracker/models/medication_dose.dart';
 import 'package:nokken/src/features/medication_tracker/services/medication_schedule_service.dart';
 import 'package:nokken/src/features/medication_tracker/providers/medication_taken_provider.dart';
+import 'package:nokken/src/features/bloodwork_tracker/models/bloodwork.dart';
 import 'package:nokken/src/features/bloodwork_tracker/providers/bloodwork_state.dart';
 import 'package:nokken/src/services/database_service.dart';
 import 'package:nokken/src/services/navigation_service.dart';
@@ -107,6 +108,19 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         _medications, _selectedDay);
   }
 
+  /// Get bloodwork records for the selected day
+  List<Bloodwork> _getBloodworkForSelectedDay() {
+    final bloodworkRecords = ref.watch(bloodworkRecordsProvider);
+    return bloodworkRecords.where((record) {
+      // Compare just the date part (not time)
+      final recordDate =
+          DateTime(record.date.year, record.date.month, record.date.day);
+      final selectedDate =
+          DateTime(_selectedDay.year, _selectedDay.month, _selectedDay.day);
+      return recordDate.isAtSameMomentAs(selectedDate);
+    }).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -155,10 +169,14 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     );
   }
 
-  /// Build the list of medications for the selected day
+  /// Build the list of medications and bloodwork for the selected day
   Widget _buildMedicationsListContent() {
     final medicationsForDay = _getMedicationsForSelectedDay();
+    final bloodworkForDay = _getBloodworkForSelectedDay();
     final formattedDate = DateTimeFormatter.formatDateDDMMYY(_selectedDay);
+
+    final bool hasItems =
+        bloodworkForDay.isNotEmpty || medicationsForDay.isNotEmpty;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -174,7 +192,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         Container(
           constraints: const BoxConstraints(minHeight: 200),
           padding: const EdgeInsets.only(bottom: 24),
-          child: medicationsForDay.isEmpty
+          child: !hasItems
               ? Center(
                   child: Padding(
                     padding: const EdgeInsets.all(32.0),
@@ -185,15 +203,125 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                   ),
                 )
               : Column(
-                  children: medicationsForDay
-                      .map((medication) => Padding(
-                            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                            child: _buildMedicationCard(medication),
-                          ))
-                      .toList(),
+                  children: [
+                    // Bloodwork records first
+                    ...bloodworkForDay.map((bloodwork) => Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                          child: _buildBloodworkCard(bloodwork),
+                        )),
+
+                    // Then medications
+                    ...medicationsForDay.map((medication) => Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                          child: _buildMedicationCard(medication),
+                        )),
+                  ],
                 ),
         ),
       ],
+    );
+  }
+
+  /// Build a card for an individual bloodwork record
+  Widget _buildBloodworkCard(Bloodwork bloodwork) {
+    final isDateInFuture = DateTime(
+      bloodwork.date.year,
+      bloodwork.date.month,
+      bloodwork.date.day,
+    ).isAfter(DateTime(
+      DateTime.now().year,
+      DateTime.now().month,
+      DateTime.now().day,
+    ));
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Bloodwork icon
+            Icon(Icons.science_outlined, color: Colors.red),
+
+            SharedWidgets.verticalSpace(16),
+
+            // Bloodwork details
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  InkWell(
+                    onTap: () => NavigationService.goToBloodworkAddEdit(
+                      context,
+                      bloodwork: bloodwork,
+                    ),
+                    child: Row(
+                      children: [
+                        Text(
+                          'Lab Appointment',
+                          style: AppTextStyles.titleLarge,
+                        ),
+                        if (isDateInFuture) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: AppColors.info.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                  color: AppColors.info.withOpacity(0.3)),
+                            ),
+                            child: Text(
+                              'Scheduled',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppColors.info,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  SharedWidgets.verticalSpace(),
+                  // If future date, show scheduled message
+                  if (isDateInFuture)
+                    Text(
+                      'Lab appointment scheduled',
+                      style: AppTextStyles.bodyMedium,
+                    )
+                  // Otherwise show hormone levels if available
+                  else ...[
+                    if (bloodwork.estrogen != null)
+                      Text(
+                          'Estrogen: ${bloodwork.estrogen!.toStringAsFixed(1)} pg/mL'),
+                    if (bloodwork.testosterone != null)
+                      Text(
+                          'Testosterone: ${bloodwork.testosterone!.toStringAsFixed(1)} ng/dL'),
+                    if (bloodwork.estrogen == null &&
+                        bloodwork.testosterone == null)
+                      Text('No results recorded yet',
+                          style: AppTextStyles.bodyMedium),
+                  ],
+                  // Display notes if any
+                  if (bloodwork.notes?.isNotEmpty == true) ...[
+                    SharedWidgets.verticalSpace(),
+                    Text(
+                      'Notes: ${bloodwork.notes}',
+                      style: AppTextStyles.bodySmall,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ],
+              ),
+            )
+          ],
+        ),
+      ),
     );
   }
 
