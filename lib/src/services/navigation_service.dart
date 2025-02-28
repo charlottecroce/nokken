@@ -73,9 +73,24 @@ class NavigationService {
     Navigator.pushNamed(context, RouteNames.bloodworkList);
   }
 
+  /// Navigate to bloodwork overview screen
+  static void goToBloodLevelList(BuildContext context) {
+    Navigator.pushNamed(context, RouteNames.bloodLevelList);
+  }
+
   /// Navigate to bloodwork graph screen
   static void goToBloodworkGraph(BuildContext context) {
     Navigator.pushNamed(context, RouteNames.bloodworkGraph);
+  }
+
+  /// Navigate to bloodwork graph screen for a specific hormone
+  static void goToBloodworkGraphWithHormone(
+      BuildContext context, String hormoneName) {
+    Navigator.pushNamed(
+      context,
+      RouteNames.bloodworkGraph,
+      arguments: ArgsBloodworkGraph(selectedHormone: hormoneName),
+    );
   }
 
   /// Navigate to add/edit bloodwork screen

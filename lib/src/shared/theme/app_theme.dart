@@ -220,9 +220,9 @@ class AppTheme {
   static const oralMedColor = Color.fromARGB(255, 159, 85, 186);
   static const injectionColor = Color.fromARGB(255, 212, 132, 20);
 
-  static const bloodworkColor = Color.fromARGB(255, 195, 6, 6);
-  static const doctorApptColor = Color.fromARGB(255, 41, 159, 75);
-  static const surgeryColor = Color.fromARGB(255, 213, 205, 49);
+  static const bloodworkColor = Color.fromARGB(255, 255, 52, 52);
+  static const doctorApptColor = Color.fromARGB(255, 64, 226, 110);
+  static const surgeryColor = Color.fromARGB(255, 238, 230, 87);
   //----------------------------------------------------------------------------
   // DARK THEME COLORS
   //----------------------------------------------------------------------------

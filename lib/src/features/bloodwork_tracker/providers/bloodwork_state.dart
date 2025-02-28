@@ -250,3 +250,93 @@ final filteredBloodworkByTypeProvider =
   final records = ref.watch(bloodworkStateProvider).bloodworkRecords;
   return records.where((record) => record.appointmentType == type).toList();
 });
+
+/// Provider that extracts all unique hormone types from records
+final hormoneTypesProvider = Provider<List<String>>((ref) {
+  final records = ref.watch(bloodworkTypeRecordsProvider);
+  final Set<String> hormoneTypes = {};
+
+  // Extract from readings
+  for (final record in records) {
+    for (final reading in record.hormoneReadings) {
+      hormoneTypes.add(reading.name);
+    }
+  }
+
+  // Add legacy fields if present
+  if (records.any((record) => record.estrogen != null)) {
+    hormoneTypes.add('Estrogen');
+  }
+  if (records.any((record) => record.testosterone != null)) {
+    hormoneTypes.add('Testosterone');
+  }
+
+  // Sort alphabetically
+  final sortedTypes = hormoneTypes.toList()..sort();
+  return sortedTypes;
+});
+
+/// Provider for getting all records for a specific hormone type
+final hormoneRecordsProvider =
+    Provider.family<List<MapEntry<DateTime, double>>, String>(
+        (ref, hormoneName) {
+  final records = ref.watch(bloodworkTypeRecordsProvider);
+  final List<MapEntry<DateTime, double>> readings = [];
+
+  for (final record in records) {
+    // First check in hormone readings
+    for (final reading in record.hormoneReadings) {
+      if (reading.name == hormoneName) {
+        readings.add(MapEntry(record.date, reading.value));
+      }
+    }
+
+    // For backward compatibility
+    if (hormoneName == 'Estrogen' && record.estrogen != null) {
+      readings.add(MapEntry(record.date, record.estrogen!));
+    } else if (hormoneName == 'Testosterone' && record.testosterone != null) {
+      readings.add(MapEntry(record.date, record.testosterone!));
+    }
+  }
+
+  // Sort by date (oldest first for charts)
+  readings.sort((a, b) => a.key.compareTo(b.key));
+  return readings;
+});
+
+/// Provider to get the most recent value for a specific hormone
+final latestHormoneValueProvider =
+    Provider.family<double?, String>((ref, hormoneName) {
+  final readings = ref.watch(hormoneRecordsProvider(hormoneName));
+  if (readings.isEmpty) return null;
+
+  // Sort by date descending (most recent first)
+  final sortedReadings = [...readings];
+  sortedReadings.sort((a, b) => b.key.compareTo(a.key));
+
+  return sortedReadings.first.value;
+});
+
+/// Provider to get the unit for a specific hormone type
+final hormoneUnitProvider = Provider.family<String, String>((ref, hormoneName) {
+  final records = ref.watch(bloodworkTypeRecordsProvider);
+
+  // First try to find it in the data
+  for (final record in records) {
+    for (final reading in record.hormoneReadings) {
+      if (reading.name == hormoneName) {
+        return reading.unit;
+      }
+    }
+  }
+
+  // Fall back to default units
+  switch (hormoneName) {
+    case 'Estrogen':
+      return 'pg/mL';
+    case 'Testosterone':
+      return 'ng/dL';
+    default:
+      return HormoneTypes.getDefaultUnit(hormoneName);
+  }
+});

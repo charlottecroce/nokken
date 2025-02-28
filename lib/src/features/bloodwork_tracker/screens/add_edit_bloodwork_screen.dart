@@ -30,17 +30,21 @@ class _AddEditBloodworkScreenState
   final _formKey = GlobalKey<FormState>();
 
   // Controllers that need disposal
-  late final TextEditingController _estrogenController;
-  late final TextEditingController _testosteroneController;
   late final TextEditingController _locationController;
   late final TextEditingController _doctorController;
   late final TextEditingController _notesController;
+
+  // List of hormone reading controllers
+  final List<Map<String, dynamic>> _hormoneControllers = [];
 
   // State variables
   late DateTime _selectedDate;
   late TimeOfDay _selectedTime;
   late AppointmentType _selectedAppointmentType;
   bool _isLoading = false;
+
+  // Available hormone types for dropdown
+  final List<String> _availableHormoneTypes = HormoneTypes.getHormoneTypes();
 
   @override
   void initState() {
@@ -63,14 +67,6 @@ class _AddEditBloodworkScreenState
     _selectedAppointmentType =
         widget.bloodwork?.appointmentType ?? AppointmentType.bloodwork;
 
-    _estrogenController = TextEditingController(
-      text: widget.bloodwork?.estrogen?.toString() ?? '',
-    );
-
-    _testosteroneController = TextEditingController(
-      text: widget.bloodwork?.testosterone?.toString() ?? '',
-    );
-
     _locationController = TextEditingController(
       text: widget.bloodwork?.location ?? '',
     );
@@ -82,16 +78,108 @@ class _AddEditBloodworkScreenState
     _notesController = TextEditingController(
       text: widget.bloodwork?.notes ?? '',
     );
+
+    // Initialize hormone controllers
+    _initializeHormoneControllers();
+  }
+
+  /// Initialize hormone reading controllers from existing bloodwork or defaults
+  void _initializeHormoneControllers() {
+    if (widget.bloodwork != null) {
+      // First try to use hormone readings
+      if (widget.bloodwork!.hormoneReadings.isNotEmpty) {
+        for (final reading in widget.bloodwork!.hormoneReadings) {
+          _addHormoneField(
+            name: reading.name,
+            value: reading.value.toString(),
+            unit: reading.unit,
+          );
+        }
+      } else {
+        // Fall back to legacy estrogen/testosterone fields if present
+        if (widget.bloodwork!.estrogen != null) {
+          _addHormoneField(
+            name: 'Estrogen',
+            value: widget.bloodwork!.estrogen.toString(),
+            unit: 'pg/mL',
+          );
+        }
+
+        if (widget.bloodwork!.testosterone != null) {
+          _addHormoneField(
+            name: 'Testosterone',
+            value: widget.bloodwork!.testosterone.toString(),
+            unit: 'ng/dL',
+          );
+        }
+      }
+    }
+
+    // If no hormone fields were added, add an empty one
+    if (_hormoneControllers.isEmpty) {
+      _addHormoneField();
+    }
+  }
+
+  /// Add a new hormone field with optional preset values
+  void _addHormoneField({String? name, String? value, String? unit}) {
+    final nameController =
+        TextEditingController(text: name ?? _availableHormoneTypes[0]);
+    final valueController = TextEditingController(text: value ?? '');
+    final unitController = TextEditingController(
+      text: unit ?? HormoneTypes.getDefaultUnit(_availableHormoneTypes[0]),
+    );
+
+    setState(() {
+      _hormoneControllers.add({
+        'name': nameController,
+        'value': valueController,
+        'unit': unitController,
+      });
+    });
+
+    // Automatically update unit when hormone type changes
+    nameController.addListener(() {
+      final hormoneName = nameController.text;
+      final defaultUnit = HormoneTypes.getDefaultUnit(hormoneName);
+      if (defaultUnit.isNotEmpty && unitController.text.isEmpty) {
+        unitController.text = defaultUnit;
+      }
+    });
+  }
+
+  /// Remove a hormone field at the specified index
+  void _removeHormoneField(int index) {
+    if (_hormoneControllers.length <= 1) {
+      // Don't remove the last field
+      return;
+    }
+
+    setState(() {
+      // Dispose controllers
+      _hormoneControllers[index]['name'].dispose();
+      _hormoneControllers[index]['value'].dispose();
+      _hormoneControllers[index]['unit'].dispose();
+
+      // Remove from list
+      _hormoneControllers.removeAt(index);
+    });
   }
 
   // Clean up controllers to prevent memory leaks
   @override
   void dispose() {
-    _estrogenController.dispose();
-    _testosteroneController.dispose();
     _locationController.dispose();
     _doctorController.dispose();
     _notesController.dispose();
+
+    // Dispose all hormone controllers
+    for (final controllers in _hormoneControllers) {
+      controllers['name'].dispose();
+      controllers['value'].dispose();
+      controllers['unit'].dispose();
+    }
+
     super.dispose();
   }
 
@@ -254,7 +342,7 @@ class _AddEditBloodworkScreenState
         ),
         // Regular appointment radio
         RadioListTile<AppointmentType>(
-          title: const Text('Appointment'),
+          title: const Text('Doctor Visit'),
           value: AppointmentType.appointment,
           groupValue: _selectedAppointmentType,
           onChanged: (AppointmentType? value) {
@@ -309,6 +397,155 @@ class _AddEditBloodworkScreenState
     );
   }
 
+  /// Build a single hormone input row
+  Widget _buildHormoneInputRow(int index) {
+    final nameController = _hormoneControllers[index]['name'];
+    final valueController = _hormoneControllers[index]['value'];
+    final unitController = _hormoneControllers[index]['unit'];
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Hormone type dropdown
+          Expanded(
+            flex: 3,
+            child: DropdownButtonFormField<String>(
+              value: nameController.text,
+              decoration: AppTheme.defaultTextFieldDecoration.copyWith(
+                labelText: 'Hormone',
+              ),
+              items: _availableHormoneTypes.map((type) {
+                return DropdownMenuItem<String>(
+                  value: type,
+                  child: Text(type),
+                );
+              }).toList(),
+              onChanged: (String? value) {
+                if (value != null) {
+                  nameController.text = value;
+
+                  // Update unit to match hormone type
+                  final defaultUnit = HormoneTypes.getDefaultUnit(value);
+                  if (defaultUnit.isNotEmpty) {
+                    unitController.text = defaultUnit;
+                  }
+                }
+              },
+            ),
+          ),
+
+          const SizedBox(width: 8),
+
+          // Hormone value input
+          Expanded(
+            flex: 2,
+            child: TextFormField(
+              controller: valueController,
+              keyboardType: TextInputType.numberWithOptions(decimal: true),
+              decoration: AppTheme.defaultTextFieldDecoration.copyWith(
+                labelText: 'Value',
+                hintText: _isDateInFuture() ? 'Future date' : 'Enter value',
+                enabled: !_isDateInFuture(),
+              ),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*$')),
+              ],
+              validator: _isDateInFuture()
+                  ? null
+                  : (value) {
+                      if (value == null || value.isEmpty) {
+                        return null; // Optional
+                      }
+                      final number = double.tryParse(value);
+                      if (number == null) {
+                        return 'Invalid number';
+                      }
+                      if (number < 0) {
+                        return 'Cannot be negative';
+                      }
+                      return null;
+                    },
+            ),
+          ),
+
+          const SizedBox(width: 8),
+
+          // Unit input (with default)
+          Expanded(
+            flex: 2,
+            child: TextFormField(
+              controller: unitController,
+              decoration: AppTheme.defaultTextFieldDecoration.copyWith(
+                labelText: 'Unit',
+              ),
+            ),
+          ),
+
+          // Remove button
+          IconButton(
+            icon: const Icon(Icons.remove_circle_outline),
+            onPressed: _hormoneControllers.length > 1
+                ? () => _removeHormoneField(index)
+                : null,
+            color:
+                _hormoneControllers.length > 1 ? AppColors.error : Colors.grey,
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Build hormone levels section for bloodwork
+  Widget _buildHormoneLevelsSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Future date warning if applicable
+        if (_isDateInFuture())
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16.0),
+            child: Container(
+              padding: AppTheme.standardCardPadding,
+              decoration: BoxDecoration(
+                color: AppColors.info.withAlpha(20),
+                borderRadius: BorderRadius.circular(4.0),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, color: AppColors.info),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'This is a future date. Hormone levels can be added after the lab date occurs.',
+                      style: TextStyle(color: AppColors.info),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+        // List of hormone inputs
+        ...List.generate(
+          _hormoneControllers.length,
+          (index) => _buildHormoneInputRow(index),
+        ),
+
+        // Add button
+        if (_hormoneControllers.length < 10 && !_isDateInFuture())
+          Center(
+            child: TextButton.icon(
+              icon: const Icon(Icons.add),
+              label: const Text('Add Hormone'),
+              onPressed: () => _addHormoneField(),
+            ),
+          ),
+      ],
+    );
+  }
+
   /// Save or update bloodwork data
   Future<void> _saveBloodwork() async {
     // Validate form before proceeding
@@ -317,14 +554,10 @@ class _AddEditBloodworkScreenState
     // Only validate hormone values for past/present dates with bloodwork appointment type
     if (!_isDateInFuture() &&
         _selectedAppointmentType == AppointmentType.bloodwork) {
-      final estrogen = _estrogenController.text.isNotEmpty
-          ? double.tryParse(_estrogenController.text)
-          : null;
-      final testosterone = _testosteroneController.text.isNotEmpty
-          ? double.tryParse(_testosteroneController.text)
-          : null;
+      // Get valid hormone readings
+      final validReadings = _getValidHormoneReadings();
 
-      if (estrogen == null && testosterone == null) {
+      if (validReadings.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text(
@@ -340,21 +573,6 @@ class _AddEditBloodworkScreenState
     setState(() => _isLoading = true);
 
     try {
-      // For future dates or non-bloodwork types, hormone levels will be null
-      final estrogen = (_isDateInFuture() ||
-              _selectedAppointmentType != AppointmentType.bloodwork)
-          ? null
-          : (_estrogenController.text.isNotEmpty
-              ? double.tryParse(_estrogenController.text)
-              : null);
-
-      final testosterone = (_isDateInFuture() ||
-              _selectedAppointmentType != AppointmentType.bloodwork)
-          ? null
-          : (_testosteroneController.text.isNotEmpty
-              ? double.tryParse(_testosteroneController.text)
-              : null);
-
       // Create a DateTime that includes both date and time
       final dateTime = DateTime(
         _selectedDate.year,
@@ -369,8 +587,9 @@ class _AddEditBloodworkScreenState
         id: widget.bloodwork?.id, // null for new, existing id for updates
         date: dateTime,
         appointmentType: _selectedAppointmentType,
-        estrogen: estrogen,
-        testosterone: testosterone,
+        hormoneReadings: _isDateInFuture()
+            ? [] // No hormone readings for future dates
+            : _getValidHormoneReadings(),
         location: _locationController.text.trim().isNotEmpty
             ? _locationController.text.trim()
             : null,
@@ -413,14 +632,36 @@ class _AddEditBloodworkScreenState
     }
   }
 
+  /// Get valid hormone readings from the input fields
+  List<HormoneReading> _getValidHormoneReadings() {
+    final readings = <HormoneReading>[];
+
+    for (final controller in _hormoneControllers) {
+      final name = controller['name'].text;
+      final valueText = controller['value'].text;
+      final unit = controller['unit'].text;
+
+      if (valueText.isNotEmpty) {
+        final value = double.tryParse(valueText);
+        if (value != null && value >= 0) {
+          readings.add(HormoneReading(
+            name: name,
+            value: value,
+            unit: unit.isNotEmpty ? unit : HormoneTypes.getDefaultUnit(name),
+          ));
+        }
+      }
+    }
+
+    return readings;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          widget.bloodwork == null
-              ? 'Add Medical Record'
-              : 'Edit Medical Record',
+          widget.bloodwork == null ? 'Add Appointment' : 'Edit Appointment',
         ),
         actions: [
           // Show loading indicator or save button
@@ -478,99 +719,7 @@ class _AddEditBloodworkScreenState
                 context: context,
                 title: 'Hormone Levels',
                 children: [
-                  // Future date warning if applicable
-                  if (_isDateInFuture())
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 16.0),
-                      child: Container(
-                        padding: AppTheme.standardCardPadding,
-                        decoration: BoxDecoration(
-                          color: AppColors.info.withAlpha(20),
-                          borderRadius: BorderRadius.circular(4.0),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.info_outline, color: AppColors.info),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'This is a future date. Hormone levels can be added after the lab date occurs.',
-                                style: TextStyle(color: AppColors.info),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                  // Estrogen field
-                  TextFormField(
-                    controller: _estrogenController,
-                    decoration: AppTheme.defaultTextFieldDecoration.copyWith(
-                      labelText: 'Estrogen (pg/mL)',
-                      hintText: _isDateInFuture()
-                          ? 'Cannot add levels for future dates'
-                          : 'Enter estrogen level',
-                      // Disable the field for future dates
-                      enabled: !_isDateInFuture(),
-                    ),
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*$')),
-                    ],
-                    validator: (value) {
-                      if (_isDateInFuture()) {
-                        return null; // Skip validation for future dates
-                      }
-
-                      if (value != null && value.isNotEmpty) {
-                        final number = double.tryParse(value);
-                        if (number == null) {
-                          return 'Please enter a valid number';
-                        }
-                        if (number < 0) {
-                          return 'Value cannot be negative';
-                        }
-                      }
-                      return null;
-                    },
-                  ),
-                  SharedWidgets.verticalSpace(),
-
-                  // Testosterone field
-                  TextFormField(
-                    controller: _testosteroneController,
-                    decoration: AppTheme.defaultTextFieldDecoration.copyWith(
-                      labelText: 'Testosterone (ng/dL)',
-                      hintText: _isDateInFuture()
-                          ? 'Cannot add levels for future dates'
-                          : 'Enter testosterone level',
-                      // Disable the field for future dates
-                      enabled: !_isDateInFuture(),
-                    ),
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*$')),
-                    ],
-                    validator: (value) {
-                      if (_isDateInFuture()) {
-                        return null; // Skip validation for future dates
-                      }
-
-                      if (value != null && value.isNotEmpty) {
-                        final number = double.tryParse(value);
-                        if (number == null) {
-                          return 'Please enter a valid number';
-                        }
-                        if (number < 0) {
-                          return 'Value cannot be negative';
-                        }
-                      }
-                      return null;
-                    },
-                  ),
+                  _buildHormoneLevelsSection(),
                 ],
               ),
             SharedWidgets.verticalSpace(AppTheme.cardSpacing),

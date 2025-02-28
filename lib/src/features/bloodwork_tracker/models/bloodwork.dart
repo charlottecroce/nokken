@@ -16,13 +16,82 @@ class BloodworkException implements Exception {
 /// Types of appointments supported by the bloodwork tracker
 enum AppointmentType { bloodwork, appointment, surgery }
 
+/// Represents a single hormone reading with name, value and unit
+class HormoneReading {
+  final String name;
+  final double value;
+  final String unit;
+
+  HormoneReading({
+    required this.name,
+    required this.value,
+    required this.unit,
+  });
+
+  /// Convert to JSON format for database storage
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'value': value,
+      'unit': unit,
+    };
+  }
+
+  /// Create a HormoneReading from JSON
+  factory HormoneReading.fromJson(Map<String, dynamic> json) {
+    return HormoneReading(
+      name: json['name'] as String,
+      value: (json['value'] as num).toDouble(),
+      unit: json['unit'] as String,
+    );
+  }
+
+  /// Create a copy with updated fields
+  HormoneReading copyWith({
+    String? name,
+    double? value,
+    String? unit,
+  }) {
+    return HormoneReading(
+      name: name ?? this.name,
+      value: value ?? this.value,
+      unit: unit ?? this.unit,
+    );
+  }
+}
+
+/// Predefined hormone types with their default units
+class HormoneTypes {
+  static const Map<String, String> defaultUnits = {
+    'Estrogen': 'pg/mL',
+    'Testosterone': 'ng/dL',
+    'Progesterone': 'ng/mL',
+    'FSH': 'mIU/mL',
+    'LH': 'mIU/mL',
+    'Prolactin': 'ng/mL',
+    'DHEA-S': 'μg/dL',
+    'Cortisol': 'μg/dL',
+    'TSH': 'μIU/mL',
+    'Free T4': 'ng/dL',
+  };
+
+  /// Get the default unit for a hormone type
+  static String getDefaultUnit(String hormoneName) {
+    return defaultUnits[hormoneName] ?? '';
+  }
+
+  /// Get list of available hormone types
+  static List<String> getHormoneTypes() {
+    return defaultUnits.keys.toList();
+  }
+}
+
 /// Primary model for bloodwork lab test data
 class Bloodwork {
   final String id;
   final DateTime date;
   final AppointmentType appointmentType;
-  final double? estrogen; // pg/mL
-  final double? testosterone; // ng/dL
+  final List<HormoneReading> hormoneReadings;
   final String? location;
   final String? doctor;
   final String? notes;
@@ -32,23 +101,38 @@ class Bloodwork {
     String? id,
     required this.date,
     this.appointmentType = AppointmentType.bloodwork,
-    this.estrogen,
-    this.testosterone,
+    List<HormoneReading>? hormoneReadings,
     this.location,
     this.doctor,
     this.notes,
-  }) : id = id ?? const Uuid().v4() {
+  })  : id = id ?? const Uuid().v4(),
+        hormoneReadings = hormoneReadings ?? [] {
     _validate();
+  }
+
+  /// For backward compatibility - get estrogen value if present
+  double? get estrogen {
+    final reading = hormoneReadings
+        .where((reading) => reading.name == 'Estrogen')
+        .firstOrNull;
+    return reading?.value;
+  }
+
+  /// For backward compatibility - get testosterone value if present
+  double? get testosterone {
+    final reading = hormoneReadings
+        .where((reading) => reading.name == 'Testosterone')
+        .firstOrNull;
+    return reading?.value;
   }
 
   /// Validates bloodwork fields
   void _validate() {
-    if (estrogen != null && estrogen! < 0) {
-      throw BloodworkException('Estrogen level cannot be negative');
-    }
-
-    if (testosterone != null && testosterone! < 0) {
-      throw BloodworkException('Testosterone level cannot be negative');
+    // Validate hormone readings
+    for (final reading in hormoneReadings) {
+      if (reading.value < 0) {
+        throw BloodworkException('${reading.name} level cannot be negative');
+      }
     }
 
     // For past or present dates with bloodwork type, require at least one hormone level
@@ -58,8 +142,7 @@ class Bloodwork {
 
     if (!recordDate.isAfter(today) &&
         appointmentType == AppointmentType.bloodwork &&
-        estrogen == null &&
-        testosterone == null) {
+        hormoneReadings.isEmpty) {
       throw BloodworkException(
           'At least one hormone level must be provided for past or present bloodwork dates');
     }
@@ -71,6 +154,9 @@ class Bloodwork {
       'id': id,
       'date': date.toIso8601String(),
       'appointmentType': appointmentType.toString(),
+      'hormoneReadings':
+          hormoneReadings.map((reading) => reading.toJson()).toList(),
+      // For backward compatibility
       'estrogen': estrogen,
       'testosterone': testosterone,
       'location': location?.trim(),
@@ -93,16 +179,37 @@ class Bloodwork {
         parsedType = AppointmentType.bloodwork;
       }
 
+      // Handle the transition between old and new formats
+      List<HormoneReading> readings = [];
+
+      // First try to parse new format with hormoneReadings list
+      if (json['hormoneReadings'] != null) {
+        readings = (json['hormoneReadings'] as List)
+            .map((reading) => HormoneReading.fromJson(reading))
+            .toList();
+      } else {
+        // For backward compatibility with old format
+        if (json['estrogen'] != null) {
+          readings.add(HormoneReading(
+            name: 'Estrogen',
+            value: (json['estrogen'] as num).toDouble(),
+            unit: 'pg/mL',
+          ));
+        }
+        if (json['testosterone'] != null) {
+          readings.add(HormoneReading(
+            name: 'Testosterone',
+            value: (json['testosterone'] as num).toDouble(),
+            unit: 'ng/dL',
+          ));
+        }
+      }
+
       return Bloodwork(
         id: json['id'] as String,
         date: DateTime.parse(json['date']),
         appointmentType: parsedType,
-        estrogen: json['estrogen'] != null
-            ? (json['estrogen'] as num).toDouble()
-            : null,
-        testosterone: json['testosterone'] != null
-            ? (json['testosterone'] as num).toDouble()
-            : null,
+        hormoneReadings: readings,
         location: json['location'] as String?,
         doctor: json['doctor'] as String?,
         notes: json['notes'] as String?,
@@ -116,8 +223,7 @@ class Bloodwork {
   Bloodwork copyWith({
     DateTime? date,
     AppointmentType? appointmentType,
-    double? estrogen,
-    double? testosterone,
+    List<HormoneReading>? hormoneReadings,
     String? location,
     String? doctor,
     String? notes,
@@ -126,8 +232,7 @@ class Bloodwork {
       id: id,
       date: date ?? this.date,
       appointmentType: appointmentType ?? this.appointmentType,
-      estrogen: estrogen ?? this.estrogen,
-      testosterone: testosterone ?? this.testosterone,
+      hormoneReadings: hormoneReadings ?? this.hormoneReadings,
       location: location ?? this.location,
       doctor: doctor ?? this.doctor,
       notes: notes ?? this.notes,

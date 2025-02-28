@@ -2,6 +2,7 @@
 //  database_service.dart
 //  Service for handling database operations
 //
+import 'dart:convert';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart' as path;
 import 'package:nokken/src/features/medication_tracker/models/medication.dart';
@@ -81,7 +82,7 @@ class TakenMedication {
 /// Service that manages database operations for the application
 class DatabaseService {
   static Database? _database;
-  static const int _currentVersion = 1; // Will be used in future for DB updates
+  static const int _currentVersion = 2; // Increase version for schema update
 
   /// Get the database instance (lazy initialization)
   Future<Database> get database async {
@@ -103,8 +104,9 @@ class DatabaseService {
           await _createDatabase(db);
         },
         onUpgrade: (db, oldVersion, newVersion) async {
-          if (oldVersion < 1) {
-            // for updates to DB. for now just resetting
+          if (oldVersion < 2) {
+            //Migrations, don't need for now
+            //await _migrateToV2(db);
           }
         },
       );
@@ -159,6 +161,7 @@ class DatabaseService {
         appointmentType TEXT NOT NULL,
         estrogen REAL,
         testosterone REAL,
+        hormone_readings TEXT,
         location TEXT,
         doctor TEXT,
         notes TEXT
@@ -410,44 +413,91 @@ class DatabaseService {
 
   /// Convert a Bloodwork object to a database map
   Map<String, dynamic> _bloodworkToMap(Bloodwork bloodwork) {
-    return {
+    final map = {
       'id': bloodwork.id,
       'date': bloodwork.date.toIso8601String(),
       'appointmentType': bloodwork.appointmentType.toString(),
-      'estrogen': bloodwork.estrogen,
-      'testosterone': bloodwork.testosterone,
       'location': bloodwork.location,
       'doctor': bloodwork.doctor,
       'notes': bloodwork.notes,
     };
+
+    // Store hormone readings as JSON
+    if (bloodwork.hormoneReadings.isNotEmpty) {
+      map['hormone_readings'] =
+          jsonEncode(bloodwork.hormoneReadings.map((r) => r.toJson()).toList());
+    }
+
+    // For backward compatibility
+    //final estrogen = bloodwork.estrogen;
+    //final testosterone = bloodwork.testosterone;
+    //if (estrogen != null) map['estrogen'] = estrogen;
+    //if (testosterone != null) map['testosterone'] = testosterone;
+
+    return map;
   }
 
   /// Convert a database map to a Bloodwork object
   Bloodwork _mapToBloodwork(Map<String, dynamic> map) {
-    // Parse appointment type from string
-    AppointmentType parsedType;
     try {
-      parsedType = AppointmentType.values.firstWhere(
-          (e) => e.toString() == map['appointmentType'],
-          orElse: () => AppointmentType.bloodwork);
-    } catch (_) {
-      // For backward compatibility with old records without appointmentType
-      parsedType = AppointmentType.bloodwork;
-    }
+      // Parse appointment type from string
+      AppointmentType parsedType;
+      try {
+        parsedType = AppointmentType.values.firstWhere(
+            (e) => e.toString() == map['appointmentType'],
+            orElse: () => AppointmentType.bloodwork);
+      } catch (_) {
+        // For backward compatibility with old records without appointmentType
+        parsedType = AppointmentType.bloodwork;
+      }
 
-    return Bloodwork(
-      id: map['id'] as String,
-      date: DateTime.parse(map['date'] as String),
-      appointmentType: parsedType,
-      estrogen:
-          map['estrogen'] != null ? (map['estrogen'] as num).toDouble() : null,
-      testosterone: map['testosterone'] != null
-          ? (map['testosterone'] as num).toDouble()
-          : null,
-      location: map['location'] as String?,
-      doctor: map['doctor'] as String?,
-      notes: map['notes'] as String?,
-    );
+      // Parse hormone readings from JSON
+      List<HormoneReading> hormoneReadings = [];
+
+      if (map['hormone_readings'] != null) {
+        try {
+          final List<dynamic> decodedReadings =
+              jsonDecode(map['hormone_readings']);
+          hormoneReadings = decodedReadings
+              .map((json) => HormoneReading.fromJson(json))
+              .toList();
+        } catch (e) {
+          print('Error parsing hormone readings: $e');
+        }
+      }
+
+      // If no hormone readings were found in JSON but legacy fields exist,
+      // create hormone readings from them
+      if (hormoneReadings.isEmpty) {
+        if (map['estrogen'] != null) {
+          hormoneReadings.add(HormoneReading(
+            name: 'Estrogen',
+            value: (map['estrogen'] as num).toDouble(),
+            unit: 'pg/mL',
+          ));
+        }
+
+        if (map['testosterone'] != null) {
+          hormoneReadings.add(HormoneReading(
+            name: 'Testosterone',
+            value: (map['testosterone'] as num).toDouble(),
+            unit: 'ng/dL',
+          ));
+        }
+      }
+
+      return Bloodwork(
+        id: map['id'] as String,
+        date: DateTime.parse(map['date'] as String),
+        appointmentType: parsedType,
+        hormoneReadings: hormoneReadings,
+        location: map['location'] as String?,
+        doctor: map['doctor'] as String?,
+        notes: map['notes'] as String?,
+      );
+    } catch (e) {
+      throw DatabaseException('Invalid bloodwork data: $e');
+    }
   }
 
   /// Insert a new bloodwork record into the database

@@ -178,14 +178,14 @@ class MedicationListScreen extends ConsumerWidget {
                             // Only add sections that have medications
                             if (groupedMedications['oral']!.isNotEmpty)
                               MedicationSectionWithStickyHeader(
-                                title: 'Oral Medications',
+                                title: 'Oral',
                                 medications: groupedMedications['oral']!,
                                 type: MedicationType.oral,
                               ),
 
                             if (groupedMedications['injection']!.isNotEmpty)
                               MedicationSectionWithStickyHeader(
-                                title: 'Injectable Medications',
+                                title: 'Injectable',
                                 medications: groupedMedications['injection']!,
                                 type: MedicationType.injection,
                               ),
