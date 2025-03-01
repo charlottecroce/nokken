@@ -34,11 +34,11 @@ flutter run
 
 All contributions are welcome!
 
-Please read [CONTRIBUTING.md](https://github.com/charlottecroce/nokken/blob/main/CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
+Please read [CONTRIBUTING.md](docs/CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
 
 ## 📜 License
 
-This project is licensed under the GPLv3 License - see the [LICENSE](https://github.com/charlottecroce/nokken/blob/main/LICENSE) file for details.
+This project is licensed under the GPLv3 License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
