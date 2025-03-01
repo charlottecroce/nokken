@@ -771,7 +771,7 @@ class _MedicationCalendarViewState extends State<_MedicationCalendarView> {
               final appointmentType = _getAppointmentTypeForDate(day);
               final appointmentColor = appointmentType != null
                   ? AppointmentUtils.getAppointmentTypeColor(appointmentType)
-                  : AppTheme.bloodworkColor;
+                  : AppColors.bloodwork;
 
               return Container(
                 margin: const EdgeInsets.all(4),
@@ -797,13 +797,13 @@ class _MedicationCalendarViewState extends State<_MedicationCalendarView> {
                 margin: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(color: AppTheme.injectionColor, width: 2),
+                  border: Border.all(color: AppColors.injection, width: 2),
                 ),
                 child: Center(
                   child: Text(
                     '${day.day}',
-                    style: const TextStyle(
-                      color: AppTheme.injectionColor,
+                    style: TextStyle(
+                      color: AppColors.injection,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -825,9 +825,9 @@ class _MedicationCalendarViewState extends State<_MedicationCalendarView> {
               appointmentType = _getAppointmentTypeForDate(day);
               borderColor = appointmentType != null
                   ? AppointmentUtils.getAppointmentTypeColor(appointmentType)
-                  : AppTheme.bloodworkColor;
+                  : AppColors.bloodwork;
             } else if (hasInjection) {
-              borderColor = AppTheme.injectionColor;
+              borderColor = AppColors.injection;
             } else {
               borderColor = Colors.transparent;
             }
@@ -844,8 +844,8 @@ class _MedicationCalendarViewState extends State<_MedicationCalendarView> {
                         ? appointmentType != null
                             ? AppointmentUtils.getAppointmentTypeColor(
                                 appointmentType)
-                            : AppTheme.bloodworkColor
-                        : AppTheme.injectionColor)
+                            : AppColors.bloodwork
+                        : AppColors.injection)
                     : AppColors.primary,
                 border:
                     hasBorder ? Border.all(color: borderColor, width: 2) : null,
@@ -872,9 +872,9 @@ class _MedicationCalendarViewState extends State<_MedicationCalendarView> {
               final appointmentType = _getAppointmentTypeForDate(day);
               borderColor = appointmentType != null
                   ? AppointmentUtils.getAppointmentTypeColor(appointmentType)
-                  : AppTheme.bloodworkColor;
+                  : AppColors.bloodwork;
             } else if (hasInjection) {
-              borderColor = AppTheme.injectionColor;
+              borderColor = AppColors.injection;
             } else {
               borderColor = AppColors.primary;
             }
@@ -896,7 +896,7 @@ class _MedicationCalendarViewState extends State<_MedicationCalendarView> {
                     color: hasBloodwork
                         ? borderColor
                         : (hasInjection
-                            ? AppTheme.injectionColor
+                            ? AppColors.injection
                             : AppColors.primary),
                     fontWeight: FontWeight.bold,
                   ),
@@ -916,7 +916,7 @@ class _MedicationCalendarViewState extends State<_MedicationCalendarView> {
               borderColor = appointmentType != null
                   ? AppointmentUtils.getAppointmentTypeColor(appointmentType)
                       .withAlpha(160)
-                  : AppTheme.bloodworkColor.withAlpha(160);
+                  : AppColors.bloodwork.withAlpha(160);
 
               return Container(
                 margin: const EdgeInsets.all(4),
@@ -943,13 +943,13 @@ class _MedicationCalendarViewState extends State<_MedicationCalendarView> {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
-                      color: AppTheme.injectionColor.withAlpha(160), width: 2),
+                      color: AppColors.injection.withAlpha(160), width: 2),
                 ),
                 child: Center(
                   child: Text(
                     '${day.day}',
                     style: TextStyle(
-                      color: AppTheme.injectionColor.withAlpha(160),
+                      color: AppColors.injection.withAlpha(160),
                       fontWeight: FontWeight.bold,
                     ),
                   ),
