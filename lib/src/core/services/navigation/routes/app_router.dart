@@ -4,7 +4,7 @@
 //
 import 'package:flutter/material.dart';
 import 'route_names.dart';
-import 'package:nokken/src/routes/route_arguments.dart';
+import 'package:nokken/src/core/services/navigation/routes/route_arguments.dart';
 import 'package:nokken/src/features/scheduler/screens/daily_tracker_screen.dart';
 import 'package:nokken/src/features/scheduler/screens/calendar_screen.dart';
 import 'package:nokken/src/features/medication_tracker/screens/medication_list_screen.dart';

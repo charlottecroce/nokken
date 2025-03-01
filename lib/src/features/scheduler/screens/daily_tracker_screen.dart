@@ -11,13 +11,13 @@ import 'package:nokken/src/features/medication_tracker/providers/medication_take
 import 'package:nokken/src/features/medication_tracker/services/medication_schedule_service.dart';
 import 'package:nokken/src/features/bloodwork_tracker/models/bloodwork.dart';
 import 'package:nokken/src/features/bloodwork_tracker/providers/bloodwork_state.dart';
-import 'package:nokken/src/services/navigation_service.dart';
-import 'package:nokken/src/shared/theme/shared_widgets.dart';
-import 'package:nokken/src/shared/theme/app_theme.dart';
-import 'package:nokken/src/shared/constants/date_constants.dart';
-import 'package:nokken/src/shared/theme/app_icons.dart';
-import 'package:nokken/src/shared/utils/date_time_formatter.dart';
-import 'package:nokken/src/shared/utils/appointment_utils.dart';
+import 'package:nokken/src/core/services/navigation/navigation_service.dart';
+import 'package:nokken/src/core/theme/shared_widgets.dart';
+import 'package:nokken/src/core/theme/app_theme.dart';
+import 'package:nokken/src/core/constants/date_constants.dart';
+import 'package:nokken/src/core/theme/app_icons.dart';
+import 'package:nokken/src/core/utils/date_time_formatter.dart';
+import 'package:nokken/src/core/utils/appointment_utils.dart';
 
 /// Provider to track the currently selected date
 final selectedDateProvider = StateProvider<DateTime>((ref) => DateTime.now());

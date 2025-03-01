@@ -5,8 +5,8 @@
 import 'package:flutter/material.dart';
 import 'package:nokken/src/features/medication_tracker/models/medication.dart';
 import 'package:nokken/src/features/medication_tracker/models/medication_dose.dart';
-import 'package:nokken/src/shared/constants/date_constants.dart';
-import 'package:nokken/src/shared/utils/date_time_formatter.dart';
+import 'package:nokken/src/core/constants/date_constants.dart';
+import 'package:nokken/src/core/utils/date_time_formatter.dart';
 
 class MedicationScheduleService {
   /// Check if a medication is scheduled for the specified date

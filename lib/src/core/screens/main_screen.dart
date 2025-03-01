@@ -6,11 +6,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nokken/src/features/bloodwork_tracker/screens/bloodwork_list_screen.dart';
 import 'package:nokken/src/features/settings/screens/settings_screen.dart';
-import 'package:nokken/src/shared/theme/shared_widgets.dart';
+import 'package:nokken/src/core/theme/shared_widgets.dart';
 import 'package:nokken/src/features/scheduler/screens/daily_tracker_screen.dart';
 import 'package:nokken/src/features/medication_tracker/screens/medication_list_screen.dart';
-import 'package:nokken/src/shared/theme/app_icons.dart';
-import 'package:nokken/src/shared/theme/app_theme.dart';
+import 'package:nokken/src/core/theme/app_icons.dart';
+import 'package:nokken/src/core/theme/app_theme.dart';
 
 /// Provider to track the current navigation index
 /// Default to index 2 (daily tracker)

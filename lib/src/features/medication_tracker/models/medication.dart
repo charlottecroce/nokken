@@ -3,8 +3,8 @@
 //  Core model for medication data
 //
 import 'package:uuid/uuid.dart';
-import 'package:nokken/src/shared/constants/date_constants.dart';
-import 'package:nokken/src/services/validation_service.dart';
+import 'package:nokken/src/core/constants/date_constants.dart';
+import 'package:nokken/src/core/services/error/validation_service.dart';
 
 /// Types of medications supported
 enum MedicationType { oral, injection }

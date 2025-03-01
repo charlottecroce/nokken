@@ -4,8 +4,8 @@
 //
 import 'package:flutter/material.dart';
 import 'package:nokken/src/features/bloodwork_tracker/models/bloodwork.dart';
-import 'package:nokken/src/shared/theme/app_theme.dart';
-import 'package:nokken/src/shared/theme/app_icons.dart';
+import 'package:nokken/src/core/theme/app_theme.dart';
+import 'package:nokken/src/core/theme/app_icons.dart';
 
 /// Utility functions for appointment-related operations
 class AppointmentUtils {

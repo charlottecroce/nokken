@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nokken/src/features/bloodwork_tracker/models/bloodwork.dart';
 import 'package:nokken/src/features/medication_tracker/providers/medication_state.dart';
-import 'package:nokken/src/services/database_service.dart';
+import 'package:nokken/src/core/services/database/database_service.dart';
 
 /// State class to handle loading and error states for bloodwork data
 class BloodworkState {

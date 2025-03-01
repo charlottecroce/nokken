@@ -5,8 +5,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:nokken/src/shared/theme/shared_widgets.dart';
-import 'package:nokken/src/shared/utils/date_time_formatter.dart';
+import 'package:nokken/src/core/theme/shared_widgets.dart';
+import 'package:nokken/src/core/utils/date_time_formatter.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:nokken/src/features/medication_tracker/models/medication.dart';
 import 'package:nokken/src/features/medication_tracker/models/medication_dose.dart';
@@ -14,12 +14,12 @@ import 'package:nokken/src/features/medication_tracker/services/medication_sched
 import 'package:nokken/src/features/medication_tracker/providers/medication_taken_provider.dart';
 import 'package:nokken/src/features/bloodwork_tracker/models/bloodwork.dart';
 import 'package:nokken/src/features/bloodwork_tracker/providers/bloodwork_state.dart';
-import 'package:nokken/src/services/database_service.dart';
-import 'package:nokken/src/services/navigation_service.dart';
-import 'package:nokken/src/shared/theme/app_icons.dart';
-import 'package:nokken/src/shared/theme/app_theme.dart';
-import 'package:nokken/src/shared/constants/date_constants.dart';
-import 'package:nokken/src/shared/utils/appointment_utils.dart';
+import 'package:nokken/src/core/services/database/database_service.dart';
+import 'package:nokken/src/core/services/navigation/navigation_service.dart';
+import 'package:nokken/src/core/theme/app_icons.dart';
+import 'package:nokken/src/core/theme/app_theme.dart';
+import 'package:nokken/src/core/constants/date_constants.dart';
+import 'package:nokken/src/core/utils/appointment_utils.dart';
 
 class CalendarScreen extends ConsumerStatefulWidget {
   const CalendarScreen({super.key});

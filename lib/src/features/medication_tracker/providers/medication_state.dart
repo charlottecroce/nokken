@@ -4,8 +4,8 @@
 //
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nokken/src/features/medication_tracker/models/medication.dart';
-import 'package:nokken/src/services/database_service.dart';
-import 'package:nokken/src/services/notification_service.dart';
+import 'package:nokken/src/core/services/database/database_service.dart';
+import 'package:nokken/src/core/services/notifications/notification_service.dart';
 
 /// State class to handle loading and error states for medication data
 class MedicationState {

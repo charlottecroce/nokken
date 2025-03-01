@@ -4,10 +4,10 @@
 //
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:nokken/src/shared/providers/theme_provider.dart';
-import 'package:nokken/src/routes/app_router.dart';
-import 'package:nokken/src/screens/main_screen.dart';
-import 'package:nokken/src/shared/theme/app_theme.dart';
+import 'package:nokken/src/core/theme/providers/theme_provider.dart';
+import 'package:nokken/src/core/services/navigation/routes/app_router.dart';
+import 'package:nokken/src/core/screens/main_screen.dart';
+import 'package:nokken/src/core/theme/app_theme.dart';
 
 /// Root widget for the app
 /// Handles theme configuration and routing

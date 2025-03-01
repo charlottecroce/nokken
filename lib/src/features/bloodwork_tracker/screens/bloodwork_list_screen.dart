@@ -7,12 +7,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sticky_header/flutter_sticky_header.dart';
 import 'package:nokken/src/features/bloodwork_tracker/models/bloodwork.dart';
 import 'package:nokken/src/features/bloodwork_tracker/providers/bloodwork_state.dart';
-import 'package:nokken/src/services/navigation_service.dart';
-import 'package:nokken/src/shared/theme/shared_widgets.dart';
-import 'package:nokken/src/shared/theme/app_icons.dart';
-import 'package:nokken/src/shared/theme/app_theme.dart';
-import 'package:nokken/src/shared/utils/date_time_formatter.dart';
-import 'package:nokken/src/shared/utils/appointment_utils.dart';
+import 'package:nokken/src/core/services/navigation/navigation_service.dart';
+import 'package:nokken/src/core/theme/shared_widgets.dart';
+import 'package:nokken/src/core/theme/app_icons.dart';
+import 'package:nokken/src/core/theme/app_theme.dart';
+import 'package:nokken/src/core/utils/date_time_formatter.dart';
+import 'package:nokken/src/core/utils/appointment_utils.dart';
 
 /// This widget adds a sticky header decorator for each section
 class SectionWithStickyHeader extends StatelessWidget {
@@ -428,7 +428,7 @@ class BloodworkListTile extends StatelessWidget {
           context,
           bloodwork: bloodwork,
         ),
-        trailing: Icon(AppIcons.getIcon('chevron-right')),
+        trailing: Icon(AppIcons.getIcon('chevron_right')),
       ),
     );
   }

@@ -3,7 +3,7 @@
 //  Reusable UI components
 //
 import 'package:flutter/material.dart';
-import 'package:nokken/src/shared/theme/app_theme.dart';
+import 'package:nokken/src/core/theme/app_theme.dart';
 
 class SharedWidgets {
   /// Creates a vertical spacer with customizable height

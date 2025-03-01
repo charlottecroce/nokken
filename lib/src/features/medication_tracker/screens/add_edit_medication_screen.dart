@@ -6,13 +6,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:nokken/src/services/navigation_service.dart';
-import 'package:nokken/src/services/validation_service.dart';
-import 'package:nokken/src/shared/constants/date_constants.dart';
-import 'package:nokken/src/shared/utils/date_time_formatter.dart';
-import 'package:nokken/src/shared/theme/app_icons.dart';
-import 'package:nokken/src/shared/theme/app_theme.dart';
-import 'package:nokken/src/shared/theme/shared_widgets.dart';
+import 'package:nokken/src/core/services/navigation/navigation_service.dart';
+import 'package:nokken/src/core/services/error/validation_service.dart';
+import 'package:nokken/src/core/constants/date_constants.dart';
+import 'package:nokken/src/core/utils/date_time_formatter.dart';
+import 'package:nokken/src/core/theme/app_icons.dart';
+import 'package:nokken/src/core/theme/app_theme.dart';
+import 'package:nokken/src/core/theme/shared_widgets.dart';
 import '../models/medication.dart';
 import '../providers/medication_state.dart';
 

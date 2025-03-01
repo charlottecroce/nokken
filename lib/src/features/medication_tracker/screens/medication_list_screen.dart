@@ -7,11 +7,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sticky_header/flutter_sticky_header.dart';
 import 'package:nokken/src/features/medication_tracker/models/medication.dart';
 import 'package:nokken/src/features/medication_tracker/providers/medication_state.dart';
-import 'package:nokken/src/services/navigation_service.dart';
-import 'package:nokken/src/shared/utils/date_time_formatter.dart';
-import 'package:nokken/src/shared/theme/shared_widgets.dart';
-import 'package:nokken/src/shared/theme/app_icons.dart';
-import 'package:nokken/src/shared/theme/app_theme.dart';
+import 'package:nokken/src/core/services/navigation/navigation_service.dart';
+import 'package:nokken/src/core/utils/date_time_formatter.dart';
+import 'package:nokken/src/core/theme/shared_widgets.dart';
+import 'package:nokken/src/core/theme/app_icons.dart';
+import 'package:nokken/src/core/theme/app_theme.dart';
 
 /// This widget adds a sticky header decorator for each medication type section
 class MedicationSectionWithStickyHeader extends StatelessWidget {

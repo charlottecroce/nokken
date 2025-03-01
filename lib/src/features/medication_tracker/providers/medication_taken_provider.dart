@@ -7,7 +7,7 @@ import 'package:nokken/src/features/medication_tracker/models/medication.dart';
 import 'package:nokken/src/features/medication_tracker/models/medication_dose.dart';
 import 'package:nokken/src/features/medication_tracker/providers/medication_state.dart';
 import 'package:nokken/src/features/medication_tracker/services/medication_schedule_service.dart';
-import 'package:nokken/src/services/database_service.dart';
+import 'package:nokken/src/core/services/database/database_service.dart';
 
 /// Notifier for tracking which medications have been taken
 class MedicationTakenNotifier extends StateNotifier<Set<String>> {

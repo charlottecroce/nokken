@@ -3,7 +3,7 @@
 //  Centralized validation logic for app-wide use
 //
 import 'package:nokken/src/features/medication_tracker/models/medication.dart';
-import 'package:nokken/src/shared/constants/date_constants.dart';
+import 'package:nokken/src/core/constants/date_constants.dart';
 
 /// Service providing validation rules and messages for data across the application
 class ValidationService {

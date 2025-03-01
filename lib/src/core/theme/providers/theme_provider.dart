@@ -4,7 +4,7 @@
 //
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:nokken/src/shared/theme/app_theme.dart';
+import 'package:nokken/src/core/theme/app_theme.dart';
 
 /// Provider for the application theme mode (light/dark)
 final themeProvider = StateProvider<ThemeMode>((ref) => ThemeMode.dark);
