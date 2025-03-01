@@ -55,6 +55,28 @@ class AppColors {
       : AppTheme.orangeDark;
   static Color get info => current.primary;
 
+  // Medication type colors
+  static Color get oralMedication => _themeMode == ThemeMode.light
+      ? AppTheme.oralMedColorLight
+      : AppTheme.oralMedColorDark;
+
+  static Color get injection => _themeMode == ThemeMode.light
+      ? AppTheme.injectionColorLight
+      : AppTheme.injectionColorDark;
+
+  // Appointment type colors
+  static Color get bloodwork => _themeMode == ThemeMode.light
+      ? AppTheme.bloodworkColorLight
+      : AppTheme.bloodworkColorDark;
+
+  static Color get doctorAppointment => _themeMode == ThemeMode.light
+      ? AppTheme.doctorApptColorLight
+      : AppTheme.doctorApptColorDark;
+
+  static Color get surgery => _themeMode == ThemeMode.light
+      ? AppTheme.surgeryColorLight
+      : AppTheme.surgeryColorDark;
+
   // Other UI element colors
   static Color get shadow => current.shadow;
   static Color get outline => current.outline;
@@ -215,14 +237,26 @@ class AppTheme {
   static const Color darkgrey = Color.fromARGB(255, 29, 29, 29);
 
   //----------------------------------------------------------------------------
-  // NOTIFCATION TYPE COLORS
+  // NOTIFICATION TYPE COLORS
   //----------------------------------------------------------------------------
-  static const oralMedColor = Color.fromARGB(255, 159, 85, 186);
-  static const injectionColor = Color.fromARGB(255, 212, 132, 20);
+  // Dark theme colors for medication types
+  static const oralMedColorDark = Color.fromARGB(255, 159, 85, 186);
+  static const injectionColorDark = Color.fromARGB(255, 212, 132, 20);
 
-  static const bloodworkColor = Color.fromARGB(255, 255, 52, 52);
-  static const doctorApptColor = Color.fromARGB(255, 64, 226, 110);
-  static const surgeryColor = Color.fromARGB(255, 238, 230, 87);
+  // Light theme colors for medication types
+  static const oralMedColorLight = Color.fromARGB(255, 128, 55, 155);
+  static const injectionColorLight = Color.fromARGB(255, 175, 90, 0);
+
+  // Dark theme colors for appointment types
+  static const bloodworkColorDark = Color.fromARGB(255, 255, 52, 52);
+  static const doctorApptColorDark = Color.fromARGB(255, 64, 226, 110);
+  static const surgeryColorDark = Color.fromARGB(255, 238, 230, 87);
+
+  // Light theme colors for appointment types
+  static const bloodworkColorLight = Color.fromARGB(255, 200, 10, 10);
+  static const doctorApptColorLight = Color.fromARGB(255, 0, 150, 50);
+  static const surgeryColorLight = Color.fromARGB(255, 190, 175, 20);
+
   //----------------------------------------------------------------------------
   // DARK THEME COLORS
   //----------------------------------------------------------------------------

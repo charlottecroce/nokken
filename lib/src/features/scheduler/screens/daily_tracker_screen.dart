@@ -636,9 +636,9 @@ class _TimeGroupItem extends StatelessWidget {
     }
     // Otherwise, use the specific type color
     else if (hasOral) {
-      return AppTheme.oralMedColor;
+      return AppColors.oralMedication;
     } else if (hasInjection) {
-      return AppTheme.injectionColor;
+      return AppColors.injection;
     }
 
     // Default fallback color
@@ -674,8 +674,8 @@ class _MedicationListTile extends ConsumerWidget {
     // Set color based on medication type
     final Color medicationColor =
         medication.medicationType == MedicationType.oral
-            ? AppTheme.oralMedColor
-            : AppTheme.injectionColor;
+            ? AppColors.oralMedication
+            : AppColors.injection;
 
     // Add dose index indicator if this is not the first dose at this time
     final String doseIndicator =

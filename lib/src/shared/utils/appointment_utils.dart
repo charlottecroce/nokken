@@ -13,11 +13,11 @@ class AppointmentUtils {
   static Color getAppointmentTypeColor(AppointmentType type) {
     switch (type) {
       case AppointmentType.bloodwork:
-        return AppTheme.bloodworkColor;
+        return AppColors.bloodwork;
       case AppointmentType.appointment:
-        return AppTheme.doctorApptColor;
+        return AppColors.doctorAppointment;
       case AppointmentType.surgery:
-        return AppTheme.surgeryColor;
+        return AppColors.surgery;
       default:
         return Colors.grey;
     }
