@@ -243,19 +243,12 @@ class AppTheme {
 
   // Dark theme colors for appointment types
   static const bloodworkColorDark = Color(0xFFff9fb3); // Soft pink
-  static const doctorApptColorDark = Color(0xFFb6dcfe); // Uranian blue
+  static const doctorApptColorDark = Color.fromARGB(255, 241, 169, 111);
   static const surgeryColorDark = Color(0xFFf2d0a4); // Soft gold
   // Light theme colors for appointment types
   static const bloodworkColorLight = Color(0xFFe6536e); // Deeper pink
-  static const doctorApptColorLight = Color(0xFF3c77b5); // Deeper blue
+  static const doctorApptColorLight = Color.fromARGB(255, 223, 119, 33);
   static const surgeryColorLight = Color(0xFFd4a241); // Amber gold
-
-  // Keep old constants for backward compatibility
-  static const oralMedColor = oralMedColorDark;
-  static const injectionColor = injectionColorDark;
-  static const bloodworkColor = bloodworkColorDark;
-  static const doctorApptColor = doctorApptColorDark;
-  static const surgeryColor = surgeryColorDark;
 
   //----------------------------------------------------------------------------
   // DARK THEME COLORS
