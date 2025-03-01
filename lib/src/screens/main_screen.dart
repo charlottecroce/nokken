@@ -34,8 +34,8 @@ class MainScreen extends ConsumerWidget {
             const Icon(Icons.construction, size: 64),
             SharedWidgets.verticalSpace(),
             Text(
-              '$feature Coming Soon',
-              style: AppTheme.titleLarge,
+              '$feature Coming Soon. Not sure what this section can be',
+              style: AppTheme.titleMedium,
             ),
           ],
         ),
@@ -45,9 +45,9 @@ class MainScreen extends ConsumerWidget {
     // List of all screens accessible from the bottom navigation
     final screens = [
       const MedicationListScreen(),
-      buildComingSoon('Feature 1'),
-      DailyTrackerScreen(),
       const BloodworkListScreen(),
+      const DailyTrackerScreen(),
+      buildComingSoon('New Feature'),
       const SettingsScreen()
     ];
 
@@ -83,18 +83,19 @@ class MainScreen extends ConsumerWidget {
               ),
               label: 'Medications',
             ),
-            // Placeholder for future feature
+            // Bloodwork tab
             NavigationDestination(
               icon: Padding(
                 padding: AppTheme.navigationBarPadding,
-                child: Icon(AppIcons.getOutlined('menu')),
+                child: Icon(AppIcons.getOutlined('bloodwork')),
               ),
               selectedIcon: Padding(
                 padding: AppTheme.navigationBarPadding,
-                child: Icon(AppIcons.getFilled('menu')),
+                child: Icon(AppIcons.getFilled('bloodwork')),
               ),
-              label: 'coming soon',
+              label: 'Bloodwork',
             ),
+
             // Daily tracker tab
             NavigationDestination(
               icon: Padding(
@@ -107,17 +108,17 @@ class MainScreen extends ConsumerWidget {
               ),
               label: 'Daily Tracker',
             ),
-            // Bloodwork tab
+            // Placeholder for future feature
             NavigationDestination(
               icon: Padding(
                 padding: AppTheme.navigationBarPadding,
-                child: Icon(AppIcons.getOutlined('vial')),
+                child: Icon(AppIcons.getOutlined('menu')),
               ),
               selectedIcon: Padding(
                 padding: AppTheme.navigationBarPadding,
-                child: Icon(AppIcons.getFilled('vial')),
+                child: Icon(AppIcons.getFilled('menu')),
               ),
-              label: 'Bloodwork',
+              label: 'coming soon',
             ),
             // Settings tab
             NavigationDestination(

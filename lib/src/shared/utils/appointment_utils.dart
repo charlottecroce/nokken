@@ -5,6 +5,7 @@
 import 'package:flutter/material.dart';
 import 'package:nokken/src/features/bloodwork_tracker/models/bloodwork.dart';
 import 'package:nokken/src/shared/theme/app_theme.dart';
+import 'package:nokken/src/shared/theme/app_icons.dart';
 
 /// Utility functions for appointment-related operations
 class AppointmentUtils {
@@ -40,13 +41,13 @@ class AppointmentUtils {
   static IconData getAppointmentTypeIcon(AppointmentType type) {
     switch (type) {
       case AppointmentType.bloodwork:
-        return Icons.science_outlined;
+        return AppIcons.getOutlined('bloodwork');
       case AppointmentType.appointment:
-        return Icons.medical_services_outlined;
+        return AppIcons.getOutlined('medical_services');
       case AppointmentType.surgery:
-        return Icons.medical_information_outlined;
+        return AppIcons.getOutlined('medical_info');
       default:
-        return Icons.event_note_outlined;
+        return AppIcons.getOutlined('event_note');
     }
   }
 }

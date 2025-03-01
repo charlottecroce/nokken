@@ -362,7 +362,7 @@ class _AddEditBloodworkScreenState
         TextFormField(
           controller: _locationController,
           decoration: AppTheme.defaultTextFieldDecoration.copyWith(
-            labelText: 'Location (optional)',
+            labelText: 'Location',
             hintText: 'Enter appointment location',
           ),
         ),
@@ -372,7 +372,7 @@ class _AddEditBloodworkScreenState
         TextFormField(
           controller: _doctorController,
           decoration: AppTheme.defaultTextFieldDecoration.copyWith(
-            labelText: 'Healthcare Provider (optional)',
+            labelText: 'Healthcare Provider',
             hintText: 'Enter doctor or provider name',
           ),
         ),

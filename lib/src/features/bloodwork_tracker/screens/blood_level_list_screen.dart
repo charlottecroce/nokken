@@ -10,6 +10,7 @@ import 'package:nokken/src/features/bloodwork_tracker/models/bloodwork.dart';
 import 'package:nokken/src/features/bloodwork_tracker/providers/bloodwork_state.dart';
 import 'package:nokken/src/services/navigation_service.dart';
 import 'package:nokken/src/shared/theme/app_theme.dart';
+import 'package:nokken/src/shared/theme/app_icons.dart';
 import 'package:nokken/src/shared/utils/date_time_formatter.dart';
 import 'package:nokken/src/shared/theme/shared_widgets.dart';
 
@@ -81,7 +82,7 @@ class BloodLevelListScreen extends ConsumerWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            Icons.science_outlined,
+            AppIcons.getOutlined('bloodwork'),
             size: 64,
             color: AppColors.secondary,
           ),

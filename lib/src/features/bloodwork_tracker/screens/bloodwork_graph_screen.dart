@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nokken/src/features/bloodwork_tracker/models/bloodwork.dart';
 import 'package:nokken/src/features/bloodwork_tracker/providers/bloodwork_state.dart';
 import 'package:nokken/src/shared/theme/app_theme.dart';
+import 'package:nokken/src/shared/theme/app_icons.dart';
 import 'package:nokken/src/shared/utils/date_time_formatter.dart';
 import 'package:nokken/src/shared/theme/shared_widgets.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -252,7 +253,7 @@ class _BloodworkGraphScreenState extends ConsumerState<BloodworkGraphScreen>
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
-                            Icons.science_outlined,
+                            AppIcons.getOutlined('bloodwork'),
                             size: 64,
                             color: AppColors.secondary,
                           ),
