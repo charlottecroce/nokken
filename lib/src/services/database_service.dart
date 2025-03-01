@@ -25,16 +25,22 @@ class TakenMedication {
   final DateTime date;
   final String timeSlot;
   final bool taken;
+  final String? customKey;
 
   TakenMedication({
     required this.medicationId,
     required this.date,
     required this.timeSlot,
     required this.taken,
+    this.customKey,
   });
 
   /// Generate a unique key for this record - normalize date to prevent time issues
   String get uniqueKey {
+    if (customKey != null) {
+      return customKey!;
+    }
+
     // Create a normalized date string (just year-month-day, no time)
     final normalizedDate =
         DateTime(date.year, date.month, date.day).toIso8601String();
@@ -46,12 +52,20 @@ class TakenMedication {
     // Always normalize the date when saving to database
     final normalizedDate =
         DateTime(date.year, date.month, date.day).toIso8601String();
-    return {
+
+    final map = {
       'medication_id': medicationId,
       'date': normalizedDate,
       'time_slot': timeSlot,
       'taken': taken ? 1 : 0,
     };
+
+// Add custom key if provided (cast to Object to satisfy type requirements)
+    if (customKey != null) {
+      map['custom_key'] = customKey as Object;
+    }
+
+    return map;
   }
 
   /// Create from database map
@@ -66,6 +80,7 @@ class TakenMedication {
         date: normalizedDate,
         timeSlot: map['time_slot'],
         taken: map['taken'] == 1,
+        customKey: map['custom_key'],
       );
     } catch (e) {
       // Return a default value in case of error
@@ -82,7 +97,7 @@ class TakenMedication {
 /// Service that manages database operations for the application
 class DatabaseService {
   static Database? _database;
-  static const int _currentVersion = 2; // Increase version for schema update
+  static const int _currentVersion = 3; // Increase version for schema update
 
   /// Get the database instance (lazy initialization)
   Future<Database> get database async {
@@ -103,12 +118,7 @@ class DatabaseService {
         onCreate: (db, version) async {
           await _createDatabase(db);
         },
-        onUpgrade: (db, oldVersion, newVersion) async {
-          if (oldVersion < 2) {
-            //Migrations, don't need for now
-            //await _migrateToV2(db);
-          }
-        },
+        // No onUpgrade - for testing we'll reset the database
       );
     } catch (e) {
       throw DatabaseException('Failed to initialize database', e);
@@ -149,7 +159,8 @@ class DatabaseService {
         date TEXT NOT NULL,
         time_slot TEXT NOT NULL,
         taken INTEGER NOT NULL,
-        PRIMARY KEY (medication_id, date, time_slot)
+        custom_key TEXT,
+        PRIMARY KEY (custom_key)
       )
     ''');
 
@@ -167,6 +178,50 @@ class DatabaseService {
         notes TEXT
       )
     ''');
+  }
+
+  /// Migrate database to version 3
+  Future<void> _migrateToV3(Database db) async {
+    try {
+      // Check if custom_key column already exists
+      final result = await db.rawQuery('PRAGMA table_info(taken_medications)');
+      final hasCustomKey = result.any((col) => col['name'] == 'custom_key');
+
+      if (!hasCustomKey) {
+        // Add custom_key column
+        await db.execute(
+            'ALTER TABLE taken_medications ADD COLUMN custom_key TEXT');
+
+        // Update primary key constraint - need to recreate table
+        // First, backup existing data
+        await db.execute(
+            'CREATE TABLE taken_medications_backup AS SELECT * FROM taken_medications');
+
+        // Drop old table
+        await db.execute('DROP TABLE taken_medications');
+
+        // Create new table with updated primary key
+        await db.execute('''
+          CREATE TABLE taken_medications(
+            medication_id TEXT NOT NULL,
+            date TEXT NOT NULL,
+            time_slot TEXT NOT NULL,
+            taken INTEGER NOT NULL,
+            custom_key TEXT,
+            PRIMARY KEY (medication_id, date, time_slot, custom_key)
+          )
+        ''');
+
+        // Restore data
+        await db.execute(
+            'INSERT INTO taken_medications SELECT medication_id, date, time_slot, taken, custom_key FROM taken_medications_backup');
+
+        // Drop backup
+        await db.execute('DROP TABLE taken_medications_backup');
+      }
+    } catch (e) {
+      throw DatabaseException('Failed to migrate database to v3', e);
+    }
   }
 
   /// Convert a Medication object to a database map
@@ -342,10 +397,9 @@ class DatabaseService {
   // TAKEN MEDICATION OPERATIONS
   //----------------------------------------------------------------------------
 
-  /// Mark a medication as taken or not taken
-// Add this method to support the MedicationDose model
-  Future<void> setMedicationTaken(
-      String medicationId, DateTime date, String timeSlot, bool taken) async {
+  /// Mark a medication as taken or not taken, with optional custom key
+  Future<void> setMedicationTakenWithCustomKey(String medicationId,
+      DateTime date, String timeSlot, bool taken, String? customKey) async {
     try {
       final db = await database;
       final takenMed = TakenMedication(
@@ -353,16 +407,52 @@ class DatabaseService {
         date: DateTime(date.year, date.month, date.day), // Strip time component
         timeSlot: timeSlot,
         taken: taken,
+        customKey: customKey,
       );
 
-      await db.insert(
-        'taken_medications',
-        takenMed.toMap(),
-        conflictAlgorithm: ConflictAlgorithm.replace,
-      );
+      // If custom key is provided, we need to handle it specially
+      if (customKey != null) {
+        // First check if an entry with this custom key exists
+        final existingEntries = await db.query(
+          'taken_medications',
+          where: 'custom_key = ?',
+          whereArgs: [customKey],
+        );
+
+        if (existingEntries.isNotEmpty) {
+          // Update existing entry
+          await db.update(
+            'taken_medications',
+            takenMed.toMap(),
+            where: 'custom_key = ?',
+            whereArgs: [customKey],
+          );
+        } else {
+          // Insert new entry
+          await db.insert(
+            'taken_medications',
+            takenMed.toMap(),
+            conflictAlgorithm: ConflictAlgorithm.replace,
+          );
+        }
+      } else {
+        // Standard insert/replace for entries without custom key
+        await db.insert(
+          'taken_medications',
+          takenMed.toMap(),
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
     } catch (e) {
       throw DatabaseException('Failed to save medication taken status', e);
     }
+  }
+
+  /// Legacy method for compatibility
+  Future<void> setMedicationTaken(
+      String medicationId, DateTime date, String timeSlot, bool taken) async {
+    await setMedicationTakenWithCustomKey(
+        medicationId, date, timeSlot, taken, null);
   }
 
   /// Get all medications taken on a specific date
@@ -378,11 +468,18 @@ class DatabaseService {
         whereArgs: [dateStr],
       );
 
-      final result = maps
-          .map((map) => TakenMedication.fromMap(map))
-          .where((takenMed) => takenMed.taken)
-          .map((takenMed) => takenMed.uniqueKey)
-          .toSet();
+      final result = <String>{};
+
+      for (final map in maps) {
+        final takenMed = TakenMedication.fromMap(map);
+
+        // Add to result using custom key if available, otherwise use standard key
+        if (takenMed.customKey != null) {
+          result.add(takenMed.customKey!);
+        } else {
+          result.add(takenMed.uniqueKey);
+        }
+      }
 
       return result;
     } catch (e) {
@@ -427,12 +524,6 @@ class DatabaseService {
       map['hormone_readings'] =
           jsonEncode(bloodwork.hormoneReadings.map((r) => r.toJson()).toList());
     }
-
-    // For backward compatibility
-    //final estrogen = bloodwork.estrogen;
-    //final testosterone = bloodwork.testosterone;
-    //if (estrogen != null) map['estrogen'] = estrogen;
-    //if (testosterone != null) map['testosterone'] = testosterone;
 
     return map;
   }
