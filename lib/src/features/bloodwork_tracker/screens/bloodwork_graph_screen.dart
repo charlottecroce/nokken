@@ -42,6 +42,24 @@ class _BloodworkGraphScreenState extends ConsumerState<BloodworkGraphScreen>
   late List<String> _hormoneTypes;
   late String _selectedHormone;
 
+  // Scroll controller for tab bar
+  final ScrollController _tabScrollController = ScrollController();
+
+  // Recommended ranges (female reference ranges)
+  final Map<String, ({double min, double max, String unit})>
+      _recommendedRanges = {
+    'Estrogen': (min: 30, max: 400, unit: 'pg/mL'),
+    'Testosterone': (min: 15, max: 70, unit: 'ng/dL'),
+    'Progesterone': (min: 0.1, max: 25, unit: 'ng/mL'),
+    'FSH': (min: 4, max: 13, unit: 'mIU/mL'),
+    'LH': (min: 1, max: 20, unit: 'mIU/mL'),
+    'Prolactin': (min: 4, max: 30, unit: 'ng/mL'),
+    'DHEA-S': (min: 35, max: 430, unit: 'μg/dL'),
+    'Cortisol': (min: 5, max: 25, unit: 'μg/dL'),
+    'TSH': (min: 0.4, max: 4.0, unit: 'μIU/mL'),
+    'Free T4': (min: 0.8, max: 1.8, unit: 'ng/dL'),
+  };
+
   @override
   void initState() {
     super.initState();
@@ -106,6 +124,7 @@ class _BloodworkGraphScreenState extends ConsumerState<BloodworkGraphScreen>
   @override
   void dispose() {
     _tabController.dispose();
+    _tabScrollController.dispose();
     super.dispose();
   }
 
@@ -171,17 +190,25 @@ class _BloodworkGraphScreenState extends ConsumerState<BloodworkGraphScreen>
     // Get filtered data based on time range
     final filteredRecords = _getFilteredData(bloodworkRecords);
 
-    // Reverse the filtered records to show oldest to newest (left to right on chart)
-    final chronologicalRecords = filteredRecords.reversed.toList();
+    // Sort the records chronologically (oldest first) for chart display
+    final chronologicalRecords = [...filteredRecords]
+      ..sort((a, b) => a.date.compareTo(b.date));
 
     return Scaffold(
       appBar: AppBar(
         title: Text(
             _selectedHormone.isNotEmpty ? _selectedHormone : 'Blood Levels'),
-        bottom: TabBar(
-          controller: _tabController,
-          isScrollable: _hormoneTypes.length > 2,
-          tabs: _hormoneTypes.map((type) => Tab(text: type)).toList(),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(48),
+          child: Container(
+            alignment: Alignment.centerLeft,
+            child: TabBar(
+              controller: _tabController,
+              isScrollable: true,
+              tabAlignment: TabAlignment.start,
+              tabs: _hormoneTypes.map((type) => Tab(text: type)).toList(),
+            ),
+          ),
         ),
         actions: [
           // Time range filter dropdown
@@ -313,6 +340,11 @@ class _BloodworkGraphScreenState extends ConsumerState<BloodworkGraphScreen>
       }
     }
 
+    // Try to get from recommended ranges
+    if (_recommendedRanges.containsKey(hormoneType)) {
+      return _recommendedRanges[hormoneType]!.unit;
+    }
+
     // Fall back to default units
     switch (hormoneType) {
       case 'Estrogen':
@@ -357,7 +389,8 @@ class _BloodworkGraphScreenState extends ConsumerState<BloodworkGraphScreen>
           ),
           SharedWidgets.verticalSpace(24),
           Expanded(
-            child: _buildLineChart(validRecords, lineColor, valueGetter, unit),
+            child: _buildLineChart(
+                validRecords, lineColor, valueGetter, unit, title),
           ),
         ],
       ),
@@ -369,6 +402,7 @@ class _BloodworkGraphScreenState extends ConsumerState<BloodworkGraphScreen>
     Color lineColor,
     double? Function(Bloodwork) valueGetter,
     String unit,
+    String hormoneType,
   ) {
     // Get all values to calculate min and max for Y axis
     final values = records
@@ -381,12 +415,22 @@ class _BloodworkGraphScreenState extends ConsumerState<BloodworkGraphScreen>
       return const Center(child: Text('No data available'));
     }
 
-    final minY = (values.reduce((a, b) => a < b ? a : b) * 0.8).floorToDouble();
-    final maxY = (values.reduce((a, b) => a > b ? a : b) * 1.2).ceilToDouble();
+    // Calculate min/max Y values
+    double minY =
+        (values.reduce((a, b) => a < b ? a : b) * 0.8).floorToDouble();
+    double maxY = (values.reduce((a, b) => a > b ? a : b) * 1.2).ceilToDouble();
+
+    // Adjust based on recommended ranges if available
+    if (_recommendedRanges.containsKey(hormoneType)) {
+      final range = _recommendedRanges[hormoneType]!;
+      // Ensure the range is visible on the chart
+      minY = minY < range.min ? minY : (range.min * 0.8).floorToDouble();
+      maxY = maxY > range.max ? maxY : (range.max * 1.2).ceilToDouble();
+    }
 
     return LineChart(
       LineChartData(
-        gridData: FlGridData(
+        gridData: const FlGridData(
           show: true,
           drawVerticalLine: true,
           drawHorizontalLine: true,
@@ -397,18 +441,28 @@ class _BloodworkGraphScreenState extends ConsumerState<BloodworkGraphScreen>
               showTitles: true,
               reservedSize: 30,
               getTitlesWidget: (value, meta) {
-                // Show date for every other data point (or adjust as needed)
-                if (value.toInt() >= 0 &&
-                    value.toInt() < records.length &&
-                    value.toInt() % 2 == 0) {
-                  final date = records[value.toInt()].date;
-                  return Padding(
-                    padding: const EdgeInsets.only(top: 8.0),
-                    child: Text(
-                      DateFormat('MM/dd').format(date),
-                      style: AppTextStyles.labelSmall,
-                    ),
-                  );
+                // More sophisticated date labeling
+                if (value.toInt() >= 0 && value.toInt() < records.length) {
+                  // For small datasets (< 10 records), show all dates
+                  if (records.length < 10 ||
+                      // For larger datasets, show fewer dates
+                      (records.length >= 10 &&
+                          value.toInt() % (records.length ~/ 5 + 1) == 0)) {
+                    final date = records[value.toInt()].date;
+
+                    // Show year if spans multiple years
+                    final dateFormat = _dateFormatSpansMultipleYears(records)
+                        ? DateFormat('MM/dd/yy')
+                        : DateFormat('MM/dd');
+
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 8.0),
+                      child: Text(
+                        dateFormat.format(date),
+                        style: AppTextStyles.labelSmall,
+                      ),
+                    );
+                  }
                 }
                 return const SizedBox();
               },
@@ -429,8 +483,10 @@ class _BloodworkGraphScreenState extends ConsumerState<BloodworkGraphScreen>
               },
             ),
           ),
-          topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          rightTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
         ),
         borderData: FlBorderData(
           show: true,
@@ -447,18 +503,29 @@ class _BloodworkGraphScreenState extends ConsumerState<BloodworkGraphScreen>
             color: lineColor,
             barWidth: 3,
             isStrokeCapRound: true,
-            dotData: FlDotData(show: true),
+            dotData: const FlDotData(show: true),
             belowBarData: BarAreaData(
               show: true,
               color: lineColor.withAlpha(40),
             ),
           ),
+          // Add recommended range overlay if available
+          if (_recommendedRanges.containsKey(hormoneType))
+            ..._createRecommendedRangeOverlay(records, hormoneType),
         ],
         lineTouchData: LineTouchData(
           touchTooltipData: LineTouchTooltipData(
-            tooltipBgColor: AppColors.surface.withAlpha(80),
+            tooltipBgColor: AppColors.surface.withAlpha(220),
             getTooltipItems: (touchedSpots) {
-              return touchedSpots.map((spot) {
+              // Filter to only show tooltips for the main data line (index 0)
+              final mainLineSpots =
+                  touchedSpots.where((spot) => spot.barIndex == 0).toList();
+
+/*              if (mainLineSpots.isEmpty) {
+                return null; // No tooltips if no main line spots are touched
+              }*/
+
+              return mainLineSpots.map((spot) {
                 final index = spot.x.toInt();
                 if (index >= 0 && index < records.length) {
                   final record = records[index];
@@ -473,11 +540,14 @@ class _BloodworkGraphScreenState extends ConsumerState<BloodworkGraphScreen>
               }).toList();
             },
           ),
+          enabled: true,
+          handleBuiltInTouches: true,
         ),
       ),
     );
   }
 
+  /// Create spots for the line chart
   List<FlSpot> _createSpots(
     List<Bloodwork> records,
     double? Function(Bloodwork) valueGetter,
@@ -492,5 +562,81 @@ class _BloodworkGraphScreenState extends ConsumerState<BloodworkGraphScreen>
     }
 
     return spots;
+  }
+
+  /// Create overlays for recommended ranges
+  List<LineChartBarData> _createRecommendedRangeOverlay(
+      List<Bloodwork> records, String hormoneType) {
+    if (!_recommendedRanges.containsKey(hormoneType)) {
+      return [];
+    }
+
+    final range = _recommendedRanges[hormoneType]!;
+    final minY = range.min;
+    final maxY = range.max;
+
+    return [
+      // Minimum line
+      LineChartBarData(
+        spots: [
+          FlSpot(0, minY),
+          FlSpot(records.length - 1, minY),
+        ],
+        isCurved: false,
+        color: Colors.grey.withOpacity(0.7),
+        barWidth: 1,
+        isStrokeCapRound: false,
+        dotData: const FlDotData(show: false),
+        dashArray: [5, 5], // Dashed line
+        // Disable touch interaction for reference lines
+        show: true,
+      ),
+      // Maximum line
+      LineChartBarData(
+        spots: [
+          FlSpot(0, maxY),
+          FlSpot(records.length - 1, maxY),
+        ],
+        isCurved: false,
+        color: Colors.grey.withOpacity(0.7),
+        barWidth: 1,
+        isStrokeCapRound: false,
+        dotData: const FlDotData(show: false),
+        dashArray: [5, 5], // Dashed line
+        // Disable touch interaction for reference lines
+        show: true,
+      ),
+      // Filled area between min and max
+      LineChartBarData(
+        spots: [
+          FlSpot(0, minY),
+          FlSpot(records.length - 1, minY),
+        ],
+        isCurved: false,
+        color: Colors.transparent,
+        barWidth: 0,
+        isStrokeCapRound: false,
+        dotData: const FlDotData(show: false),
+        belowBarData: BarAreaData(
+          show: false,
+        ),
+        aboveBarData: BarAreaData(
+          show: true,
+          color: Colors.green.withOpacity(0.1),
+          cutOffY: maxY,
+          applyCutOffY: true,
+        ),
+        // Disable touch interaction for reference lines
+        show: true,
+      ),
+    ];
+  }
+
+  /// Check if the dataset spans multiple years
+  bool _dateFormatSpansMultipleYears(List<Bloodwork> records) {
+    if (records.length < 2) return false;
+
+    final firstYear = records.first.date.year;
+    return records.any((record) => record.date.year != firstYear);
   }
 }
