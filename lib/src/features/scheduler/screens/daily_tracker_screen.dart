@@ -17,6 +17,7 @@ import 'package:nokken/src/shared/theme/app_theme.dart';
 import 'package:nokken/src/shared/constants/date_constants.dart';
 import 'package:nokken/src/shared/theme/app_icons.dart';
 import 'package:nokken/src/shared/utils/date_time_formatter.dart';
+import 'package:nokken/src/shared/utils/appointment_utils.dart';
 
 /// Provider to track the currently selected date
 final selectedDateProvider = StateProvider<DateTime>((ref) => DateTime.now());
@@ -35,6 +36,78 @@ final bloodworkForSelectedDateProvider =
     final selectedDate = DateTime(date.year, date.month, date.day);
     return recordDate.isAtSameMomentAs(selectedDate);
   }).toList();
+});
+
+/// Provider to get unique medication doses with index
+final uniqueMedicationDosesProvider =
+    Provider.family<List<(MedicationDose, int, Medication)>, DateTime>(
+        (ref, date) {
+  final medications = ref.watch(medicationsForDateProvider(date));
+  final result = <(MedicationDose, int, Medication)>[];
+
+  for (final med in medications) {
+    // Group by time slot
+    final Map<String, List<DateTime>> timeSlots = {};
+
+    for (final time in med.timeOfDay) {
+      final timeSlot =
+          DateTimeFormatter.formatTimeToAMPM(TimeOfDay.fromDateTime(time));
+
+      if (!timeSlots.containsKey(timeSlot)) {
+        timeSlots[timeSlot] = [];
+      }
+
+      timeSlots[timeSlot]!.add(time);
+    }
+
+    // Create doses with indexes for each time slot
+    for (final entry in timeSlots.entries) {
+      final timeSlot = entry.key;
+      final times = entry.value;
+
+      for (int i = 0; i < times.length; i++) {
+        final dose = MedicationDose(
+          medicationId: med.id,
+          date: date,
+          timeSlot: timeSlot,
+        );
+
+        result.add((dose, i, med));
+      }
+    }
+  }
+
+  // Sort by time slot
+  result.sort((a, b) {
+    final timeA = DateTimeFormatter.parseTimeString(a.$1.timeSlot);
+    final timeB = DateTimeFormatter.parseTimeString(b.$1.timeSlot);
+    return (timeA.hour * 60 + timeA.minute) - (timeB.hour * 60 + timeB.minute);
+  });
+
+  return result;
+});
+
+/// Provider to check if a specific medication dose with index is taken
+final isUniqueDoseTakenProvider =
+    Provider.family<bool, (MedicationDose, int)>((ref, params) {
+  final takenMedications = ref.watch(medicationTakenProvider);
+  final dose = params.$1;
+  final index = params.$2;
+
+  final key =
+      '${dose.medicationId}-${dose.date.toIso8601String()}-${dose.timeSlot}-$index';
+
+  // First check for the indexed key
+  if (takenMedications.contains(key)) {
+    return true;
+  }
+
+  // For backward compatibility, check if old-style key exists and it's the first instance (index 0)
+  if (index == 0 && takenMedications.contains(dose.toKey())) {
+    return true;
+  }
+
+  return false;
 });
 
 class DailyTrackerScreen extends ConsumerStatefulWidget {
@@ -91,14 +164,41 @@ class _DailyTrackerScreenState extends ConsumerState<DailyTrackerScreen> {
       }
     });
 
-    // Get medications for the selected day, grouped by time
-    final medicationsForDay = _getMedicationsForDay(medications, selectedDate);
-    final groupedMedications =
-        _groupMedicationsByTime(medicationsForDay, context);
+    // Get unique medication doses for this day
+    final uniqueDoses = ref.watch(uniqueMedicationDosesProvider(selectedDate));
+
+    // Group unique doses by time slot
+    final Map<String, List<(MedicationDose, int, Medication)>> groupedDoses =
+        {};
+
+    for (final doseWithIndex in uniqueDoses) {
+      final timeSlot = doseWithIndex.$1.timeSlot;
+      if (!groupedDoses.containsKey(timeSlot)) {
+        groupedDoses[timeSlot] = [];
+      }
+      groupedDoses[timeSlot]!.add(doseWithIndex);
+    }
+
+    // Get all time slots sorted
+    final sortedTimeSlots = groupedDoses.keys.toList()
+      ..sort((a, b) => DateTimeFormatter.compareTimeSlots(a, b));
+
+    // Create time groups from the sorted doses
+    final List<MedicationTimeGroup> timeGroups = [];
+
+    for (final timeSlot in sortedTimeSlots) {
+      final dosesForTimeSlot = groupedDoses[timeSlot]!;
+      final medications = dosesForTimeSlot.map((e) => e.$3).toList();
+      timeGroups.add(MedicationTimeGroup(
+        timeSlot: timeSlot,
+        medications: medications,
+        doseIndexes: dosesForTimeSlot.map((e) => (e.$1, e.$2)).toList(),
+      ));
+    }
 
     // Create a merged content model for the day (medications + appointments)
     final bool hasContent =
-        groupedMedications.isNotEmpty || bloodworkRecords.isNotEmpty;
+        timeGroups.isNotEmpty || bloodworkRecords.isNotEmpty;
 
     return Scaffold(
       appBar: AppBar(
@@ -142,7 +242,7 @@ class _DailyTrackerScreenState extends ConsumerState<DailyTrackerScreen> {
               },
               child: _DailyScheduleList(
                 key: ValueKey<DateTime>(selectedDate),
-                groupedMedications: groupedMedications,
+                timeGroups: timeGroups,
                 bloodworkRecords: bloodworkRecords,
                 selectedDate: selectedDate,
                 hasContent: hasContent,
@@ -152,43 +252,6 @@ class _DailyTrackerScreenState extends ConsumerState<DailyTrackerScreen> {
         ],
       ),
     );
-  }
-
-  /// Filters medications to only those scheduled for the given day
-  static List<Medication> _getMedicationsForDay(
-      List<Medication> medications, DateTime date) {
-    if (medications.isEmpty) return const [];
-
-    // Use the MedicationScheduleService which now uses the model's isDueOnDate method
-    return MedicationScheduleService.getMedicationsForDate(medications, date);
-  }
-
-  /// Groups medications by time slot for organized display
-  static List<MedicationTimeGroup> _groupMedicationsByTime(
-      List<Medication> medications, BuildContext context) {
-    if (medications.isEmpty) return const [];
-
-    final groups = <String, List<Medication>>{};
-
-    // Group medications by time slot
-    for (final med in medications) {
-      for (final time in med.timeOfDay) {
-        // Always use AM/PM format for time
-        final timeStr =
-            DateTimeFormatter.formatTimeToAMPM(TimeOfDay.fromDateTime(time));
-        groups.putIfAbsent(timeStr, () => []).add(med);
-      }
-    }
-
-    // Convert to list of MedicationTimeGroup objects and sort by time
-    return groups.entries
-        .map((e) => MedicationTimeGroup(
-              timeSlot: e.key,
-              medications: e.value,
-            ))
-        .toList()
-      ..sort(
-          (a, b) => DateTimeFormatter.compareTimeSlots(a.timeSlot, b.timeSlot));
   }
 }
 
@@ -254,13 +317,13 @@ class _DateSelector extends ConsumerWidget {
 class _DailyScheduleList extends ConsumerWidget {
   const _DailyScheduleList({
     super.key,
-    required this.groupedMedications,
+    required this.timeGroups,
     required this.bloodworkRecords,
     required this.selectedDate,
     required this.hasContent,
   });
 
-  final List<MedicationTimeGroup> groupedMedications;
+  final List<MedicationTimeGroup> timeGroups;
   final List<Bloodwork> bloodworkRecords;
   final DateTime selectedDate;
   final bool hasContent;
@@ -308,6 +371,10 @@ class _DailyScheduleList extends ConsumerWidget {
     final timeOfDay = TimeOfDay.fromDateTime(bloodwork.date);
     final timeStr = DateTimeFormatter.formatTimeToAMPM(timeOfDay);
 
+    // Use the AppointmentUtils to get the appointment color
+    final appointmentColor =
+        AppointmentUtils.getAppointmentTypeColor(bloodwork.appointmentType);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -317,12 +384,11 @@ class _DailyScheduleList extends ConsumerWidget {
           child: Row(
             children: [
               Icon(DateTimeFormatter.getTimeIcon(timeStr),
-                  size: 20,
-                  color: _getAppointmentColor(bloodwork.appointmentType)),
+                  size: 20, color: appointmentColor),
               const SizedBox(width: 8),
               Text(timeStr,
-                  style: AppTextStyles.titleMedium.copyWith(
-                      color: _getAppointmentColor(bloodwork.appointmentType))),
+                  style: AppTextStyles.titleMedium
+                      .copyWith(color: appointmentColor)),
             ],
           ),
         ),
@@ -332,26 +398,12 @@ class _DailyScheduleList extends ConsumerWidget {
     );
   }
 
-  /// Returns a color based on the appointment type
-  Color _getAppointmentColor(AppointmentType type) {
-    switch (type) {
-      case AppointmentType.bloodwork:
-        return AppTheme.bloodworkColor;
-      case AppointmentType.appointment:
-        return AppTheme.doctorApptColor;
-      case AppointmentType.surgery:
-        return AppTheme.surgeryColor;
-      default:
-        return Colors.grey;
-    }
-  }
-
   /// Sorts schedule items chronologically
   List<_ScheduleItem> _getSortedScheduleItems() {
     final List<_ScheduleItem> items = [];
 
     // Add medication groups
-    for (final group in groupedMedications) {
+    for (final group in timeGroups) {
       items.add(_MedicationGroupItem(timeGroup: group));
     }
 
@@ -396,32 +448,13 @@ class _AppointmentCard extends StatelessWidget {
       DateTime.now().day,
     ));
 
-    // Get appointment specific details
-    final String appointmentTitle;
-    final IconData appointmentIcon;
-    final Color appointmentColor;
-
-    switch (bloodwork.appointmentType) {
-      case AppointmentType.bloodwork:
-        appointmentTitle = 'Lab Appointment';
-        appointmentIcon = Icons.science_outlined;
-        appointmentColor = AppTheme.bloodworkColor;
-        break;
-      case AppointmentType.appointment:
-        appointmentTitle = 'Doctor Appointment';
-        appointmentIcon = Icons.medical_services_outlined;
-        appointmentColor = AppTheme.doctorApptColor;
-        break;
-      case AppointmentType.surgery:
-        appointmentTitle = 'Surgery';
-        appointmentIcon = Icons.medical_information_outlined;
-        appointmentColor = AppTheme.surgeryColor;
-        break;
-      default:
-        appointmentTitle = 'Medical Appointment';
-        appointmentIcon = Icons.event_note_outlined;
-        appointmentColor = Colors.grey;
-    }
+    // Get appointment specific details using AppointmentUtils
+    final appointmentTitle =
+        AppointmentUtils.getAppointmentTypeText(bloodwork.appointmentType);
+    final appointmentIcon =
+        AppointmentUtils.getAppointmentTypeIcon(bloodwork.appointmentType);
+    final appointmentColor =
+        AppointmentUtils.getAppointmentTypeColor(bloodwork.appointmentType);
 
     return Card(
       child: Padding(
@@ -569,15 +602,16 @@ class _TimeGroupItem extends StatelessWidget {
         ),
         // List of medications for this time slot (now each med is its own card)
         Column(
-          children: timeGroup.medications
-              .map(
-                (med) => _MedicationListTile(
-                  medication: med,
-                  timeSlot: timeGroup.timeSlot,
-                  selectedDate: selectedDate,
-                ),
-              )
-              .toList(),
+          children: List.generate(timeGroup.doseIndexes.length, (i) {
+            final doseWithIndex = timeGroup.doseIndexes[i];
+            final medication = timeGroup.medications[i];
+            return _MedicationListTile(
+              medication: medication,
+              dose: doseWithIndex.$1,
+              doseIndex: doseWithIndex.$2,
+              selectedDate: selectedDate,
+            );
+          }),
         ),
       ],
     );
@@ -616,23 +650,20 @@ class _TimeGroupItem extends StatelessWidget {
 class _MedicationListTile extends ConsumerWidget {
   const _MedicationListTile({
     required this.medication,
-    required this.timeSlot,
+    required this.dose,
+    required this.doseIndex,
     required this.selectedDate,
   });
 
   final Medication medication;
-  final String timeSlot;
+  final MedicationDose dose;
+  final int doseIndex;
   final DateTime selectedDate;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final dose = MedicationDose(
-      medicationId: medication.id,
-      date: selectedDate,
-      timeSlot: timeSlot,
-    );
-    // Check if this medication is taken
-    final isTaken = ref.watch(isDoseTakenProvider(dose));
+    // Check if this specific instance is taken using the new provider
+    final isTaken = ref.watch(isUniqueDoseTakenProvider((dose, doseIndex)));
 
     // Determine icon and color based on medication type
     final IconData medicationIcon =
@@ -645,6 +676,10 @@ class _MedicationListTile extends ConsumerWidget {
         medication.medicationType == MedicationType.oral
             ? AppTheme.oralMedColor
             : AppTheme.injectionColor;
+
+    // Add dose index indicator if this is not the first dose at this time
+    final String doseIndicator =
+        doseIndex > 0 ? ' (Dose ${doseIndex + 1})' : '';
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 4.0),
@@ -672,9 +707,12 @@ class _MedicationListTile extends ConsumerWidget {
                       ),
                       child: Row(
                         children: [
-                          Text(
-                            medication.name,
-                            style: AppTextStyles.titleLarge,
+                          Flexible(
+                            child: Text(
+                              medication.name + doseIndicator,
+                              style: AppTextStyles.titleLarge,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
                           // Show refill indicator if needed
                           if (medication.needsRefill()) ...[
@@ -752,7 +790,7 @@ class _MedicationListTile extends ConsumerWidget {
                         Checkbox(
                           value: isTaken,
                           onChanged: (bool? value) =>
-                              _handleTakenChange(value, ref, dose),
+                              _handleTakenChange(value, ref),
                           fillColor: WidgetStateProperty.resolveWith((states) {
                             if (states.contains(WidgetState.selected)) {
                               return AppColors.tertiary;
@@ -774,7 +812,7 @@ class _MedicationListTile extends ConsumerWidget {
   }
 
   /// Handle toggling a medication's taken status
-  void _handleTakenChange(bool? value, WidgetRef ref, MedicationDose dose) {
+  void _handleTakenChange(bool? value, WidgetRef ref) {
     if (value == null) return;
 
     // Check if we have enough quantity to mark as taken
@@ -791,10 +829,17 @@ class _MedicationListTile extends ConsumerWidget {
       return;
     }
 
+    // Create a key that includes the dose index
+    final key =
+        '${dose.medicationId}-${dose.date.toIso8601String()}-${dose.timeSlot}-$doseIndex';
+
     // Update taken medications in database and state
+    // For the existing database schema, we'll still use the setMedicationTaken method
+    // but internally we'll save using the unique key
     ref.read(medicationTakenProvider.notifier).setMedicationTaken(
           dose,
           value,
+          customKey: key,
         );
 
     // Update medication quantity
@@ -825,9 +870,12 @@ class _AppointmentItem extends _ScheduleItem {
 class MedicationTimeGroup {
   final String timeSlot;
   final List<Medication> medications;
+  final List<(MedicationDose, int)> doseIndexes;
 
   const MedicationTimeGroup({
     required this.timeSlot,
     List<Medication>? medications,
-  }) : medications = medications ?? const [];
+    List<(MedicationDose, int)>? doseIndexes,
+  })  : medications = medications ?? const [],
+        doseIndexes = doseIndexes ?? const [];
 }

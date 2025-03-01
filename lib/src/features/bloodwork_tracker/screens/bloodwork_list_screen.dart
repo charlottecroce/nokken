@@ -12,6 +12,7 @@ import 'package:nokken/src/shared/theme/shared_widgets.dart';
 import 'package:nokken/src/shared/theme/app_icons.dart';
 import 'package:nokken/src/shared/theme/app_theme.dart';
 import 'package:nokken/src/shared/utils/date_time_formatter.dart';
+import 'package:nokken/src/shared/utils/appointment_utils.dart';
 
 /// This widget adds a sticky header decorator for each section
 class SectionWithStickyHeader extends StatelessWidget {
@@ -113,7 +114,6 @@ class BloodworkListScreen extends ConsumerWidget {
     final isLoading = ref.watch(bloodworkLoadingProvider);
     final error = ref.watch(bloodworkErrorProvider);
 
-    // Check if there are any records at all
     // Check if there are any records at all
     final bool hasRecords = groupedRecords['upcoming']!.isNotEmpty ||
         groupedRecords['today']!.isNotEmpty ||
@@ -244,48 +244,6 @@ class BloodworkListTile extends StatelessWidget {
     return recordDate.isAfter(today);
   }
 
-  /// Get appointment type text to display
-  String _getAppointmentTypeText() {
-    switch (bloodwork.appointmentType) {
-      case AppointmentType.bloodwork:
-        return 'Bloodwork';
-      case AppointmentType.appointment:
-        return 'Appointment';
-      case AppointmentType.surgery:
-        return 'Surgery';
-      default:
-        return 'Medical Record';
-    }
-  }
-
-  /// Get appointment type icon
-  IconData _getAppointmentTypeIcon() {
-    switch (bloodwork.appointmentType) {
-      case AppointmentType.bloodwork:
-        return Icons.science_outlined;
-      case AppointmentType.appointment:
-        return Icons.medical_services_outlined;
-      case AppointmentType.surgery:
-        return Icons.medical_information_outlined;
-      default:
-        return Icons.event_note_outlined;
-    }
-  }
-
-  /// Get appointment type color -- in future, map to AppTheme
-  Color _getAppointmentTypeColor() {
-    switch (bloodwork.appointmentType) {
-      case AppointmentType.bloodwork:
-        return AppTheme.bloodworkColor;
-      case AppointmentType.appointment:
-        return AppTheme.doctorApptColor;
-      case AppointmentType.surgery:
-        return AppTheme.surgeryColor;
-      default:
-        return Colors.grey;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final isFutureDate = _isDateInFuture();
@@ -294,9 +252,13 @@ class BloodworkListTile extends StatelessWidget {
     final timeStr = DateTimeFormatter.formatTimeToAMPM(timeOfDay);
     final timeIcon = DateTimeFormatter.getTimeIcon(timeStr);
 
-    final appointmentTypeText = _getAppointmentTypeText();
-    final appointmentTypeIcon = _getAppointmentTypeIcon();
-    final appointmentTypeColor = _getAppointmentTypeColor();
+    // Use the AppointmentUtils helper for appointment details
+    final appointmentTypeText =
+        AppointmentUtils.getAppointmentTypeText(bloodwork.appointmentType);
+    final appointmentTypeIcon =
+        AppointmentUtils.getAppointmentTypeIcon(bloodwork.appointmentType);
+    final appointmentTypeColor =
+        AppointmentUtils.getAppointmentTypeColor(bloodwork.appointmentType);
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -369,7 +331,7 @@ class BloodworkListTile extends StatelessWidget {
                   size: 16,
                   color: appointmentTypeColor,
                 ),
-                const SizedBox(width: 6),
+                SharedWidgets.verticalSpace(6),
                 Flexible(
                   // Added Flexible to prevent overflow
                   child: Text(
@@ -394,7 +356,7 @@ class BloodworkListTile extends StatelessWidget {
                     size: 16,
                     color: Colors.grey,
                   ),
-                  const SizedBox(width: 6),
+                  SharedWidgets.verticalSpace(6),
                   Flexible(
                     // Added Flexible
                     child: Text(
@@ -417,7 +379,7 @@ class BloodworkListTile extends StatelessWidget {
                     size: 16,
                     color: Colors.grey,
                   ),
-                  const SizedBox(width: 6),
+                  SharedWidgets.verticalSpace(6),
                   Flexible(
                     // Added Flexible
                     child: Text(
@@ -437,7 +399,7 @@ class BloodworkListTile extends StatelessWidget {
                 'Scheduled',
                 style: AppTextStyles.bodyMedium,
               )
-            // Otherwise show hormone levels if available and if this is bloodwork
+            // Otherwise show hormone levels if bloodwork type
             else if (bloodwork.appointmentType ==
                 AppointmentType.bloodwork) ...[
               // Display hormone readings if available

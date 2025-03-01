@@ -29,13 +29,20 @@ class MedicationTakenNotifier extends StateNotifier<Set<String>> {
   }
 
   /// Set a medication as taken or not taken
-  Future<void> setMedicationTaken(MedicationDose dose, bool taken) async {
-    final key = dose.toKey();
+  ///
+  /// @param dose The medication dose being taken or untaken
+  /// @param taken Whether the medication is being marked as taken (true) or untaken (false)
+  /// @param customKey An optional custom key to use for the database.
+  ///        Used for handling multiple doses of the same medication at the same time slot
+  Future<void> setMedicationTaken(MedicationDose dose, bool taken,
+      {String? customKey}) async {
+    // Use the provided custom key or generate a standard one
+    final key = customKey ?? dose.toKey();
 
     try {
-      // Update database
-      await _databaseService.setMedicationTaken(
-          dose.medicationId, dose.date, dose.timeSlot, taken);
+      // Update database using the dose details but saving with the custom key if provided
+      await _databaseService.setMedicationTakenWithCustomKey(
+          dose.medicationId, dose.date, dose.timeSlot, taken, customKey);
 
       // Update state
       if (taken) {

@@ -19,6 +19,7 @@ import 'package:nokken/src/services/navigation_service.dart';
 import 'package:nokken/src/shared/theme/app_icons.dart';
 import 'package:nokken/src/shared/theme/app_theme.dart';
 import 'package:nokken/src/shared/constants/date_constants.dart';
+import 'package:nokken/src/shared/utils/appointment_utils.dart';
 
 class CalendarScreen extends ConsumerStatefulWidget {
   const CalendarScreen({super.key});
@@ -74,9 +75,12 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       // Fetch medications from the database
       final medications = await dbService.getAllMedications();
 
+      // Sort medications by their first time slot
+      final sortedMedications = _sortMedicationsByTime(medications);
+
       // Update state with fetched medications
       setState(() {
-        _medications = medications;
+        _medications = sortedMedications;
         _isLoading = false;
       });
     } catch (e) {
@@ -101,11 +105,32 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     }
   }
 
+  /// Sort medications by their first time slot
+  List<Medication> _sortMedicationsByTime(List<Medication> medications) {
+    final sortedMeds = [...medications];
+
+    sortedMeds.sort((a, b) {
+      if (a.timeOfDay.isEmpty) return 1;
+      if (b.timeOfDay.isEmpty) return -1;
+
+      final aTime = a.timeOfDay.first;
+      final bTime = b.timeOfDay.first;
+
+      return (aTime.hour * 60 + aTime.minute) -
+          (bTime.hour * 60 + bTime.minute);
+    });
+
+    return sortedMeds;
+  }
+
   /// Filter medications to those that should appear on the selected day
   /// Now using the MedicationScheduleService
   List<Medication> _getMedicationsForSelectedDay() {
-    return MedicationScheduleService.getMedicationsForDate(
+    final medicationsForDay = MedicationScheduleService.getMedicationsForDate(
         _medications, _selectedDay);
+
+    // Sort medications by time
+    return _sortMedicationsByTime(medicationsForDay);
   }
 
   /// Get bloodwork records for the selected day
@@ -239,32 +264,13 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     final timeStr = DateTimeFormatter.formatTimeToAMPM(timeOfDay);
     final timeIcon = DateTimeFormatter.getTimeIcon(timeStr);
 
-    // Get appointment specific details
-    final String appointmentTitle;
-    final IconData appointmentIcon;
-    final Color appointmentColor;
-
-    switch (bloodwork.appointmentType) {
-      case AppointmentType.bloodwork:
-        appointmentTitle = 'Lab Appointment';
-        appointmentIcon = Icons.science_outlined;
-        appointmentColor = AppTheme.bloodworkColor;
-        break;
-      case AppointmentType.appointment:
-        appointmentTitle = 'Doctor Appointment';
-        appointmentIcon = Icons.medical_services_outlined;
-        appointmentColor = AppTheme.doctorApptColor;
-        break;
-      case AppointmentType.surgery:
-        appointmentTitle = 'Surgery';
-        appointmentIcon = Icons.medical_information_outlined;
-        appointmentColor = AppTheme.surgeryColor;
-        break;
-      default:
-        appointmentTitle = 'Medical Appointment';
-        appointmentIcon = Icons.event_note_outlined;
-        appointmentColor = Colors.grey;
-    }
+    // Get appointment specific details using the AppointmentUtils class
+    final appointmentTitle =
+        AppointmentUtils.getAppointmentTypeText(bloodwork.appointmentType);
+    final appointmentIcon =
+        AppointmentUtils.getAppointmentTypeIcon(bloodwork.appointmentType);
+    final appointmentColor =
+        AppointmentUtils.getAppointmentTypeColor(bloodwork.appointmentType);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
@@ -388,17 +394,31 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                   // Otherwise show hormone levels if bloodwork type
                   else if (bloodwork.appointmentType ==
                       AppointmentType.bloodwork) ...[
-                    if (bloodwork.estrogen != null)
+                    // Display hormone readings if available
+                    if (bloodwork.hormoneReadings.isNotEmpty)
+                      ...bloodwork.hormoneReadings.take(2).map((reading) => Text(
+                          '${reading.name}: ${reading.value.toStringAsFixed(1)} ${reading.unit}',
+                          overflow: TextOverflow.ellipsis)), // Added ellipsis
+
+                    // Show count if there are more readings
+                    if (bloodwork.hormoneReadings.length > 2)
                       Text(
-                          'Estrogen: ${bloodwork.estrogen!.toStringAsFixed(1)} pg/mL'),
-                    if (bloodwork.testosterone != null)
-                      Text(
-                          'Testosterone: ${bloodwork.testosterone!.toStringAsFixed(1)} ng/dL'),
-                    if (bloodwork.estrogen == null &&
-                        bloodwork.testosterone == null)
-                      Text('No results recorded yet',
-                          style: AppTextStyles.bodyMedium),
+                          '...and ${bloodwork.hormoneReadings.length - 2} more',
+                          style: AppTextStyles.bodySmall),
+
+                    // For backward compatibility
+                    if (bloodwork.hormoneReadings.isEmpty) ...[
+                      if (bloodwork.estrogen != null)
+                        Text(
+                            'Estrogen: ${bloodwork.estrogen!.toStringAsFixed(1)} pg/mL',
+                            overflow: TextOverflow.ellipsis), // Added ellipsis
+                      if (bloodwork.testosterone != null)
+                        Text(
+                            'Testosterone: ${bloodwork.testosterone!.toStringAsFixed(1)} ng/dL',
+                            overflow: TextOverflow.ellipsis), // Added ellipsis
+                    ],
                   ],
+
                   // Display notes if any
                   if (bloodwork.notes?.isNotEmpty == true) ...[
                     SharedWidgets.verticalSpace(),
@@ -573,22 +593,6 @@ class MedicationCalendar extends ConsumerWidget {
   }
 }
 
-class _MedicationCalendarView extends StatefulWidget {
-  final List<Medication> medications;
-  final Function(DateTime) onDaySelected;
-  final WidgetRef ref;
-
-  const _MedicationCalendarView({
-    Key? key,
-    required this.medications,
-    required this.onDaySelected,
-    required this.ref,
-  }) : super(key: key);
-
-  @override
-  _MedicationCalendarViewState createState() => _MedicationCalendarViewState();
-}
-
 class _MedicationCalendarViewState extends State<_MedicationCalendarView> {
   late DateTime _focusedDay;
   late DateTime _selectedDay;
@@ -622,6 +626,43 @@ class _MedicationCalendarViewState extends State<_MedicationCalendarView> {
   /// Update the set of dates that have bloodwork recorded
   void _updateBloodworkDates() {
     _bloodworkDates = widget.ref.read(bloodworkDatesProvider);
+  }
+
+  /// Get the appointment type for a given date
+  AppointmentType? _getAppointmentTypeForDate(DateTime date) {
+    // Normalize date for comparison
+    final normalizedDate = DateTime(date.year, date.month, date.day);
+
+    // Get bloodwork records for this date
+    final bloodworkRecords =
+        widget.ref.read(bloodworkRecordsProvider).where((record) {
+      final recordDate =
+          DateTime(record.date.year, record.date.month, record.date.day);
+      return recordDate.isAtSameMomentAs(normalizedDate);
+    }).toList();
+
+    // Prioritize by appointment type (surgery > appointment > bloodwork)
+    if (bloodworkRecords.isNotEmpty) {
+      if (bloodworkRecords
+          .any((r) => r.appointmentType == AppointmentType.surgery)) {
+        return AppointmentType.surgery;
+      } else if (bloodworkRecords
+          .any((r) => r.appointmentType == AppointmentType.appointment)) {
+        return AppointmentType.appointment;
+      } else {
+        return AppointmentType.bloodwork;
+      }
+    }
+    return null;
+  }
+
+  /// Get the color for an appointment on a specific date
+  Color _getAppointmentColorForDate(DateTime date) {
+    final type = _getAppointmentTypeForDate(date);
+    if (type != null) {
+      return AppointmentUtils.getAppointmentTypeColor(type);
+    }
+    return Colors.grey;
   }
 
   /// Check if a date has an injection due
@@ -725,19 +766,24 @@ class _MedicationCalendarViewState extends State<_MedicationCalendarView> {
             bool hasInjection = _hasInjectionDue(day);
             bool hasBloodwork = _hasBloodworkOnDate(day);
 
-            // Check for bloodwork days
+            // Check for appointment days and get the appropriate color
             if (hasBloodwork) {
+              final appointmentType = _getAppointmentTypeForDate(day);
+              final appointmentColor = appointmentType != null
+                  ? AppointmentUtils.getAppointmentTypeColor(appointmentType)
+                  : AppTheme.bloodworkColor;
+
               return Container(
                 margin: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(color: AppTheme.bloodworkColor, width: 2),
+                  border: Border.all(color: appointmentColor, width: 2),
                 ),
                 child: Center(
                   child: Text(
                     '${day.day}',
-                    style: const TextStyle(
-                      color: AppTheme.bloodworkColor,
+                    style: TextStyle(
+                      color: appointmentColor,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -772,11 +818,20 @@ class _MedicationCalendarViewState extends State<_MedicationCalendarView> {
           selectedBuilder: (context, day, focusedDay) {
             bool hasInjection = _hasInjectionDue(day);
             bool hasBloodwork = _hasBloodworkOnDate(day);
+            AppointmentType? appointmentType;
+            Color borderColor;
 
-            // Determine border color based on what's happening on this day
-            Color borderColor = hasBloodwork
-                ? AppTheme.bloodworkColor
-                : (hasInjection ? AppTheme.injectionColor : Colors.transparent);
+            if (hasBloodwork) {
+              appointmentType = _getAppointmentTypeForDate(day);
+              borderColor = appointmentType != null
+                  ? AppointmentUtils.getAppointmentTypeColor(appointmentType)
+                  : AppTheme.bloodworkColor;
+            } else if (hasInjection) {
+              borderColor = AppTheme.injectionColor;
+            } else {
+              borderColor = Colors.transparent;
+            }
+
             bool hasBorder = hasInjection || hasBloodwork;
 
             return Container(
@@ -786,7 +841,10 @@ class _MedicationCalendarViewState extends State<_MedicationCalendarView> {
                 // Change the background color when selected day has special events
                 color: hasBorder
                     ? (hasBloodwork
-                        ? AppTheme.bloodworkColor
+                        ? appointmentType != null
+                            ? AppointmentUtils.getAppointmentTypeColor(
+                                appointmentType)
+                            : AppTheme.bloodworkColor
                         : AppTheme.injectionColor)
                     : AppColors.primary,
                 border:
@@ -808,11 +866,13 @@ class _MedicationCalendarViewState extends State<_MedicationCalendarView> {
           todayBuilder: (context, day, focusedDay) {
             bool hasInjection = _hasInjectionDue(day);
             bool hasBloodwork = _hasBloodworkOnDate(day);
-
-            // Determine border color
             Color borderColor;
+
             if (hasBloodwork) {
-              borderColor = AppTheme.bloodworkColor;
+              final appointmentType = _getAppointmentTypeForDate(day);
+              borderColor = appointmentType != null
+                  ? AppointmentUtils.getAppointmentTypeColor(appointmentType)
+                  : AppTheme.bloodworkColor;
             } else if (hasInjection) {
               borderColor = AppTheme.injectionColor;
             } else {
@@ -834,7 +894,7 @@ class _MedicationCalendarViewState extends State<_MedicationCalendarView> {
                   '${day.day}',
                   style: TextStyle(
                     color: hasBloodwork
-                        ? AppTheme.bloodworkColor
+                        ? borderColor
                         : (hasInjection
                             ? AppTheme.injectionColor
                             : AppColors.primary),
@@ -849,21 +909,26 @@ class _MedicationCalendarViewState extends State<_MedicationCalendarView> {
           outsideBuilder: (context, day, focusedDay) {
             bool hasInjection = _hasInjectionDue(day);
             bool hasBloodwork = _hasBloodworkOnDate(day);
+            Color borderColor;
 
-            // Bloodwork outside current month
             if (hasBloodwork) {
+              final appointmentType = _getAppointmentTypeForDate(day);
+              borderColor = appointmentType != null
+                  ? AppointmentUtils.getAppointmentTypeColor(appointmentType)
+                      .withAlpha(160)
+                  : AppTheme.bloodworkColor.withAlpha(160);
+
               return Container(
                 margin: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(
-                      color: AppTheme.bloodworkColor.withAlpha(160), width: 2),
+                  border: Border.all(color: borderColor, width: 2),
                 ),
                 child: Center(
                   child: Text(
                     '${day.day}',
                     style: TextStyle(
-                      color: AppTheme.bloodworkColor.withAlpha(160),
+                      color: borderColor,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -906,4 +971,20 @@ class _MedicationCalendarViewState extends State<_MedicationCalendarView> {
       ),
     );
   }
+}
+
+class _MedicationCalendarView extends StatefulWidget {
+  final List<Medication> medications;
+  final Function(DateTime) onDaySelected;
+  final WidgetRef ref;
+
+  const _MedicationCalendarView({
+    Key? key,
+    required this.medications,
+    required this.onDaySelected,
+    required this.ref,
+  }) : super(key: key);
+
+  @override
+  _MedicationCalendarViewState createState() => _MedicationCalendarViewState();
 }
