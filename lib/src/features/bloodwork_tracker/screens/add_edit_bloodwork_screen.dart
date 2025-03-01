@@ -494,7 +494,7 @@ class _AddEditBloodworkScreenState
               child: Row(
                 children: [
                   Icon(Icons.info_outline, color: AppColors.info),
-                  const SizedBox(width: 8),
+                  SharedWidgets.horizontalSpace(),
                   Expanded(
                     child: Text(
                       'This is a future date. Hormone levels can be added after the lab date occurs.',

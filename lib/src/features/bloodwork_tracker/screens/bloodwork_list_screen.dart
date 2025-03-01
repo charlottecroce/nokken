@@ -64,7 +64,7 @@ class SectionWithStickyHeader extends StatelessWidget {
               size: 20,
               color: sectionColor,
             ),
-            const SizedBox(width: 8),
+            SharedWidgets.horizontalSpace(),
             // Section title
             Text(
               title,
@@ -74,7 +74,7 @@ class SectionWithStickyHeader extends StatelessWidget {
               ),
             ),
             // Count badge
-            const SizedBox(width: 8),
+            SharedWidgets.horizontalSpace(),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
@@ -147,7 +147,7 @@ class BloodworkListScreen extends ConsumerWidget {
                       Icons.error_outline,
                       color: AppColors.error,
                     ),
-                    const SizedBox(width: 8),
+                    SharedWidgets.horizontalSpace(),
                     Expanded(
                       child: Text(
                         error,
@@ -276,7 +276,7 @@ class BloodworkListTile extends StatelessWidget {
               ),
             ),
             if (isFutureDate) ...[
-              const SizedBox(width: 8),
+              SharedWidgets.horizontalSpace(),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(

@@ -385,7 +385,7 @@ class _DailyScheduleList extends ConsumerWidget {
             children: [
               Icon(DateTimeFormatter.getTimeIcon(timeStr),
                   size: 20, color: appointmentColor),
-              const SizedBox(width: 8),
+              SharedWidgets.horizontalSpace(),
               Text(timeStr,
                   style: AppTextStyles.titleMedium
                       .copyWith(color: appointmentColor)),
@@ -465,7 +465,7 @@ class _AppointmentCard extends StatelessWidget {
             // Appointment type icon
             Icon(appointmentIcon, color: appointmentColor),
 
-            SharedWidgets.verticalSpace(16),
+            SharedWidgets.verticalSpace(AppTheme.doubleSpacing),
 
             // Appointment details
             Expanded(
@@ -484,7 +484,7 @@ class _AppointmentCard extends StatelessWidget {
                           style: AppTextStyles.titleLarge,
                         ),
                         if (isDateInFuture) ...[
-                          const SizedBox(width: 8),
+                          SharedWidgets.horizontalSpace(),
                           Container(
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 8, vertical: 2),
@@ -510,7 +510,7 @@ class _AppointmentCard extends StatelessWidget {
 
                   // Display location if available
                   if (bloodwork.location?.isNotEmpty == true) ...[
-                    SharedWidgets.verticalSpace(8),
+                    SharedWidgets.verticalSpace(),
                     Row(
                       children: [
                         Icon(
@@ -548,7 +548,7 @@ class _AppointmentCard extends StatelessWidget {
 
                   // Display notes if any
                   if (bloodwork.notes?.isNotEmpty == true) ...[
-                    SharedWidgets.verticalSpace(8),
+                    SharedWidgets.verticalSpace(),
                     Text(
                       'Notes: ${bloodwork.notes}',
                       style: AppTextStyles.bodySmall,
@@ -591,7 +591,7 @@ class _TimeGroupItem extends StatelessWidget {
             children: [
               Icon(DateTimeFormatter.getTimeIcon(timeGroup.timeSlot),
                   size: 20, color: timeGroupColor),
-              const SizedBox(width: 8),
+              SharedWidgets.horizontalSpace(),
               Text(
                 timeGroup.timeSlot,
                 style:
@@ -692,7 +692,7 @@ class _MedicationListTile extends ConsumerWidget {
               // Medication type icon
               Icon(medicationIcon, color: medicationColor),
 
-              SharedWidgets.verticalSpace(16),
+              SharedWidgets.verticalSpace(AppTheme.doubleSpacing),
 
               // Medication details
               Expanded(
@@ -716,7 +716,7 @@ class _MedicationListTile extends ConsumerWidget {
                           ),
                           // Show refill indicator if needed
                           if (medication.needsRefill()) ...[
-                            const SizedBox(width: 8),
+                            SharedWidgets.horizontalSpace(),
                             Container(
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 8, vertical: 2),
@@ -741,7 +741,7 @@ class _MedicationListTile extends ConsumerWidget {
                     ),
 
                     // Medication dosage
-                    SharedWidgets.verticalSpace(8),
+                    SharedWidgets.verticalSpace(),
                     Text(
                       medication.dosage,
                       style: AppTextStyles.bodyMedium,
@@ -773,7 +773,7 @@ class _MedicationListTile extends ConsumerWidget {
                     ],
 
                     // Show taken status
-                    SharedWidgets.verticalSpace(8),
+                    SharedWidgets.verticalSpace(),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [

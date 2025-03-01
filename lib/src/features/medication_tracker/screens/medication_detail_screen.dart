@@ -38,13 +38,13 @@ class MedicationDetailScreen extends ConsumerWidget {
         actions: [
           // Edit button
           IconButton(
-            icon: const Icon(Icons.edit),
+            icon: Icon(AppIcons.getIcon('edit')),
             onPressed: () => NavigationService.goToMedicationAddEdit(context,
                 medication: medication),
           ),
           // Delete button
           IconButton(
-            icon: const Icon(Icons.delete),
+            icon: Icon(AppIcons.getIcon('delete')),
             onPressed: () => _showDeleteDialog(context, ref),
           ),
         ],
@@ -61,7 +61,7 @@ class MedicationDetailScreen extends ConsumerWidget {
                 child: Row(
                   children: [
                     Icon(
-                      Icons.warning_rounded,
+                      AppIcons.getIcon('warning'),
                       color: AppColors.error,
                     ),
                     SharedWidgets.verticalSpace(),

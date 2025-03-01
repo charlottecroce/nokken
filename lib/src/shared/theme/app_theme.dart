@@ -196,6 +196,8 @@ class AppTheme {
 
   /// Standard spacing unit for margins, padding, etc.
   static const double spacing = 8.0;
+  static const double doubleSpacing = spacing * 2;
+  static const double tripleSpacing = spacing * 3;
 
   /// Standard padding for containers
   static const double padding = 16.0;

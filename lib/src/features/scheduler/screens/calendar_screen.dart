@@ -282,7 +282,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             // Appointment type icon
             Icon(appointmentIcon, color: appointmentColor),
 
-            SharedWidgets.verticalSpace(16),
+            SharedWidgets.verticalSpace(AppTheme.doubleSpacing),
 
             // Appointment details
             Expanded(
@@ -301,7 +301,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                           style: AppTextStyles.titleLarge,
                         ),
                         if (isDateInFuture) ...[
-                          const SizedBox(width: 8),
+                          SharedWidgets.horizontalSpace(),
                           Container(
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 8, vertical: 2),
@@ -458,7 +458,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                   : AppColors.oralMedication,
             ),
 
-            SharedWidgets.verticalSpace(16),
+            SharedWidgets.verticalSpace(AppTheme.doubleSpacing),
 
             // Medication details
             Expanded(

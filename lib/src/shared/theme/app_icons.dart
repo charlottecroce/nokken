@@ -24,6 +24,7 @@ class AppIcons {
 
     // Actions
     'add': (outlined: Icons.add, filled: Icons.add),
+    'remove': (outlined: Icons.remove, filled: Icons.remove),
     'edit': (outlined: Icons.edit_outlined, filled: Icons.edit),
     'delete': (outlined: Icons.delete_outline, filled: Icons.delete),
     'save': (outlined: Icons.save_outlined, filled: Icons.save),
