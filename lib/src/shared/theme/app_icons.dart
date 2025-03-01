@@ -30,6 +30,7 @@ class AppIcons {
     'refresh': (outlined: Icons.refresh_outlined, filled: Icons.refresh),
     'redo': (outlined: Icons.redo_outlined, filled: Icons.redo),
     'undo': (outlined: Icons.undo_outlined, filled: Icons.undo),
+    'check': (outlined: Icons.check_circle_outline, filled: Icons.check_circle),
 
     // Arrows
     'arrow_back': (
@@ -98,7 +99,7 @@ class AppIcons {
     'email': (outlined: Icons.email_outlined, filled: Icons.email),
     'phone': (outlined: Icons.phone_outlined, filled: Icons.phone),
 
-    // Medical
+    // Medical and Health
     'medication': (
       outlined: Icons.medication_outlined,
       filled: Icons.medication
@@ -113,6 +114,28 @@ class AppIcons {
     ),
     'vaccine': (outlined: Icons.vaccines_outlined, filled: Icons.vaccines),
     'vial': (outlined: Icons.science_outlined, filled: Icons.science),
+    'medical_info': (
+      outlined: Icons.medical_information_outlined,
+      filled: Icons.medical_information
+    ),
+    'bloodwork': (outlined: Icons.science_outlined, filled: Icons.science),
+    'surgery': (
+      outlined: Icons.medical_information_outlined,
+      filled: Icons.medical_information
+    ),
+    'doctor': (outlined: Icons.person_outlined, filled: Icons.person),
+    'inventory': (
+      outlined: Icons.inventory_2_outlined,
+      filled: Icons.inventory_2
+    ),
+    'analytics': (outlined: Icons.analytics_outlined, filled: Icons.analytics),
+    'lab': (outlined: Icons.biotech_outlined, filled: Icons.biotech),
+
+    // Location
+    'location': (
+      outlined: Icons.location_on_outlined,
+      filled: Icons.location_on
+    ),
 
     // Status
     'success': (
@@ -122,6 +145,7 @@ class AppIcons {
     'warning': (outlined: Icons.warning_outlined, filled: Icons.warning),
     'error': (outlined: Icons.error_outline, filled: Icons.error),
     'info': (outlined: Icons.info_outline, filled: Icons.info),
+    'construction': (outlined: Icons.construction, filled: Icons.construction),
 
     // Time related
     'calendar': (
@@ -131,6 +155,19 @@ class AppIcons {
     'clock': (outlined: Icons.access_time_outlined, filled: Icons.access_time),
     'alarm': (outlined: Icons.alarm_outlined, filled: Icons.alarm),
     'schedule': (outlined: Icons.schedule_outlined, filled: Icons.schedule),
+    'today': (outlined: Icons.today_outlined, filled: Icons.today),
+    'event': (outlined: Icons.event_outlined, filled: Icons.event),
+    'history': (outlined: Icons.history_outlined, filled: Icons.history),
+    'event_note': (
+      outlined: Icons.event_note_outlined,
+      filled: Icons.event_note
+    ),
+
+    // Misc
+    'remove_circle': (
+      outlined: Icons.remove_circle_outline,
+      filled: Icons.remove_circle
+    ),
   };
 
   /// Get the outlined version of an icon
@@ -146,5 +183,19 @@ class AppIcons {
   /// Get icon based on selected state (filled when selected, outlined when not)
   static IconData getIcon(String name, {bool selected = false}) {
     return selected ? getFilled(name) : getOutlined(name);
+  }
+
+  /// Get the appropriate appointment type icon
+  static IconData getAppointmentTypeIcon(String type) {
+    switch (type) {
+      case 'bloodwork':
+        return getOutlined('bloodwork');
+      case 'appointment':
+        return getOutlined('medical_services');
+      case 'surgery':
+        return getOutlined('medical_info');
+      default:
+        return getOutlined('event_note');
+    }
   }
 }

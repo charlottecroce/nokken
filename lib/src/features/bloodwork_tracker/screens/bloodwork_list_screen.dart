@@ -206,7 +206,7 @@ class BloodworkListScreen extends ConsumerWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            Icons.event_note_outlined,
+            AppIcons.getOutlined('event_note'),
             size: 64,
             color: AppColors.secondary,
           ),
@@ -352,7 +352,7 @@ class BloodworkListTile extends StatelessWidget {
               Row(
                 children: [
                   Icon(
-                    Icons.location_on_outlined,
+                    AppIcons.getOutlined('location'),
                     size: 16,
                     color: Colors.grey,
                   ),

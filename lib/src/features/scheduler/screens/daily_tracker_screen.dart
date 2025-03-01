@@ -514,7 +514,7 @@ class _AppointmentCard extends StatelessWidget {
                     Row(
                       children: [
                         Icon(
-                          Icons.location_on_outlined,
+                          AppIcons.getOutlined('location'),
                           size: 16,
                           color: Colors.grey,
                         ),
