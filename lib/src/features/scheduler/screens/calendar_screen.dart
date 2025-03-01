@@ -282,7 +282,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             // Appointment type icon
             Icon(appointmentIcon, color: appointmentColor),
 
-            SharedWidgets.verticalSpace(16),
+            SharedWidgets.verticalSpace(AppTheme.doubleSpacing),
 
             // Appointment details
             Expanded(
@@ -301,7 +301,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                           style: AppTextStyles.titleLarge,
                         ),
                         if (isDateInFuture) ...[
-                          const SizedBox(width: 8),
+                          SharedWidgets.horizontalSpace(),
                           Container(
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 8, vertical: 2),
@@ -371,7 +371,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     Row(
                       children: [
                         Icon(
-                          Icons.person_outlined,
+                          AppIcons.getIcon('profile'),
                           size: 16,
                           color: Colors.grey,
                         ),
@@ -449,11 +449,16 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Medication type icon
-            Icon(medication.medicationType == MedicationType.injection
-                ? AppIcons.getOutlined('vaccine')
-                : AppIcons.getOutlined('medication')),
+            Icon(
+              medication.medicationType == MedicationType.injection
+                  ? AppIcons.getOutlined('vaccine')
+                  : AppIcons.getOutlined('medication'),
+              color: medication.medicationType == MedicationType.injection
+                  ? AppColors.injection
+                  : AppColors.oralMedication,
+            ),
 
-            SharedWidgets.verticalSpace(16),
+            SharedWidgets.verticalSpace(AppTheme.doubleSpacing),
 
             // Medication details
             Expanded(
@@ -478,7 +483,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                         medication.dosage,
                         style: AppTextStyles.bodyMedium,
                       ),
-                      const SizedBox(height: 4),
+                      SharedWidgets.verticalSpace(4),
 
                       // Display times medication is taken
                       Column(

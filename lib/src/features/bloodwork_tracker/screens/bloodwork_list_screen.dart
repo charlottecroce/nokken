@@ -38,16 +38,16 @@ class SectionWithStickyHeader extends StatelessWidget {
 
     switch (title) {
       case 'Today':
-        sectionIcon = Icons.today;
+        sectionIcon = AppIcons.getIcon('today');
         sectionColor = AppTheme.greenDark;
         break;
       case 'Upcoming':
-        sectionIcon = Icons.event;
+        sectionIcon = AppIcons.getIcon('event');
         sectionColor = Colors.blue;
         break;
       case 'Past':
       default:
-        sectionIcon = Icons.history;
+        sectionIcon = AppIcons.getIcon('history');
         sectionColor = Colors.grey;
         break;
     }
@@ -64,7 +64,7 @@ class SectionWithStickyHeader extends StatelessWidget {
               size: 20,
               color: sectionColor,
             ),
-            const SizedBox(width: 8),
+            SharedWidgets.horizontalSpace(),
             // Section title
             Text(
               title,
@@ -74,7 +74,7 @@ class SectionWithStickyHeader extends StatelessWidget {
               ),
             ),
             // Count badge
-            const SizedBox(width: 8),
+            SharedWidgets.horizontalSpace(),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
@@ -125,7 +125,7 @@ class BloodworkListScreen extends ConsumerWidget {
         automaticallyImplyLeading: false,
         actions: [
           IconButton(
-            icon: const Icon(Icons.analytics),
+            icon: Icon(AppIcons.getIcon('analytics')),
             onPressed: () => NavigationService.goToBloodLevelList(context),
             tooltip: 'View Hormone Levels',
           ),
@@ -144,10 +144,10 @@ class BloodworkListScreen extends ConsumerWidget {
                 child: Row(
                   children: [
                     Icon(
-                      Icons.error_outline,
+                      AppIcons.getIcon('error'),
                       color: AppColors.error,
                     ),
-                    const SizedBox(width: 8),
+                    SharedWidgets.horizontalSpace(),
                     Expanded(
                       child: Text(
                         error,
@@ -276,7 +276,7 @@ class BloodworkListTile extends StatelessWidget {
               ),
             ),
             if (isFutureDate) ...[
-              const SizedBox(width: 8),
+              SharedWidgets.horizontalSpace(),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
@@ -308,7 +308,7 @@ class BloodworkListTile extends StatelessWidget {
                   size: 16,
                   color: appointmentTypeColor,
                 ),
-                const SizedBox(width: 6),
+                SharedWidgets.horizontalSpace(6),
                 Flexible(
                   // Added Flexible to prevent overflow
                   child: Text(
@@ -358,11 +358,10 @@ class BloodworkListTile extends StatelessWidget {
                   ),
                   SharedWidgets.verticalSpace(6),
                   Flexible(
-                    // Added Flexible
                     child: Text(
                       bloodwork.location!,
                       style: AppTextStyles.bodyMedium,
-                      overflow: TextOverflow.ellipsis, // Added ellipsis
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],
@@ -375,17 +374,16 @@ class BloodworkListTile extends StatelessWidget {
               Row(
                 children: [
                   Icon(
-                    Icons.person_outlined,
+                    AppIcons.getIcon('profile'),
                     size: 16,
                     color: Colors.grey,
                   ),
                   SharedWidgets.verticalSpace(6),
                   Flexible(
-                    // Added Flexible
                     child: Text(
                       bloodwork.doctor!,
                       style: AppTextStyles.bodyMedium,
-                      overflow: TextOverflow.ellipsis, // Added ellipsis
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],
@@ -412,18 +410,6 @@ class BloodworkListTile extends StatelessWidget {
               if (bloodwork.hormoneReadings.length > 2)
                 Text('...and ${bloodwork.hormoneReadings.length - 2} more',
                     style: AppTextStyles.bodySmall),
-
-              // For backward compatibility
-              if (bloodwork.hormoneReadings.isEmpty) ...[
-                if (bloodwork.estrogen != null)
-                  Text(
-                      'Estrogen: ${bloodwork.estrogen!.toStringAsFixed(1)} pg/mL',
-                      overflow: TextOverflow.ellipsis), // Added ellipsis
-                if (bloodwork.testosterone != null)
-                  Text(
-                      'Testosterone: ${bloodwork.testosterone!.toStringAsFixed(1)} ng/dL',
-                      overflow: TextOverflow.ellipsis), // Added ellipsis
-              ],
             ],
 
             // Display notes if any
@@ -442,7 +428,7 @@ class BloodworkListTile extends StatelessWidget {
           context,
           bloodwork: bloodwork,
         ),
-        trailing: Icon(Icons.chevron_right),
+        trailing: Icon(AppIcons.getIcon('chevron-right')),
       ),
     );
   }

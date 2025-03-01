@@ -299,7 +299,7 @@ class _AddEditMedicationScreenState
                   ),
                 )
               : IconButton(
-                  icon: const Icon(Icons.save),
+                  icon: Icon(AppIcons.getIcon('save')),
                   onPressed: _saveMedication,
                 ),
         ],
@@ -567,7 +567,7 @@ class InjectionDetailsSection extends StatelessWidget {
             }
           },
         ),
-        SharedWidgets.verticalSpace(24),
+        SharedWidgets.verticalSpace(AppTheme.tripleSpacing),
 
         // Drawing Needles Section
         _buildNeedleSection(
@@ -583,7 +583,7 @@ class InjectionDetailsSection extends StatelessWidget {
           onRefillsChanged: (value) =>
               onDetailsChanged(drawingNeedleRefills: value),
         ),
-        SharedWidgets.verticalSpace(24),
+        SharedWidgets.verticalSpace(AppTheme.tripleSpacing),
 
         // Injecting Needles Section
         _buildNeedleSection(
@@ -600,7 +600,7 @@ class InjectionDetailsSection extends StatelessWidget {
           onRefillsChanged: (value) =>
               onDetailsChanged(injectingNeedleRefills: value),
         ),
-        SharedWidgets.verticalSpace(24),
+        SharedWidgets.verticalSpace(AppTheme.tripleSpacing),
 
         // Injection Site Notes
         Text(
@@ -652,13 +652,13 @@ class TimingSection extends StatelessWidget {
       children: [
         const Text('Times per day: '),
         IconButton(
-          icon: const Icon(Icons.remove),
+          icon: Icon(AppIcons.getIcon('remove')),
           onPressed:
               frequency > 1 ? () => onFrequencyChanged(frequency - 1) : null,
         ),
         Text('$frequency'),
         IconButton(
-          icon: const Icon(Icons.add),
+          icon: Icon(AppIcons.getIcon('add')),
           onPressed:
               frequency < 10 ? () => onFrequencyChanged(frequency + 1) : null,
         ),
@@ -727,12 +727,12 @@ class TimingSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: 8),
+        SharedWidgets.verticalSpace(),
         ListTile(
           title: Text(
             'Start Date: ${DateTimeFormatter.formatDateDDMMYY(selectedStartDate)}',
           ),
-          trailing: const Icon(Icons.calendar_today),
+          trailing: Icon(AppIcons.getIcon('calendar')),
           onTap: () => _selectStartDate(context),
         ),
       ],
@@ -815,7 +815,7 @@ class TimingSection extends StatelessWidget {
               },
             ),
           ),
-          const SizedBox(width: 12),
+          SharedWidgets.horizontalSpace(12),
           // AM/PM toggle
           TextButton(
             onPressed: () {
@@ -856,9 +856,9 @@ class TimingSection extends StatelessWidget {
       children: [
         _buildStartDateSelector(context),
         if (!isEveryTwoWeeks) _buildFrequencySelector(),
-        SharedWidgets.verticalSpace(16),
+        SharedWidgets.verticalSpace(AppTheme.doubleSpacing),
         _buildDaySelector(context),
-        SharedWidgets.verticalSpace(16),
+        SharedWidgets.verticalSpace(AppTheme.doubleSpacing),
         ...List.generate(
           frequency,
           (index) => _buildTimeInput(context, index),
@@ -944,7 +944,7 @@ class InventorySection extends StatelessWidget {
         ),
         if (showAddButton)
           TextButton.icon(
-            icon: const Icon(Icons.add),
+            icon: Icon(AppIcons.getIcon('add')),
             label: const Text('Add More'),
             onPressed: () {
               showDialog(

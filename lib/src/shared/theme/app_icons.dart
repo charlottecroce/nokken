@@ -24,6 +24,7 @@ class AppIcons {
 
     // Actions
     'add': (outlined: Icons.add, filled: Icons.add),
+    'remove': (outlined: Icons.remove, filled: Icons.remove),
     'edit': (outlined: Icons.edit_outlined, filled: Icons.edit),
     'delete': (outlined: Icons.delete_outline, filled: Icons.delete),
     'save': (outlined: Icons.save_outlined, filled: Icons.save),
@@ -31,6 +32,11 @@ class AppIcons {
     'redo': (outlined: Icons.redo_outlined, filled: Icons.redo),
     'undo': (outlined: Icons.undo_outlined, filled: Icons.undo),
     'check': (outlined: Icons.check_circle_outline, filled: Icons.check_circle),
+    'checkmark': (outlined: Icons.check, filled: Icons.check),
+    'filter_list': (
+      outlined: Icons.filter_list_outlined,
+      filled: Icons.filter_list
+    ),
 
     // Arrows
     'arrow_back': (

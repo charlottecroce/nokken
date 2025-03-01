@@ -214,7 +214,7 @@ class _BloodworkGraphScreenState extends ConsumerState<BloodworkGraphScreen>
         actions: [
           // Time range filter dropdown
           PopupMenuButton<String>(
-            icon: const Icon(Icons.filter_list),
+            icon: Icon(AppIcons.getIcon('filter_list')),
             tooltip: 'Filter time range',
             onSelected: (String value) {
               setState(() {
@@ -229,7 +229,7 @@ class _BloodworkGraphScreenState extends ConsumerState<BloodworkGraphScreen>
                     children: [
                       Text(range),
                       if (_selectedTimeRange == range)
-                        const Icon(Icons.check, size: 18)
+                        Icon(AppIcons.getIcon('checkmark'), size: 18)
                     ],
                   ),
                 );
@@ -257,12 +257,12 @@ class _BloodworkGraphScreenState extends ConsumerState<BloodworkGraphScreen>
                             size: 64,
                             color: AppColors.secondary,
                           ),
-                          SharedWidgets.verticalSpace(16),
+                          SharedWidgets.verticalSpace(AppTheme.doubleSpacing),
                           const Text(
                             'No bloodwork data available for the selected time range',
                             textAlign: TextAlign.center,
                           ),
-                          SharedWidgets.verticalSpace(8),
+                          SharedWidgets.verticalSpace(),
                           const Text(
                             'Only lab appointments with hormone levels are shown in graphs',
                             textAlign: TextAlign.center,
@@ -383,12 +383,12 @@ class _BloodworkGraphScreenState extends ConsumerState<BloodworkGraphScreen>
             '$title ($unit)',
             style: AppTextStyles.titleMedium,
           ),
-          SharedWidgets.verticalSpace(8),
+          SharedWidgets.verticalSpace(),
           Text(
             'Time range: $_selectedTimeRange',
             style: AppTextStyles.bodySmall,
           ),
-          SharedWidgets.verticalSpace(24),
+          SharedWidgets.verticalSpace(AppTheme.tripleSpacing),
           Expanded(
             child: _buildLineChart(
                 validRecords, lineColor, valueGetter, unit, title),

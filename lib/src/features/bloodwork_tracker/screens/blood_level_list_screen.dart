@@ -86,7 +86,7 @@ class BloodLevelListScreen extends ConsumerWidget {
             size: 64,
             color: AppColors.secondary,
           ),
-          SharedWidgets.verticalSpace(16),
+          SharedWidgets.verticalSpace(AppTheme.doubleSpacing),
           const Text(
             'No hormone data available',
             textAlign: TextAlign.center,
@@ -167,8 +167,8 @@ class _HormoneLevelTile extends StatelessWidget {
                       if (trendInfo.showTrend)
                         Icon(
                           trendInfo.isIncreasing
-                              ? Icons.arrow_upward
-                              : Icons.arrow_downward,
+                              ? AppIcons.getIcon('arrow_up')
+                              : AppIcons.getIcon('arrow_down'),
                           color: trendInfo.isIncreasing
                               ? Colors.red
                               : Colors.green,
@@ -192,7 +192,7 @@ class _HormoneLevelTile extends StatelessWidget {
                 style: AppTextStyles.bodySmall,
               ),
 
-              SharedWidgets.verticalSpace(16),
+              SharedWidgets.verticalSpace(AppTheme.doubleSpacing),
 
               // Mini chart
               SizedBox(

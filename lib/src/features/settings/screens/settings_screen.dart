@@ -4,6 +4,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nokken/src/shared/theme/app_theme.dart';
+import 'package:nokken/src/shared/theme/app_icons.dart';
 import 'package:nokken/src/shared/providers/theme_provider.dart';
 import 'package:nokken/src/shared/theme/shared_widgets.dart';
 
@@ -56,7 +57,7 @@ class SettingsScreen extends ConsumerWidget {
               context,
               title: 'Version',
               subtitle: '0.0.1',
-              icon: Icons.info_outline,
+              icon: AppIcons.getIcon('info'),
             ),
           ],
         ),

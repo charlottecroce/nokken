@@ -47,7 +47,7 @@ class MedicationSectionWithStickyHeader extends StatelessWidget {
                   ? AppColors.oralMedication
                   : AppColors.injection,
             ),
-            const SizedBox(width: 8),
+            SharedWidgets.horizontalSpace(),
             // Section title
             Text(
               title,
@@ -59,7 +59,7 @@ class MedicationSectionWithStickyHeader extends StatelessWidget {
               ),
             ),
             // Count badge
-            const SizedBox(width: 8),
+            SharedWidgets.horizontalSpace(),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
@@ -122,14 +122,14 @@ class MedicationListScreen extends ConsumerWidget {
             if (needsRefill.isNotEmpty)
               Container(
                 color: AppColors.errorContainer.withAlpha(25),
-                padding: const EdgeInsets.all(12),
+                padding: AppTheme.standardCardPadding,
                 child: Row(
                   children: [
                     Icon(
-                      Icons.warning_rounded,
+                      AppIcons.getIcon('warning'),
                       color: AppColors.error,
                     ),
-                    const SizedBox(width: 8),
+                    SharedWidgets.horizontalSpace(),
                     Expanded(
                       child: Text(
                         '${needsRefill.length} medication${needsRefill.length != 1 ? 's' : ''} need${needsRefill.length == 1 ? 's' : ''} refill',
@@ -151,10 +151,10 @@ class MedicationListScreen extends ConsumerWidget {
                 child: Row(
                   children: [
                     Icon(
-                      Icons.error_outline,
+                      AppIcons.getIcon('error'),
                       color: AppColors.error,
                     ),
-                    const SizedBox(width: 8),
+                    SharedWidgets.horizontalSpace(),
                     Expanded(
                       child: Text(
                         error,
@@ -216,7 +216,7 @@ class MedicationListScreen extends ConsumerWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            Icons.medication_outlined,
+            AppIcons.getOutlined('medication'),
             size: 64,
             color: AppColors.secondary,
           ),
