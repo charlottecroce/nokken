@@ -118,12 +118,6 @@ class AppTextStyles {
 
   /// Create the light theme text styles with adjusted colors
   static TextTheme _getLightTextTheme() {
-    // For now, using same styles with color adjusted for light theme
-    final baseStyle = GoogleFonts.nunito(
-      color: AppTheme.black,
-      letterSpacing: 0.15,
-    );
-
     return TextTheme(
       displayLarge: AppTheme.displayLarge.copyWith(color: AppTheme.black),
       displayMedium: AppTheme.displayMedium.copyWith(color: AppTheme.black),
@@ -232,56 +226,63 @@ class AppTheme {
   // BASE COLORS
   //----------------------------------------------------------------------------
 
-  static const Color black = Color(0xFF0A100D);
-  static const Color white = Color(0xFFF7F7F9);
-  static const Color darkgrey = Color.fromARGB(255, 29, 29, 29);
+  static const Color black = Color(0xFF1A1A2E); // Deep navy-black
+  static const Color white = Color(0xFFF9F9F9); // Soft white
+  static const Color darkgrey = Color(0xFF2C2C44); // Deep blue-grey
 
   //----------------------------------------------------------------------------
   // NOTIFICATION TYPE COLORS
   //----------------------------------------------------------------------------
   // Dark theme colors for medication types
-  static const oralMedColorDark = Color.fromARGB(255, 159, 85, 186);
-  static const injectionColorDark = Color.fromARGB(255, 212, 132, 20);
+  static const oralMedColorDark = Color(0xFFc576e5); // Vibrant purple
+  static const injectionColorDark = Color(0xFF81f7e5); // Fluorescent cyan
 
   // Light theme colors for medication types
-  static const oralMedColorLight = Color.fromARGB(255, 128, 55, 155);
-  static const injectionColorLight = Color.fromARGB(255, 175, 90, 0);
+  static const oralMedColorLight = Color(0xFF9331ae); // Rich violet
+  static const injectionColorLight = Color(0xFF00b3a0); // Deeper teal
 
   // Dark theme colors for appointment types
-  static const bloodworkColorDark = Color.fromARGB(255, 255, 52, 52);
-  static const doctorApptColorDark = Color.fromARGB(255, 64, 226, 110);
-  static const surgeryColorDark = Color.fromARGB(255, 238, 230, 87);
-
+  static const bloodworkColorDark = Color(0xFFff9fb3); // Soft pink
+  static const doctorApptColorDark = Color(0xFFb6dcfe); // Uranian blue
+  static const surgeryColorDark = Color(0xFFf2d0a4); // Soft gold
   // Light theme colors for appointment types
-  static const bloodworkColorLight = Color.fromARGB(255, 200, 10, 10);
-  static const doctorApptColorLight = Color.fromARGB(255, 0, 150, 50);
-  static const surgeryColorLight = Color.fromARGB(255, 190, 175, 20);
+  static const bloodworkColorLight = Color(0xFFe6536e); // Deeper pink
+  static const doctorApptColorLight = Color(0xFF3c77b5); // Deeper blue
+  static const surgeryColorLight = Color(0xFFd4a241); // Amber gold
+
+  // Keep old constants for backward compatibility
+  static const oralMedColor = oralMedColorDark;
+  static const injectionColor = injectionColorDark;
+  static const bloodworkColor = bloodworkColorDark;
+  static const doctorApptColor = doctorApptColorDark;
+  static const surgeryColor = surgeryColorDark;
 
   //----------------------------------------------------------------------------
   // DARK THEME COLORS
   //----------------------------------------------------------------------------
-  static const Color greyDark = Color.fromARGB(255, 39, 39, 39);
-  static const Color lightgreyDark = Color.fromARGB(255, 236, 236, 243);
-  static const Color blueDark = Color.fromARGB(255, 59, 170, 255);
-  static const Color lightblueDark = Color.fromARGB(255, 176, 221, 250);
-  static const Color darkblueDark = Color(0xFF0A1128);
-  static const Color orangeDark = Color.fromARGB(255, 238, 154, 37);
-  static const Color pinkDark = Color(0xFFCE5374);
-  static const Color lightpinkDark = Color.fromARGB(255, 235, 141, 166);
-  static const Color greenDark = Color(0xFF4FB286);
+  static const Color greyDark =
+      Color.fromARGB(255, 58, 58, 88); // Deep blue-grey
+  static const Color lightgreyDark = Color(0xFF9090A0); // Muted lavender-grey
+  static const Color blueDark = Color(0xFFb6dcfe); // Uranian blue
+  static const Color lightblueDark = Color(0xFFcdedfd); // Columbia blue
+  static const Color darkblueDark = Color(0xFF5785c1); // Deeper blue
+  static const Color orangeDark = Color(0xFFffbe7d); // Soft orange
+  static const Color pinkDark = Color(0xFFff9fb3); // Soft pink
+  static const Color lightpinkDark = Color(0xFFffccd6); // Lighter pink
+  static const Color greenDark = Color(0xFFa8e6cf); // Soft mint
 
   //----------------------------------------------------------------------------
   // LIGHT THEME COLORS
   //----------------------------------------------------------------------------
-  static const Color greyLight = Color.fromARGB(255, 227, 227, 227);
-  static const Color lightgreyLight = Color.fromARGB(255, 229, 229, 229);
-  static const Color blueLight = Color.fromARGB(255, 24, 118, 210);
-  static const Color lightblueLight = Color.fromARGB(255, 125, 190, 252);
-  static const Color darkblueLight = Color(0xFF1A237E);
-  static const Color orangeLight = Color.fromARGB(255, 245, 124, 0);
-  static const Color pinkLight = Color(0xFFEC407A);
-  static const Color lightpinkLight = Color.fromARGB(255, 248, 176, 195);
-  static const Color greenLight = Color(0xFF2E7D32);
+  static const Color greyLight = Color(0xFFDCDCE8); // Pale blue-grey
+  static const Color lightgreyLight = Color(0xFFF5F5F9); // Nearly white
+  static const Color blueLight = Color(0xFF4a91db); // Medium blue
+  static const Color lightblueLight = Color(0xFF8fc4f3); // Light medium blue
+  static const Color darkblueLight = Color(0xFF245a92); // Deep navy blue
+  static const Color orangeLight = Color(0xFFf39c63); // Medium orange
+  static const Color pinkLight = Color(0xFFe6536e); // Medium pink
+  static const Color lightpinkLight = Color(0xFFf38ea0); // Light medium pink
+  static const Color greenLight = Color(0xFF5ab890); // Medium mint
 
   //----------------------------------------------------------------------------
   // COLOR SCHEMES
@@ -293,34 +294,34 @@ class AppTheme {
     secondary: pinkDark,
     tertiary: greenDark,
     surface: darkgrey,
-    surfaceContainer: greyDark,
-    onPrimary: white,
-    onSecondary: white,
-    onTertiary: white,
+    surfaceContainer: greyDark.withAlpha(200),
+    onPrimary: black,
+    onSecondary: black,
+    onTertiary: black,
     onSurface: white,
-    onSurfaceVariant: white,
+    onSurfaceVariant: lightgreyDark,
     error: pinkDark.withRed(220),
     errorContainer: lightpinkDark,
     shadow: black.withAlpha(25),
-    outline: greyDark,
+    outline: lightgreyDark.withAlpha(100),
   );
 
   /// Light mode color scheme
   static final ColorScheme lightColorScheme = ColorScheme.light(
-    primary: blueLight,
+    primary: darkblueLight, // Darker blue for better text contrast
     secondary: pinkLight,
     tertiary: greenLight,
     surface: white,
-    surfaceContainer: greyLight,
+    surfaceContainer: greyLight, // More distinct from white
     onPrimary: white,
     onSecondary: white,
     onTertiary: white,
     onSurface: black,
-    onSurfaceVariant: black,
+    onSurfaceVariant: darkgrey.withOpacity(0.7),
     error: pinkLight.withRed(240),
     errorContainer: lightpinkDark,
     shadow: black.withAlpha(15),
-    outline: greyLight,
+    outline: greyLight.withOpacity(0.7),
   );
 
   /// Default text field decoration used throughout the app
@@ -533,10 +534,11 @@ class AppTheme {
     appBarTheme: AppBarTheme(
       toolbarHeight: 48,
       backgroundColor: darkColorScheme.primary,
-      foregroundColor: darkColorScheme.onPrimary,
+      foregroundColor:
+          darkColorScheme.onPrimary, // Now using black on bright blue
       elevation: 0,
       centerTitle: true,
-      titleTextStyle: headlineSmall,
+      titleTextStyle: headlineSmall.copyWith(color: darkColorScheme.onPrimary),
     ),
 
     // Dark - Card Theme
@@ -596,16 +598,20 @@ class AppTheme {
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
         textStyle: buttonText,
+        foregroundColor: blueDark,
       ),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         textStyle: buttonText,
+        backgroundColor: blueDark,
+        foregroundColor: black, // Better contrast
       ),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
         textStyle: buttonText,
+        foregroundColor: blueDark,
       ),
     ),
 
@@ -623,8 +629,9 @@ class AppTheme {
       backgroundColor: darkColorScheme.surface,
       headerBackgroundColor: darkColorScheme.primary,
       headerForegroundColor: darkColorScheme.onPrimary,
-      headerHeadlineStyle: headlineSmall,
-      headerHelpStyle: labelMedium,
+      headerHeadlineStyle:
+          headlineSmall.copyWith(color: darkColorScheme.onPrimary),
+      headerHelpStyle: labelMedium.copyWith(color: darkColorScheme.onPrimary),
       dayBackgroundColor: WidgetStateProperty.resolveWith<Color>((states) {
         if (states.contains(WidgetState.selected)) {
           return darkColorScheme.primary;
@@ -654,7 +661,7 @@ class AppTheme {
         if (states.contains(WidgetState.selected)) {
           return darkColorScheme.onPrimary;
         }
-        return black;
+        return darkColorScheme.onSurface;
       }),
       yearStyle: bodyMedium,
     ),
@@ -672,7 +679,8 @@ class AppTheme {
 
     // Dark - Navigation Bar Theme
     navigationBarTheme: NavigationBarThemeData(
-      backgroundColor: black,
+      backgroundColor:
+          darkgrey.withOpacity(0.9), // Better contrast with content
       height: 56,
       iconTheme: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.selected)) {
@@ -822,16 +830,20 @@ class AppTheme {
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
         textStyle: buttonText.copyWith(color: black),
+        foregroundColor: darkblueLight,
       ),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
-        textStyle: buttonText.copyWith(color: black),
+        textStyle: buttonText.copyWith(color: white),
+        backgroundColor: darkblueLight,
+        foregroundColor: white,
       ),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
         textStyle: buttonText.copyWith(color: black),
+        foregroundColor: darkblueLight,
       ),
     ),
 
@@ -857,12 +869,13 @@ class AppTheme {
 
     // Light - Navigation Bar Theme
     navigationBarTheme: NavigationBarThemeData(
-      backgroundColor: white,
+      backgroundColor:
+          greyLight.withOpacity(0.9), // Better contrast with content
       height: 56,
       iconTheme: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.selected)) {
-          return const IconThemeData(
-            color: blueLight,
+          return IconThemeData(
+            color: darkblueLight,
             size: 28,
           );
         }
@@ -873,7 +886,7 @@ class AppTheme {
       }),
       labelTextStyle: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.selected)) {
-          return labelSmall.copyWith(color: blueLight);
+          return labelSmall.copyWith(color: darkblueLight);
         }
         return labelSmall;
       }),
@@ -885,7 +898,7 @@ class AppTheme {
     snackBarTheme: SnackBarThemeData(
       backgroundColor: darkblueLight,
       contentTextStyle: bodyMedium.copyWith(color: white),
-      actionTextColor: blueLight,
+      actionTextColor: white,
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8),
@@ -894,11 +907,11 @@ class AppTheme {
 
     // Light - TabBar Theme
     tabBarTheme: TabBarTheme(
-      labelStyle: labelLarge.copyWith(color: blueLight),
+      labelStyle: labelLarge.copyWith(color: darkblueLight),
       unselectedLabelStyle: labelLarge.copyWith(
         color: black.withAlpha(179),
       ),
-      indicatorColor: blueLight,
+      indicatorColor: darkblueLight,
       dividerColor: Colors.transparent,
     ),
 
