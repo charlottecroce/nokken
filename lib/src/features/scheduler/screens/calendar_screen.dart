@@ -371,7 +371,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     Row(
                       children: [
                         Icon(
-                          Icons.person_outlined,
+                          AppIcons.getIcon('profile'),
                           size: 16,
                           color: Colors.grey,
                         ),
@@ -483,7 +483,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                         medication.dosage,
                         style: AppTextStyles.bodyMedium,
                       ),
-                      const SizedBox(height: 4),
+                      SharedWidgets.verticalSpace(4),
 
                       // Display times medication is taken
                       Column(

@@ -216,7 +216,7 @@ class MedicationListScreen extends ConsumerWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            Icons.medication_outlined,
+            AppIcons.getOutlined('medication'),
             size: 64,
             color: AppColors.secondary,
           ),

@@ -32,6 +32,11 @@ class AppIcons {
     'redo': (outlined: Icons.redo_outlined, filled: Icons.redo),
     'undo': (outlined: Icons.undo_outlined, filled: Icons.undo),
     'check': (outlined: Icons.check_circle_outline, filled: Icons.check_circle),
+    'checkmark': (outlined: Icons.check, filled: Icons.check),
+    'filter_list': (
+      outlined: Icons.filter_list_outlined,
+      filled: Icons.filter_list
+    ),
 
     // Arrows
     'arrow_back': (

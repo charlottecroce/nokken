@@ -167,8 +167,8 @@ class _HormoneLevelTile extends StatelessWidget {
                       if (trendInfo.showTrend)
                         Icon(
                           trendInfo.isIncreasing
-                              ? Icons.arrow_upward
-                              : Icons.arrow_downward,
+                              ? AppIcons.getIcon('arrow_up')
+                              : AppIcons.getIcon('arrow_down'),
                           color: trendInfo.isIncreasing
                               ? Colors.red
                               : Colors.green,

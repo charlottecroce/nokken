@@ -727,7 +727,7 @@ class TimingSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: 8),
+        SharedWidgets.verticalSpace(),
         ListTile(
           title: Text(
             'Start Date: ${DateTimeFormatter.formatDateDDMMYY(selectedStartDate)}',
@@ -815,7 +815,7 @@ class TimingSection extends StatelessWidget {
               },
             ),
           ),
-          const SizedBox(width: 12),
+          SharedWidgets.horizontalSpace(12),
           // AM/PM toggle
           TextButton(
             onPressed: () {

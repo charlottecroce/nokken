@@ -214,7 +214,7 @@ class _BloodworkGraphScreenState extends ConsumerState<BloodworkGraphScreen>
         actions: [
           // Time range filter dropdown
           PopupMenuButton<String>(
-            icon: const Icon(Icons.filter_list),
+            icon: Icon(AppIcons.getIcon('filter_list')),
             tooltip: 'Filter time range',
             onSelected: (String value) {
               setState(() {
@@ -229,7 +229,7 @@ class _BloodworkGraphScreenState extends ConsumerState<BloodworkGraphScreen>
                     children: [
                       Text(range),
                       if (_selectedTimeRange == range)
-                        const Icon(Icons.check, size: 18)
+                        Icon(AppIcons.getIcon('checkmark'), size: 18)
                     ],
                   ),
                 );

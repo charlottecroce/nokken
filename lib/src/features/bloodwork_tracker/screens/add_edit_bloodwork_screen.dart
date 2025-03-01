@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nokken/src/features/bloodwork_tracker/models/bloodwork.dart';
 import 'package:nokken/src/features/bloodwork_tracker/providers/bloodwork_state.dart';
 import 'package:nokken/src/services/navigation_service.dart';
+import 'package:nokken/src/shared/theme/app_icons.dart';
 import 'package:nokken/src/shared/theme/app_theme.dart';
 import 'package:nokken/src/shared/theme/shared_widgets.dart';
 import 'package:nokken/src/shared/utils/date_time_formatter.dart';
@@ -258,7 +259,7 @@ class _AddEditBloodworkScreenState
               },
             ),
           ),
-          const SizedBox(width: 12),
+          SharedWidgets.horizontalSpace(12),
           // AM/PM toggle
           TextButton(
             onPressed: () {
@@ -464,7 +465,7 @@ class _AddEditBloodworkScreenState
 
           // Remove button
           IconButton(
-            icon: const Icon(Icons.remove_circle_outline),
+            icon: Icon(AppIcons.getIcon('remove_circle')),
             onPressed: _hormoneControllers.length > 1
                 ? () => _removeHormoneField(index)
                 : null,
@@ -493,7 +494,7 @@ class _AddEditBloodworkScreenState
               ),
               child: Row(
                 children: [
-                  Icon(Icons.info_outline, color: AppColors.info),
+                  Icon(AppIcons.getIcon('info'), color: AppColors.info),
                   SharedWidgets.horizontalSpace(),
                   Expanded(
                     child: Text(
@@ -516,8 +517,8 @@ class _AddEditBloodworkScreenState
         if (_hormoneControllers.length < 10 && !_isDateInFuture())
           Center(
             child: TextButton.icon(
-              icon: const Icon(Icons.add),
-              label: const Text('Add Hormone'),
+              icon: Icon(AppIcons.getIcon('add')),
+              label: const Text('Add Level'),
               onPressed: () => _addHormoneField(),
             ),
           ),
@@ -652,7 +653,7 @@ class _AddEditBloodworkScreenState
                   ),
                 )
               : IconButton(
-                  icon: const Icon(Icons.save),
+                  icon: Icon(AppIcons.getIcon('save')),
                   onPressed: _saveBloodwork,
                 ),
         ],
@@ -671,7 +672,7 @@ class _AddEditBloodworkScreenState
                   title: Text(
                     'Date: ${DateTimeFormatter.formatDateDDMMYY(_selectedDate)}',
                   ),
-                  trailing: const Icon(Icons.calendar_today),
+                  trailing: Icon(AppIcons.getIcon('calendar')),
                   onTap: () => _selectDate(context),
                 ),
                 // Add the time picker
