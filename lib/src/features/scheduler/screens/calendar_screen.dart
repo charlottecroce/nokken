@@ -449,9 +449,14 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Medication type icon
-            Icon(medication.medicationType == MedicationType.injection
-                ? AppIcons.getOutlined('vaccine')
-                : AppIcons.getOutlined('medication')),
+            Icon(
+              medication.medicationType == MedicationType.injection
+                  ? AppIcons.getOutlined('vaccine')
+                  : AppIcons.getOutlined('medication'),
+              color: medication.medicationType == MedicationType.injection
+                  ? AppColors.injection
+                  : AppColors.oralMedication,
+            ),
 
             SharedWidgets.verticalSpace(16),
 
