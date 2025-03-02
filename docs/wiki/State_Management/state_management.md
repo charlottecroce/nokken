@@ -1,5 +1,5 @@
 # State Management
-Nokken uses Riverpod for state management, providing a clean and testable approach to handling application state.
+Nokken uses [Riverpod](https://riverpod.dev/docs/introduction/why_riverpod) for state management, providing a clean and testable approach to handling application state.
 
 ## Providers
 The main state providers are organized by feature:

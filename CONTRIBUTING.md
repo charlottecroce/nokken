@@ -2,13 +2,13 @@
 Thank you for your interest in contributing to Nøkken! This document provides guidelines and instructions for contributing to the project. We welcome contributions of all kinds, including bug fixes, feature additions, documentation improvements, issue reporting and new feature requests, and more.
 
 ## Table of Contents
-- Getting Started
-- Development Environment Setup
-- Project Structure
-- Development Workflow
-- Code Style and Standards
-- Submitting Contributions
-- Community Guidelines
+- [Getting Started](#getting-started)
+- [Environment Setup](#environment-setup)
+- [Project Structure](#project-structure)
+- [Development Workflow](#development-workflow)
+- [Code Style and Standards](#code-style-and-standards)
+- [Submitting Contributions](#submitting-contributions)
+- [Community Guidelines](#community-guidelines)
 
 ### Getting Started
 #### Prerequisites
@@ -30,7 +30,7 @@ cd nokken
 git remote add upstream https://github.com/charlottecroce/nokken.git
 ```
 
-### Development Environment Setup
+### Environment Setup
 #### Installing Dependencies
 - Run `flutter pub get` to install all dependencies
 - Ensure all dependencies are properly resolved
@@ -86,12 +86,12 @@ git checkout -b feature/your-feature-name
 - Use trailing commas for better formatting in multi-line constructs
 
 ### Naming Conventions
-
-- **Files:** Use snake_case for file names (e.g., `medication_list_screen.dart`)
-- **Classes:** Use PascalCase for class names (e.g., `MedicationListScreen`)
-- **Variables/Functions:** Use camelCase for variables and functions (e.g., `medicationList`, `getMedications()`)
-- **Constants:** Use camelCase for constants (e.g., `defaultPadding`)
-- **Private members:** Prefix with underscore (e.g., `_privateVariable`)
+- **Files:** Use snake_case for file names - `medication_list_screen.dart`
+- **Classes:** Use PascalCase for class names - `MedicationListScreen`
+- **Variables/Functions:** Use camelCase for variables and functions - `medicationList`, `getMedications()`
+- **Constants:** Use camelCase for constants - `defaultPadding`
+- **Private members:** Prefix with underscore - `_privateVariable`
+- **Project title** - The Norwegian 'ø' is not found on English keyboards, so for convenience, refer to this project as Nokken throughout the codebase. Nøkken is used in product branding.
 
 ### Architecture Guidelines
 
@@ -102,7 +102,6 @@ git checkout -b feature/your-feature-name
 - **Theming:** Use the `AppTheme` and `AppColors` classes for consistent styling
 
 ### Documentation Requirements
-
 - Document all public APIs with clear comments
 - Use `///` for documentation comments
 - Include example usage for complex functions
@@ -111,7 +110,6 @@ git checkout -b feature/your-feature-name
 
 ## Submitting Contributions
 ### Pull Request Process
-
 - Push your branch to your fork: `git push origin feature/your-feature-name`
 - Create a pull request from your fork to the main repository
 
@@ -147,6 +145,3 @@ We are committed to providing a welcoming and inclusive environment for all cont
 
 ## Contributor Recognition
 All contributors will be acknowledged in the project documentation. Significant contributions may lead to maintainer status with additional repository permissions.
-
-## Thank You!
-We appreciate your time and effort in helping to make Nøkken better!
