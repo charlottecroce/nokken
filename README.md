@@ -7,5 +7,5 @@ This app will eventually be released as completely free on the App Store and Goo
 
 Read the docs [here](docs/wiki/README.md).
 
-All contributions are welcome! See [CONTRIBUTING.md](docs/CONTRIBUTING.md) for details.
+All contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
