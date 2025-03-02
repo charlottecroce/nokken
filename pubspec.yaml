@@ -11,6 +11,7 @@ dependencies:
   flutter:
     sdk: flutter
   mockito: ^5.4.0
+  mocktail:
   build_runner: ^2.4.6
   flutter_riverpod: ^2.4.9
   flutter_local_notifications: ^18.0.1
