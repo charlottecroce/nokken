@@ -180,50 +180,6 @@ class DatabaseService {
     ''');
   }
 
-  /// Migrate database to version 3
-  Future<void> _migrateToV3(Database db) async {
-    try {
-      // Check if custom_key column already exists
-      final result = await db.rawQuery('PRAGMA table_info(taken_medications)');
-      final hasCustomKey = result.any((col) => col['name'] == 'custom_key');
-
-      if (!hasCustomKey) {
-        // Add custom_key column
-        await db.execute(
-            'ALTER TABLE taken_medications ADD COLUMN custom_key TEXT');
-
-        // Update primary key constraint - need to recreate table
-        // First, backup existing data
-        await db.execute(
-            'CREATE TABLE taken_medications_backup AS SELECT * FROM taken_medications');
-
-        // Drop old table
-        await db.execute('DROP TABLE taken_medications');
-
-        // Create new table with updated primary key
-        await db.execute('''
-          CREATE TABLE taken_medications(
-            medication_id TEXT NOT NULL,
-            date TEXT NOT NULL,
-            time_slot TEXT NOT NULL,
-            taken INTEGER NOT NULL,
-            custom_key TEXT,
-            PRIMARY KEY (medication_id, date, time_slot, custom_key)
-          )
-        ''');
-
-        // Restore data
-        await db.execute(
-            'INSERT INTO taken_medications SELECT medication_id, date, time_slot, taken, custom_key FROM taken_medications_backup');
-
-        // Drop backup
-        await db.execute('DROP TABLE taken_medications_backup');
-      }
-    } catch (e) {
-      throw DatabaseException('Failed to migrate database to v3', e);
-    }
-  }
-
   /// Convert a Medication object to a database map
   Map<String, dynamic> _medicationToMap(Medication medication) {
     // Start with basic fields
