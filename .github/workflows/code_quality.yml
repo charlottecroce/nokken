@@ -29,3 +29,11 @@ jobs:
         
       - name: Check for any outdated packages
         run: flutter pub outdated
+
+      - name: Run unit tests
+        run: flutter test --coverage
+        
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage/lcov.info
