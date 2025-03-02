@@ -312,11 +312,11 @@ class AppTheme {
     onSecondary: white,
     onTertiary: white,
     onSurface: black,
-    onSurfaceVariant: darkgrey.withOpacity(0.7),
+    onSurfaceVariant: darkgrey.withAlpha(160),
     error: pinkLight.withRed(240),
     errorContainer: lightpinkDark,
     shadow: black.withAlpha(15),
-    outline: greyLight.withOpacity(0.7),
+    outline: greyLight.withAlpha(160),
   );
 
   /// Default text field decoration used throughout the app
@@ -674,8 +674,7 @@ class AppTheme {
 
     // Dark - Navigation Bar Theme
     navigationBarTheme: NavigationBarThemeData(
-      backgroundColor:
-          darkgrey.withOpacity(0.9), // Better contrast with content
+      backgroundColor: darkgrey.withAlpha(220),
       height: 56,
       iconTheme: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.selected)) {
@@ -864,8 +863,7 @@ class AppTheme {
 
     // Light - Navigation Bar Theme
     navigationBarTheme: NavigationBarThemeData(
-      backgroundColor:
-          greyLight.withOpacity(0.9), // Better contrast with content
+      backgroundColor: greyLight.withAlpha(200),
       height: 56,
       iconTheme: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.selected)) {

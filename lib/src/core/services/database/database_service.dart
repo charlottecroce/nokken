@@ -509,7 +509,7 @@ class DatabaseService {
               .map((json) => HormoneReading.fromJson(json))
               .toList();
         } catch (e) {
-          print('Error parsing hormone readings: $e');
+          //print('Error parsing hormone readings: $e');
         }
       }
 

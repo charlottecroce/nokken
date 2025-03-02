@@ -20,10 +20,10 @@ class SectionWithStickyHeader extends StatelessWidget {
   final List<Bloodwork> records;
 
   const SectionWithStickyHeader({
-    Key? key,
+    super.key,
     required this.title,
     required this.records,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

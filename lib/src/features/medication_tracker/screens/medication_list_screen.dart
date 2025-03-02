@@ -20,11 +20,11 @@ class MedicationSectionWithStickyHeader extends StatelessWidget {
   final MedicationType type;
 
   const MedicationSectionWithStickyHeader({
-    Key? key,
+    super.key,
     required this.title,
     required this.medications,
     required this.type,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
