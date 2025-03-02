@@ -2,8 +2,6 @@
 //  medication_dose.dart
 //  Model representing a specific dose of medication on a specific date and time
 //
-import 'package:flutter/material.dart';
-
 class MedicationDose {
   final String medicationId;
   final DateTime date;
@@ -48,7 +46,6 @@ class MedicationDose {
       return fromKey(key.substring(0, lastDashIndex));
     }
 
-    final parts = key.split('-');
     // Handle medication IDs that may contain hyphens
     final dateAndTimeStart = key.lastIndexOf('-', key.lastIndexOf('-') - 1);
     final id = key.substring(0, dateAndTimeStart);

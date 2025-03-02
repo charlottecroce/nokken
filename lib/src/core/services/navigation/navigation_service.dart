@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:nokken/src/features/medication_tracker/models/medication.dart';
 import 'package:nokken/src/core/services/navigation/routes/route_arguments.dart';
 import 'package:nokken/src/core/services/navigation/routes/route_names.dart';
-import 'package:nokken/src/features/medication_tracker/screens/medication_detail_screen.dart';
 import 'package:nokken/src/features/bloodwork_tracker/models/bloodwork.dart';
 
 /// Abstracts navigation logic for consistent behavior throughout the app

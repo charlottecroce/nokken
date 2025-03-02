@@ -8,13 +8,11 @@ import 'package:nokken/src/features/medication_tracker/models/medication.dart';
 import 'package:nokken/src/features/medication_tracker/models/medication_dose.dart';
 import 'package:nokken/src/features/medication_tracker/providers/medication_state.dart';
 import 'package:nokken/src/features/medication_tracker/providers/medication_taken_provider.dart';
-import 'package:nokken/src/features/medication_tracker/services/medication_schedule_service.dart';
 import 'package:nokken/src/features/bloodwork_tracker/models/bloodwork.dart';
 import 'package:nokken/src/features/bloodwork_tracker/providers/bloodwork_state.dart';
 import 'package:nokken/src/core/services/navigation/navigation_service.dart';
 import 'package:nokken/src/core/theme/shared_widgets.dart';
 import 'package:nokken/src/core/theme/app_theme.dart';
-import 'package:nokken/src/core/constants/date_constants.dart';
 import 'package:nokken/src/core/theme/app_icons.dart';
 import 'package:nokken/src/core/utils/date_time_formatter.dart';
 import 'package:nokken/src/core/utils/appointment_utils.dart';
@@ -114,6 +112,7 @@ class DailyTrackerScreen extends ConsumerStatefulWidget {
   const DailyTrackerScreen({super.key});
 
   @override
+  // ignore: library_private_types_in_public_api
   _DailyTrackerScreenState createState() => _DailyTrackerScreenState();
 }
 
@@ -144,9 +143,7 @@ class _DailyTrackerScreenState extends ConsumerState<DailyTrackerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Watch for changes to medication data
-    final medications =
-        ref.watch(medicationStateProvider.select((state) => state.medications));
+    // Watch for changes to date
     final selectedDate = ref.watch(selectedDateProvider);
 
     // Get bloodwork records for the selected date

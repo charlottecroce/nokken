@@ -4,7 +4,6 @@
 //
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:nokken/src/core/theme/shared_widgets.dart';
 import 'package:nokken/src/core/utils/date_time_formatter.dart';
 import 'package:table_calendar/table_calendar.dart';
@@ -18,7 +17,6 @@ import 'package:nokken/src/core/services/database/database_service.dart';
 import 'package:nokken/src/core/services/navigation/navigation_service.dart';
 import 'package:nokken/src/core/theme/app_icons.dart';
 import 'package:nokken/src/core/theme/app_theme.dart';
-import 'package:nokken/src/core/constants/date_constants.dart';
 import 'package:nokken/src/core/utils/appointment_utils.dart';
 
 class CalendarScreen extends ConsumerStatefulWidget {
@@ -85,7 +83,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       });
     } catch (e) {
       // Handle any errors that might occur during database operations
-      print('Error loading medications: $e');
+      //print('Error loading medications: $e');
 
       // Show error to user
       if (mounted) {
@@ -306,10 +304,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 8, vertical: 2),
                             decoration: BoxDecoration(
-                              color: AppColors.info.withOpacity(0.1),
+                              color: AppColors.info.withAlpha(20),
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                  color: AppColors.info.withOpacity(0.3)),
+                                  color: AppColors.info.withAlpha(60)),
                             ),
                             child: Text(
                               'Scheduled',
@@ -583,10 +581,10 @@ class MedicationCalendar extends ConsumerWidget {
   final Function(DateTime) onDaySelected;
 
   const MedicationCalendar({
-    Key? key,
+    super.key,
     required this.medications,
     required this.onDaySelected,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -659,15 +657,6 @@ class _MedicationCalendarViewState extends State<_MedicationCalendarView> {
       }
     }
     return null;
-  }
-
-  /// Get the color for an appointment on a specific date
-  Color _getAppointmentColorForDate(DateTime date) {
-    final type = _getAppointmentTypeForDate(date);
-    if (type != null) {
-      return AppointmentUtils.getAppointmentTypeColor(type);
-    }
-    return Colors.grey;
   }
 
   /// Check if a date has an injection due
@@ -984,11 +973,10 @@ class _MedicationCalendarView extends StatefulWidget {
   final WidgetRef ref;
 
   const _MedicationCalendarView({
-    Key? key,
     required this.medications,
     required this.onDaySelected,
     required this.ref,
-  }) : super(key: key);
+  });
 
   @override
   _MedicationCalendarViewState createState() => _MedicationCalendarViewState();

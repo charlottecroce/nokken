@@ -18,8 +18,6 @@ class AppointmentUtils {
         return AppColors.doctorAppointment;
       case AppointmentType.surgery:
         return AppColors.surgery;
-      default:
-        return Colors.grey;
     }
   }
 
@@ -32,8 +30,6 @@ class AppointmentUtils {
         return 'Doctor Visit';
       case AppointmentType.surgery:
         return 'Surgery';
-      default:
-        return 'Medical Record';
     }
   }
 
@@ -46,8 +42,6 @@ class AppointmentUtils {
         return AppIcons.getOutlined('medical_services');
       case AppointmentType.surgery:
         return AppIcons.getOutlined('medical_info');
-      default:
-        return AppIcons.getOutlined('event_note');
     }
   }
 }
