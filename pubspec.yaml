@@ -10,6 +10,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  mockito: ^5.4.0
+  build_runner: ^2.4.6
   flutter_riverpod: ^2.4.9
   flutter_local_notifications: ^18.0.1
   flutter_sticky_header: ^0.7.0
@@ -23,6 +25,7 @@ dependencies:
   sqflite_common_ffi: ^2.3.2
   table_calendar: ^3.0.9
   fl_chart: ^0.65.0
+
 
 dev_dependencies:
   flutter_test:

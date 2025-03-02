@@ -34,7 +34,7 @@ jobs:
     strategy:
       matrix:
         device:
-          - "iPhone 14 (16.0)" 
+          - "iPhone 15" 
           
     steps:
       - uses: actions/checkout@v3
