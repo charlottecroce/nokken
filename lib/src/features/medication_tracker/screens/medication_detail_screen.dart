@@ -282,9 +282,9 @@ class MedicationDetailScreen extends ConsumerWidget {
       case MedicationType.injection:
         return Icon(AppIcons.getOutlined('vaccine'));
       case MedicationType.topical:
-        return Icon(Icons.spa_outlined);
+        return Icon(AppIcons.getOutlined('topical'));
       case MedicationType.patch:
-        return Icon(Icons.healing_outlined);
+        return Icon(AppIcons.getOutlined('patch'));
     }
   }
 

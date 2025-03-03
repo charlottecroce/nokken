@@ -16,6 +16,7 @@ import 'package:nokken/src/core/theme/app_theme.dart';
 import 'package:nokken/src/core/theme/app_icons.dart';
 import 'package:nokken/src/core/utils/date_time_formatter.dart';
 import 'package:nokken/src/core/utils/appointment_utils.dart';
+import 'package:nokken/src/core/utils/get_icons_colors.dart';
 
 /// Provider to track the currently selected date
 final selectedDateProvider = StateProvider<DateTime>((ref) => DateTime.now());
@@ -370,7 +371,7 @@ class _DailyScheduleList extends ConsumerWidget {
 
     // Use the AppointmentUtils to get the appointment color
     final appointmentColor =
-        AppointmentUtils.getAppointmentTypeColor(bloodwork.appointmentType);
+        GetIconsColors.getAppointmentColor(bloodwork.appointmentType);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -448,10 +449,6 @@ class _AppointmentCard extends StatelessWidget {
     // Get appointment specific details using AppointmentUtils
     final appointmentTitle =
         AppointmentUtils.getAppointmentTypeText(bloodwork.appointmentType);
-    final appointmentIcon =
-        AppointmentUtils.getAppointmentTypeIcon(bloodwork.appointmentType);
-    final appointmentColor =
-        AppointmentUtils.getAppointmentTypeColor(bloodwork.appointmentType);
 
     return Card(
       child: Padding(
@@ -460,7 +457,8 @@ class _AppointmentCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Appointment type icon
-            Icon(appointmentIcon, color: appointmentColor),
+            GetIconsColors.getAppointmentIconWithColor(
+                bloodwork.appointmentType),
 
             SharedWidgets.verticalSpace(AppTheme.doubleSpacing),
 
@@ -616,29 +614,16 @@ class _TimeGroupItem extends StatelessWidget {
 
   /// Determine color based on the types of medications in this group
   Color _getTimeGroupColor() {
-    bool hasOral = false;
-    bool hasInjection = false;
+    // Use a set to track unique medication types
+    final Set<MedicationType> medicationTypes =
+        timeGroup.medications.map((med) => med.medicationType).toSet();
 
-    for (final med in timeGroup.medications) {
-      if (med.medicationType == MedicationType.oral) {
-        hasOral = true;
-      } else if (med.medicationType == MedicationType.injection) {
-        hasInjection = true;
-      }
+    // If there's only one type, return its specific color
+    if (medicationTypes.length == 1) {
+      return GetIconsColors.getMedicationColor(medicationTypes.first);
     }
 
-    // If there's a mix of types, use white (or a neutral color)
-    if (hasOral && hasInjection) {
-      return Colors.grey;
-    }
-    // Otherwise, use the specific type color
-    else if (hasOral) {
-      return AppColors.oralMedication;
-    } else if (hasInjection) {
-      return AppColors.injection;
-    }
-
-    // Default fallback color
+    // If there are multiple types, return primary
     return AppColors.primary;
   }
 }
@@ -662,10 +647,6 @@ class _MedicationListTile extends ConsumerWidget {
     // Check if this specific instance is taken using the new provider
     final isTaken = ref.watch(isUniqueDoseTakenProvider((dose, doseIndex)));
 
-    // Determine icon and color based on medication type
-    final IconData medicationIcon = _getMedicationIcon();
-    final Color medicationColor = _getMedicationColor();
-
     // Add dose index indicator if this is not the first dose at this time
     final String doseIndicator =
         doseIndex > 0 ? ' (Dose ${doseIndex + 1})' : '';
@@ -679,7 +660,8 @@ class _MedicationListTile extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Medication type icon
-              Icon(medicationIcon, color: medicationColor),
+              GetIconsColors.getMedicationIconWithColor(
+                  medication.medicationType),
 
               SharedWidgets.verticalSpace(AppTheme.doubleSpacing),
 
@@ -798,34 +780,6 @@ class _MedicationListTile extends ConsumerWidget {
         ),
       ),
     );
-  }
-
-  /// Get appropriate icon based on medication type
-  IconData _getMedicationIcon() {
-    switch (medication.medicationType) {
-      case MedicationType.oral:
-        return AppIcons.getOutlined('medication');
-      case MedicationType.injection:
-        return AppIcons.getOutlined('vaccine');
-      case MedicationType.topical:
-        return Icons.spa_outlined;
-      case MedicationType.patch:
-        return Icons.healing_outlined;
-    }
-  }
-
-  /// Get appropriate color based on medication type
-  Color _getMedicationColor() {
-    switch (medication.medicationType) {
-      case MedicationType.oral:
-        return AppColors.oralMedication;
-      case MedicationType.injection:
-        return AppColors.injection;
-      case MedicationType.topical:
-        return Colors.teal;
-      case MedicationType.patch:
-        return Colors.purple;
-    }
   }
 
   /// Format dosage text based on medication type

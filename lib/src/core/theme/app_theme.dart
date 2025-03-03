@@ -60,6 +60,14 @@ class AppColors {
       ? AppTheme.oralMedColorLight
       : AppTheme.oralMedColorDark;
 
+  static Color get topical => _themeMode == ThemeMode.light
+      ? AppTheme.topicalColorLight
+      : AppTheme.topicalColorDark;
+
+  static Color get patch => _themeMode == ThemeMode.light
+      ? AppTheme.patchColorLight
+      : AppTheme.patchColorDark;
+
   static Color get injection => _themeMode == ThemeMode.light
       ? AppTheme.injectionColorLight
       : AppTheme.injectionColorDark;
@@ -237,10 +245,14 @@ class AppTheme {
   //----------------------------------------------------------------------------
   // Dark theme colors for medication types
   static const oralMedColorDark = Color(0xFFc576e5); // Vibrant purple
+  static const topicalColorDark = Color.fromARGB(255, 187, 34, 226);
+  static const patchColorDark = Color.fromARGB(255, 83, 185, 216);
   static const injectionColorDark = Color(0xFF81f7e5); // Fluorescent cyan
 
   // Light theme colors for medication types
-  static const oralMedColorLight = Color(0xFF9331ae); // Rich violet
+  static const oralMedColorLight = Color(0xFF9331ae); // Violet
+  static const topicalColorLight = Color.fromARGB(255, 127, 24, 153);
+  static const patchColorLight = Color.fromARGB(255, 39, 109, 130);
   static const injectionColorLight = Color(0xFF00b3a0); // Deeper teal
 
   // Dark theme colors for appointment types

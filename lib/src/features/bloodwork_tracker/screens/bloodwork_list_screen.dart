@@ -5,6 +5,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sticky_header/flutter_sticky_header.dart';
+import 'package:nokken/src/core/utils/get_icons_colors.dart';
 import 'package:nokken/src/features/bloodwork_tracker/models/bloodwork.dart';
 import 'package:nokken/src/features/bloodwork_tracker/providers/bloodwork_state.dart';
 import 'package:nokken/src/core/services/navigation/navigation_service.dart';
@@ -255,10 +256,8 @@ class BloodworkListTile extends StatelessWidget {
     // Use the AppointmentUtils helper for appointment details
     final appointmentTypeText =
         AppointmentUtils.getAppointmentTypeText(bloodwork.appointmentType);
-    final appointmentTypeIcon =
-        AppointmentUtils.getAppointmentTypeIcon(bloodwork.appointmentType);
     final appointmentTypeColor =
-        AppointmentUtils.getAppointmentTypeColor(bloodwork.appointmentType);
+        GetIconsColors.getAppointmentColor(bloodwork.appointmentType);
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -303,11 +302,8 @@ class BloodworkListTile extends StatelessWidget {
             // Display appointment type
             Row(
               children: [
-                Icon(
-                  appointmentTypeIcon,
-                  size: 16,
-                  color: appointmentTypeColor,
-                ),
+                GetIconsColors.getAppointmentIconCirlce(
+                    bloodwork.appointmentType),
                 SharedWidgets.horizontalSpace(6),
                 Flexible(
                   // Added Flexible to prevent overflow

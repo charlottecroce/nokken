@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nokken/src/core/theme/shared_widgets.dart';
 import 'package:nokken/src/core/utils/date_time_formatter.dart';
+import 'package:nokken/src/core/utils/get_icons_colors.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:nokken/src/features/medication_tracker/models/medication.dart';
 import 'package:nokken/src/features/medication_tracker/models/medication_dose.dart';
@@ -265,10 +266,6 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     // Get appointment specific details using the AppointmentUtils class
     final appointmentTitle =
         AppointmentUtils.getAppointmentTypeText(bloodwork.appointmentType);
-    final appointmentIcon =
-        AppointmentUtils.getAppointmentTypeIcon(bloodwork.appointmentType);
-    final appointmentColor =
-        AppointmentUtils.getAppointmentTypeColor(bloodwork.appointmentType);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
@@ -278,7 +275,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Appointment type icon
-            Icon(appointmentIcon, color: appointmentColor),
+            GetIconsColors.getAppointmentIconWithColor(
+                bloodwork.appointmentType),
 
             SharedWidgets.verticalSpace(AppTheme.doubleSpacing),
 
@@ -331,13 +329,15 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                         Icon(
                           timeIcon,
                           size: 16,
-                          color: appointmentColor,
+                          color: GetIconsColors.getAppointmentColor(
+                              bloodwork.appointmentType),
                         ),
                         SharedWidgets.verticalSpace(6),
                         Text(
                           timeStr,
                           style: AppTextStyles.bodyMedium.copyWith(
-                            color: appointmentColor,
+                            color: GetIconsColors.getAppointmentColor(
+                                bloodwork.appointmentType),
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -447,14 +447,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Medication type icon
-            Icon(
-              medication.medicationType == MedicationType.injection
-                  ? AppIcons.getOutlined('vaccine')
-                  : AppIcons.getOutlined('medication'),
-              color: medication.medicationType == MedicationType.injection
-                  ? AppColors.injection
-                  : AppColors.oralMedication,
-            ),
+            GetIconsColors.getMedicationIconWithColor(
+                medication.medicationType),
 
             SharedWidgets.verticalSpace(AppTheme.doubleSpacing),
 
@@ -530,7 +524,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                                     Icon(
                                       DateTimeFormatter.getTimeIcon(timeStr),
                                       size: 16,
-                                      color: AppColors.primary,
+                                      color: GetIconsColors.getMedicationColor(
+                                          medication.medicationType),
                                     ),
                                     SharedWidgets.verticalSpace(),
                                     // Display formatted time
@@ -764,8 +759,8 @@ class _MedicationCalendarViewState extends State<_MedicationCalendarView> {
             if (hasBloodwork) {
               final appointmentType = _getAppointmentTypeForDate(day);
               final appointmentColor = appointmentType != null
-                  ? AppointmentUtils.getAppointmentTypeColor(appointmentType)
-                  : AppColors.bloodwork;
+                  ? GetIconsColors.getAppointmentColor(appointmentType)
+                  : AppColors.primary;
 
               return Container(
                 margin: const EdgeInsets.all(4),
@@ -818,8 +813,8 @@ class _MedicationCalendarViewState extends State<_MedicationCalendarView> {
             if (hasBloodwork) {
               appointmentType = _getAppointmentTypeForDate(day);
               borderColor = appointmentType != null
-                  ? AppointmentUtils.getAppointmentTypeColor(appointmentType)
-                  : AppColors.bloodwork;
+                  ? GetIconsColors.getAppointmentColor(appointmentType)
+                  : AppColors.primary;
             } else if (hasInjection) {
               borderColor = AppColors.injection;
             } else {
@@ -836,9 +831,9 @@ class _MedicationCalendarViewState extends State<_MedicationCalendarView> {
                 color: hasBorder
                     ? (hasBloodwork
                         ? appointmentType != null
-                            ? AppointmentUtils.getAppointmentTypeColor(
+                            ? GetIconsColors.getAppointmentColor(
                                 appointmentType)
-                            : AppColors.bloodwork
+                            : AppColors.primary
                         : AppColors.injection)
                     : AppColors.primary,
                 border:
@@ -865,8 +860,8 @@ class _MedicationCalendarViewState extends State<_MedicationCalendarView> {
             if (hasBloodwork) {
               final appointmentType = _getAppointmentTypeForDate(day);
               borderColor = appointmentType != null
-                  ? AppointmentUtils.getAppointmentTypeColor(appointmentType)
-                  : AppColors.bloodwork;
+                  ? GetIconsColors.getAppointmentColor(appointmentType)
+                  : AppColors.primary;
             } else if (hasInjection) {
               borderColor = AppColors.injection;
             } else {
@@ -908,9 +903,9 @@ class _MedicationCalendarViewState extends State<_MedicationCalendarView> {
             if (hasBloodwork) {
               final appointmentType = _getAppointmentTypeForDate(day);
               borderColor = appointmentType != null
-                  ? AppointmentUtils.getAppointmentTypeColor(appointmentType)
+                  ? GetIconsColors.getAppointmentColor(appointmentType)
                       .withAlpha(160)
-                  : AppColors.bloodwork.withAlpha(160);
+                  : AppColors.primary.withAlpha(160);
 
               return Container(
                 margin: const EdgeInsets.all(4),
