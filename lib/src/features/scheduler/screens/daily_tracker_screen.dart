@@ -14,8 +14,11 @@ import 'package:nokken/src/core/services/navigation/navigation_service.dart';
 import 'package:nokken/src/core/theme/shared_widgets.dart';
 import 'package:nokken/src/core/theme/app_theme.dart';
 import 'package:nokken/src/core/theme/app_icons.dart';
+import 'package:nokken/src/core/theme/app_colors.dart';
+import 'package:nokken/src/core/theme/app_text_styles.dart';
 import 'package:nokken/src/core/utils/date_time_formatter.dart';
-import 'package:nokken/src/core/utils/appointment_utils.dart';
+import 'package:nokken/src/core/utils/get_labels.dart';
+import 'package:nokken/src/core/utils/get_icons_colors.dart';
 
 /// Provider to track the currently selected date
 final selectedDateProvider = StateProvider<DateTime>((ref) => DateTime.now());
@@ -370,7 +373,7 @@ class _DailyScheduleList extends ConsumerWidget {
 
     // Use the AppointmentUtils to get the appointment color
     final appointmentColor =
-        AppointmentUtils.getAppointmentTypeColor(bloodwork.appointmentType);
+        GetIconsColors.getAppointmentColor(bloodwork.appointmentType);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -445,14 +448,6 @@ class _AppointmentCard extends StatelessWidget {
       DateTime.now().day,
     ));
 
-    // Get appointment specific details using AppointmentUtils
-    final appointmentTitle =
-        AppointmentUtils.getAppointmentTypeText(bloodwork.appointmentType);
-    final appointmentIcon =
-        AppointmentUtils.getAppointmentTypeIcon(bloodwork.appointmentType);
-    final appointmentColor =
-        AppointmentUtils.getAppointmentTypeColor(bloodwork.appointmentType);
-
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -460,7 +455,8 @@ class _AppointmentCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Appointment type icon
-            Icon(appointmentIcon, color: appointmentColor),
+            GetIconsColors.getAppointmentIconWithColor(
+                bloodwork.appointmentType),
 
             SharedWidgets.verticalSpace(AppTheme.doubleSpacing),
 
@@ -477,7 +473,8 @@ class _AppointmentCard extends StatelessWidget {
                     child: Row(
                       children: [
                         Text(
-                          appointmentTitle,
+                          GetLabels.getAppointmentTypeText(
+                              bloodwork.appointmentType),
                           style: AppTextStyles.titleLarge,
                         ),
                         if (isDateInFuture) ...[
@@ -616,29 +613,16 @@ class _TimeGroupItem extends StatelessWidget {
 
   /// Determine color based on the types of medications in this group
   Color _getTimeGroupColor() {
-    bool hasOral = false;
-    bool hasInjection = false;
+    // Use a set to track unique medication types
+    final Set<MedicationType> medicationTypes =
+        timeGroup.medications.map((med) => med.medicationType).toSet();
 
-    for (final med in timeGroup.medications) {
-      if (med.medicationType == MedicationType.oral) {
-        hasOral = true;
-      } else if (med.medicationType == MedicationType.injection) {
-        hasInjection = true;
-      }
+    // If there's only one type, return its specific color
+    if (medicationTypes.length == 1) {
+      return GetIconsColors.getMedicationColor(medicationTypes.first);
     }
 
-    // If there's a mix of types, use white (or a neutral color)
-    if (hasOral && hasInjection) {
-      return Colors.grey;
-    }
-    // Otherwise, use the specific type color
-    else if (hasOral) {
-      return AppColors.oralMedication;
-    } else if (hasInjection) {
-      return AppColors.injection;
-    }
-
-    // Default fallback color
+    // If there are multiple types, return primary
     return AppColors.primary;
   }
 }
@@ -662,18 +646,6 @@ class _MedicationListTile extends ConsumerWidget {
     // Check if this specific instance is taken using the new provider
     final isTaken = ref.watch(isUniqueDoseTakenProvider((dose, doseIndex)));
 
-    // Determine icon and color based on medication type
-    final IconData medicationIcon =
-        medication.medicationType == MedicationType.oral
-            ? AppIcons.getOutlined('medication')
-            : AppIcons.getOutlined('vaccine');
-
-    // Set color based on medication type
-    final Color medicationColor =
-        medication.medicationType == MedicationType.oral
-            ? AppColors.oralMedication
-            : AppColors.injection;
-
     // Add dose index indicator if this is not the first dose at this time
     final String doseIndicator =
         doseIndex > 0 ? ' (Dose ${doseIndex + 1})' : '';
@@ -687,7 +659,8 @@ class _MedicationListTile extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Medication type icon
-              Icon(medicationIcon, color: medicationColor),
+              GetIconsColors.getMedicationIconWithColor(
+                  medication.medicationType),
 
               SharedWidgets.verticalSpace(AppTheme.doubleSpacing),
 
@@ -737,10 +710,10 @@ class _MedicationListTile extends ConsumerWidget {
                       ),
                     ),
 
-                    // Medication dosage
+                    // Medication dosage with type specific language
                     SharedWidgets.verticalSpace(),
                     Text(
-                      medication.dosage,
+                      _formatDosageText(),
                       style: AppTextStyles.bodyMedium,
                     ),
 
@@ -774,9 +747,9 @@ class _MedicationListTile extends ConsumerWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        // Status text
+                        // Status text - customized per medication type
                         Text(
-                          isTaken ? 'Taken' : 'Not taken',
+                          isTaken ? _getCompletedText() : _getPendingText(),
                           style: AppTextStyles.bodyMedium.copyWith(
                             fontWeight: FontWeight.w500,
                             color: isTaken ? AppColors.tertiary : Colors.grey,
@@ -808,6 +781,78 @@ class _MedicationListTile extends ConsumerWidget {
     );
   }
 
+  /// Format dosage text based on medication type
+  String _formatDosageText() {
+    switch (medication.medicationType) {
+      case MedicationType.oral:
+        return medication.dosage;
+      case MedicationType.injection:
+        String subtypeText = '';
+        switch (medication.injectionDetails?.subtype) {
+          case InjectionSubtype.intravenous:
+            subtypeText = 'IV';
+            break;
+          case InjectionSubtype.intramuscular:
+            subtypeText = 'IM';
+            break;
+          case InjectionSubtype.subcutaneous:
+            subtypeText = 'SC';
+            break;
+          case null:
+            subtypeText = '';
+            break;
+        }
+        return '${medication.dosage}${subtypeText.isNotEmpty ? ' ($subtypeText)' : ''}';
+      case MedicationType.topical:
+        String subtypeText = '';
+        switch (medication.topicalSubtype) {
+          case TopicalSubtype.gel:
+            subtypeText = 'Gel';
+            break;
+          case TopicalSubtype.cream:
+            subtypeText = 'Cream';
+            break;
+          case TopicalSubtype.spray:
+            subtypeText = 'Spray';
+            break;
+          case null:
+            subtypeText = '';
+            break;
+        }
+        return '${medication.dosage}${subtypeText.isNotEmpty ? ' ($subtypeText)' : ''}';
+      case MedicationType.patch:
+        return medication.dosage;
+    }
+  }
+
+  /// Get text for completed state based on medication type
+  String _getCompletedText() {
+    switch (medication.medicationType) {
+      case MedicationType.oral:
+        return 'Taken';
+      case MedicationType.injection:
+        return 'Injected';
+      case MedicationType.topical:
+        return 'Applied';
+      case MedicationType.patch:
+        return 'Changed';
+    }
+  }
+
+  /// Get text for pending state based on medication type
+  String _getPendingText() {
+    switch (medication.medicationType) {
+      case MedicationType.oral:
+        return 'Not taken';
+      case MedicationType.injection:
+        return 'Not injected';
+      case MedicationType.topical:
+        return 'Not applied';
+      case MedicationType.patch:
+        return 'Not changed';
+    }
+  }
+
   /// Handle toggling a medication's taken status
   void _handleTakenChange(bool? value, WidgetRef ref) {
     if (value == null) return;
@@ -831,8 +876,6 @@ class _MedicationListTile extends ConsumerWidget {
         '${dose.medicationId}-${dose.date.toIso8601String()}-${dose.timeSlot}-$doseIndex';
 
     // Update taken medications in database and state
-    // For the existing database schema, we'll still use the setMedicationTaken method
-    // but internally we'll save using the unique key
     ref.read(medicationTakenProvider.notifier).setMedicationTaken(
           dose,
           value,

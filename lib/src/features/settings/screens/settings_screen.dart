@@ -3,10 +3,11 @@
 //
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:nokken/src/core/theme/app_theme.dart';
 import 'package:nokken/src/core/theme/app_icons.dart';
 import 'package:nokken/src/core/theme/providers/theme_provider.dart';
 import 'package:nokken/src/core/theme/shared_widgets.dart';
+import 'package:nokken/src/core/theme/app_colors.dart';
+import 'package:nokken/src/core/theme/app_text_styles.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});

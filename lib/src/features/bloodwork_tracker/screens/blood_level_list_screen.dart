@@ -11,6 +11,8 @@ import 'package:nokken/src/features/bloodwork_tracker/providers/bloodwork_state.
 import 'package:nokken/src/core/services/navigation/navigation_service.dart';
 import 'package:nokken/src/core/theme/app_theme.dart';
 import 'package:nokken/src/core/theme/app_icons.dart';
+import 'package:nokken/src/core/theme/app_colors.dart';
+import 'package:nokken/src/core/theme/app_text_styles.dart';
 import 'package:nokken/src/core/theme/shared_widgets.dart';
 
 /// Screen that shows an overview of all hormone levels

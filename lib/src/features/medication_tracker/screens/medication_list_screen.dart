@@ -5,6 +5,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sticky_header/flutter_sticky_header.dart';
+import 'package:nokken/src/core/utils/get_icons_colors.dart';
 import 'package:nokken/src/features/medication_tracker/models/medication.dart';
 import 'package:nokken/src/features/medication_tracker/providers/medication_state.dart';
 import 'package:nokken/src/core/services/navigation/navigation_service.dart';
@@ -12,6 +13,8 @@ import 'package:nokken/src/core/utils/date_time_formatter.dart';
 import 'package:nokken/src/core/theme/shared_widgets.dart';
 import 'package:nokken/src/core/theme/app_icons.dart';
 import 'package:nokken/src/core/theme/app_theme.dart';
+import 'package:nokken/src/core/theme/app_colors.dart';
+import 'package:nokken/src/core/theme/app_text_styles.dart';
 
 /// This widget adds a sticky header decorator for each medication type section
 class MedicationSectionWithStickyHeader extends StatelessWidget {
@@ -28,8 +31,7 @@ class MedicationSectionWithStickyHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Don't return SizedBox.shrink() - that's not a sliver widget
-    // Instead, we'll handle empty sections at the CustomScrollView level
+    final typeColor = GetIconsColors.getMedicationColor(type);
 
     return SliverStickyHeader(
       header: Container(
@@ -38,23 +40,13 @@ class MedicationSectionWithStickyHeader extends StatelessWidget {
         child: Row(
           children: [
             // Icon based on medication type
-            Icon(
-              type == MedicationType.oral
-                  ? AppIcons.getIcon('medication')
-                  : AppIcons.getIcon('vaccine'),
-              size: 20,
-              color: type == MedicationType.oral
-                  ? AppColors.oralMedication
-                  : AppColors.injection,
-            ),
+            GetIconsColors.getMedicationIconWithColor(type),
             SharedWidgets.horizontalSpace(),
             // Section title
             Text(
               title,
               style: AppTextStyles.titleMedium.copyWith(
-                color: type == MedicationType.oral
-                    ? AppColors.oralMedication
-                    : AppColors.injection,
+                color: typeColor,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -63,18 +55,14 @@ class MedicationSectionWithStickyHeader extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
-                color: type == MedicationType.oral
-                    ? AppColors.oralMedication.withAlpha(20)
-                    : AppColors.injection.withAlpha(20),
+                color: typeColor.withAlpha(20),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
                 '${medications.length}',
                 style: TextStyle(
                   fontSize: 12,
-                  color: type == MedicationType.oral
-                      ? AppColors.oralMedication
-                      : AppColors.injection,
+                  color: typeColor,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -104,9 +92,11 @@ class MedicationListScreen extends ConsumerWidget {
     final error = ref.watch(medicationsErrorProvider);
     final needsRefill = ref.watch(medicationsByNeedRefillProvider);
 
-    // Check if there are any medications
+// Check if there are any medications
     final bool hasMedications = groupedMedications['oral']!.isNotEmpty ||
-        groupedMedications['injection']!.isNotEmpty;
+        groupedMedications['injection']!.isNotEmpty ||
+        groupedMedications['topical']!.isNotEmpty ||
+        groupedMedications['patch']!.isNotEmpty;
 
     return Scaffold(
       appBar: AppBar(
@@ -183,6 +173,20 @@ class MedicationListScreen extends ConsumerWidget {
                                 type: MedicationType.oral,
                               ),
 
+                            if (groupedMedications['topical']!.isNotEmpty)
+                              MedicationSectionWithStickyHeader(
+                                title: 'Topical',
+                                medications: groupedMedications['topical']!,
+                                type: MedicationType.topical,
+                              ),
+
+                            if (groupedMedications['patch']!.isNotEmpty)
+                              MedicationSectionWithStickyHeader(
+                                title: 'Patch',
+                                medications: groupedMedications['patch']!,
+                                type: MedicationType.patch,
+                              ),
+
                             if (groupedMedications['injection']!.isNotEmpty)
                               MedicationSectionWithStickyHeader(
                                 title: 'Injectable',
@@ -252,9 +256,26 @@ class MedicationListTile extends StatelessWidget {
       child: ListTile(
           contentPadding: AppTheme.standardCardPadding,
           title: Text(medication.name, style: AppTextStyles.titleMedium),
+          leading:
+              GetIconsColors.getMedicationIconCirlce(medication.medicationType),
           subtitle: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              SharedWidgets.verticalSpace(),
+              Row(
+                children: [
+                  Text(_getTypeBadgeText()),
+                  if (medication.currentQuantity != 0 ||
+                      medication.refillThreshold != 0) ...[
+                    const Text(' • '),
+                    Icon(
+                      Icons.inventory_2_outlined,
+                      size: 16,
+                    ),
+                    Text('${medication.currentQuantity}'),
+                  ],
+                ],
+              ),
               SharedWidgets.verticalSpace(),
               Text(DateTimeFormatter.formatMedicationFrequencyDosage(
                   medication)),
@@ -277,5 +298,49 @@ class MedicationListTile extends StatelessWidget {
           onTap: () => NavigationService.goToMedicationDetails(context,
               medication: medication)),
     );
+  }
+
+  /// Get a short text description for the medication type badge
+  String _getTypeBadgeText() {
+    switch (medication.medicationType) {
+      case MedicationType.oral:
+        switch (medication.oralSubtype) {
+          case OralSubtype.tablets:
+            return 'Tablets';
+          case OralSubtype.capsules:
+            return 'Capsules';
+          case OralSubtype.drops:
+            return 'Drops';
+          case null:
+            return 'Oral';
+        }
+
+      case MedicationType.injection:
+        switch (medication.injectionDetails?.subtype) {
+          case InjectionSubtype.intravenous:
+            return 'IV';
+          case InjectionSubtype.intramuscular:
+            return 'IM';
+          case InjectionSubtype.subcutaneous:
+            return 'SC';
+          case null:
+            return 'Injection';
+        }
+
+      case MedicationType.topical:
+        switch (medication.topicalSubtype) {
+          case TopicalSubtype.gel:
+            return 'Gel';
+          case TopicalSubtype.cream:
+            return 'Cream';
+          case TopicalSubtype.spray:
+            return 'Spray';
+          case null:
+            return 'Topical';
+        }
+
+      case MedicationType.patch:
+        return 'Patch';
+    }
   }
 }

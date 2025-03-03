@@ -129,55 +129,63 @@ class DatabaseService {
   Future<void> _createDatabase(Database db) async {
     // Create medications table
     await db.execute('''
-      CREATE TABLE medications(
-        id TEXT PRIMARY KEY,
-        name TEXT NOT NULL,
-        dosage TEXT NOT NULL,
-        startDate TEXT NOT NULL,
-        frequency INTEGER NOT NULL,
-        timeOfDay TEXT NOT NULL,
-        daysOfWeek TEXT NOT NULL,
-        currentQuantity INTEGER NOT NULL,
-        refillThreshold INTEGER NOT NULL,
-        notes TEXT,
-        medicationType TEXT NOT NULL,
-        injectionFrequency TEXT,
-        drawingNeedleType TEXT,
-        drawingNeedleCount INTEGER,
-        drawingNeedleRefills INTEGER,
-        injectingNeedleType TEXT,
-        injectingNeedleCount INTEGER,
-        injectingNeedleRefills INTEGER,
-        injectionSiteNotes TEXT
-      )
-    ''');
+    CREATE TABLE medications(
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      dosage TEXT NOT NULL,
+      startDate TEXT NOT NULL,
+      frequency INTEGER NOT NULL,
+      timeOfDay TEXT NOT NULL,
+      daysOfWeek TEXT NOT NULL,
+      currentQuantity INTEGER NOT NULL,
+      refillThreshold INTEGER NOT NULL,
+      notes TEXT,
+      medicationType TEXT NOT NULL,
+      doctor TEXT,
+      pharmacy TEXT,
+      oralSubtype TEXT,
+      topicalSubtype TEXT,
+      injectionFrequency TEXT,
+      injectionSubtype TEXT,
+      drawingNeedleType TEXT,
+      drawingNeedleCount INTEGER,
+      drawingNeedleRefills INTEGER,
+      injectingNeedleType TEXT,
+      injectingNeedleCount INTEGER,
+      injectingNeedleRefills INTEGER,
+      syringeType TEXT,
+      syringeCount INTEGER,
+      syringeRefills INTEGER,
+      injectionSiteNotes TEXT
+    )
+  ''');
 
     // Create taken_medications table
     await db.execute('''
-      CREATE TABLE taken_medications(
-        medication_id TEXT NOT NULL,
-        date TEXT NOT NULL,
-        time_slot TEXT NOT NULL,
-        taken INTEGER NOT NULL,
-        custom_key TEXT,
-        PRIMARY KEY (custom_key)
-      )
-    ''');
+    CREATE TABLE taken_medications(
+      medication_id TEXT NOT NULL,
+      date TEXT NOT NULL,
+      time_slot TEXT NOT NULL,
+      taken INTEGER NOT NULL,
+      custom_key TEXT,
+      PRIMARY KEY (custom_key)
+    )
+  ''');
 
     // Updated bloodwork table with new fields
     await db.execute('''
-      CREATE TABLE bloodwork(
-        id TEXT PRIMARY KEY,
-        date TEXT NOT NULL,
-        appointmentType TEXT NOT NULL,
-        estrogen REAL,
-        testosterone REAL,
-        hormone_readings TEXT,
-        location TEXT,
-        doctor TEXT,
-        notes TEXT
-      )
-    ''');
+    CREATE TABLE bloodwork(
+      id TEXT PRIMARY KEY,
+      date TEXT NOT NULL,
+      appointmentType TEXT NOT NULL,
+      estrogen REAL,
+      testosterone REAL,
+      hormone_readings TEXT,
+      location TEXT,
+      doctor TEXT,
+      notes TEXT
+    )
+  ''');
   }
 
   /// Convert a Medication object to a database map
@@ -196,6 +204,10 @@ class DatabaseService {
       'refillThreshold': medication.refillThreshold,
       'notes': medication.notes?.trim(),
       'medicationType': medication.medicationType.toString().split('.').last,
+      'doctor': medication.doctor?.trim(),
+      'pharmacy': medication.pharmacy?.trim(),
+      'oralSubtype': medication.oralSubtype?.toString().split('.').last,
+      'topicalSubtype': medication.topicalSubtype?.toString().split('.').last,
     };
 
     // Add injection details if present, storing each field directly
@@ -210,9 +222,14 @@ class DatabaseService {
             medication.injectionDetails!.injectingNeedleCount,
         'injectingNeedleRefills':
             medication.injectionDetails!.injectingNeedleRefills,
+        'syringeType': medication.injectionDetails!.syringeType,
+        'syringeCount': medication.injectionDetails!.syringeCount,
+        'syringeRefills': medication.injectionDetails!.syringeRefills,
         'injectionSiteNotes': medication.injectionDetails!.injectionSiteNotes,
         'injectionFrequency':
             medication.injectionDetails!.frequency.toString().split('.').last,
+        'injectionSubtype':
+            medication.injectionDetails!.subtype.toString().split('.').last,
       });
     } else {
       // Set null for all injection-related fields for non-injection medications
@@ -223,8 +240,12 @@ class DatabaseService {
         'injectingNeedleType': null,
         'injectingNeedleCount': null,
         'injectingNeedleRefills': null,
+        'syringeType': null,
+        'syringeCount': null,
+        'syringeRefills': null,
         'injectionSiteNotes': null,
         'injectionFrequency': null,
+        'injectionSubtype': null,
       });
     }
 
@@ -238,12 +259,47 @@ class DatabaseService {
       (e) => e.toString() == 'MedicationType.${map['medicationType']}',
     );
 
+    // Handle oral subtype if present
+    OralSubtype? oralSubtype;
+    if (map['oralSubtype'] != null) {
+      try {
+        oralSubtype = OralSubtype.values.firstWhere(
+          (e) => e.toString() == 'OralSubtype.${map['oralSubtype']}',
+        );
+      } catch (_) {
+        // Default to tablets if parsing fails
+        oralSubtype =
+            medicationType == MedicationType.oral ? OralSubtype.tablets : null;
+      }
+    }
+
+    // Handle topical subtype if present
+    TopicalSubtype? topicalSubtype;
+    if (map['topicalSubtype'] != null) {
+      try {
+        topicalSubtype = TopicalSubtype.values.firstWhere(
+          (e) => e.toString() == 'TopicalSubtype.${map['topicalSubtype']}',
+        );
+      } catch (_) {
+        // Default to gel if parsing fails
+        topicalSubtype = medicationType == MedicationType.topical
+            ? TopicalSubtype.gel
+            : null;
+      }
+    }
+
     // Create injection details if this is an injection medication
     InjectionDetails? injectionDetails;
     if (medicationType == MedicationType.injection) {
       final frequency = InjectionFrequency.values.firstWhere(
         (e) =>
             e.toString() == 'InjectionFrequency.${map['injectionFrequency']}',
+        orElse: () => InjectionFrequency.weekly,
+      );
+
+      final subtype = InjectionSubtype.values.firstWhere(
+        (e) => e.toString() == 'InjectionSubtype.${map['injectionSubtype']}',
+        orElse: () => InjectionSubtype.intramuscular,
       );
 
       injectionDetails = InjectionDetails(
@@ -253,8 +309,12 @@ class DatabaseService {
         injectingNeedleType: map['injectingNeedleType'] as String,
         injectingNeedleCount: map['injectingNeedleCount'] as int,
         injectingNeedleRefills: map['injectingNeedleRefills'] as int,
+        syringeType: map['syringeType'] as String? ?? '',
+        syringeCount: map['syringeCount'] as int? ?? 0,
+        syringeRefills: map['syringeRefills'] as int? ?? 0,
         injectionSiteNotes: map['injectionSiteNotes'] as String? ?? '',
         frequency: frequency,
+        subtype: subtype,
       );
     }
 
@@ -279,7 +339,11 @@ class DatabaseService {
       currentQuantity: map['currentQuantity'] as int,
       refillThreshold: map['refillThreshold'] as int,
       notes: map['notes'] as String?,
+      doctor: map['doctor'] as String?,
+      pharmacy: map['pharmacy'] as String?,
       medicationType: medicationType,
+      oralSubtype: oralSubtype,
+      topicalSubtype: topicalSubtype,
       injectionDetails: injectionDetails,
     );
   }

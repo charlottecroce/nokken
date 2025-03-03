@@ -4,6 +4,7 @@
 //
 import 'package:flutter/material.dart';
 import 'package:nokken/src/core/theme/app_theme.dart';
+import 'package:nokken/src/core/theme/app_text_styles.dart';
 
 class SharedWidgets {
   /// Creates a vertical spacer with customizable height
@@ -26,6 +27,23 @@ class SharedWidgets {
         title.toUpperCase(),
         style: AppTextStyles.labelMedium,
       ),
+    );
+  }
+
+  /// Helper to build consistent info rows
+  static Widget buildInfoRow(String label, String value) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: AppTextStyles.bodyMedium,
+        ),
+        Text(
+          value,
+          style: AppTextStyles.bodyMedium,
+        ),
+      ],
     );
   }
 

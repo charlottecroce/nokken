@@ -137,6 +137,9 @@ class AppIcons {
     'analytics': (outlined: Icons.analytics_outlined, filled: Icons.analytics),
     'lab': (outlined: Icons.biotech_outlined, filled: Icons.biotech),
 
+    'topical': (outlined: Icons.spa_outlined, filled: Icons.spa),
+    'patch': (outlined: Icons.healing_outlined, filled: Icons.healing),
+
     // Location
     'location': (
       outlined: Icons.location_on_outlined,

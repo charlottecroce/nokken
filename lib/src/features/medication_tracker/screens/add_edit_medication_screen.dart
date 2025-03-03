@@ -12,6 +12,8 @@ import 'package:nokken/src/core/constants/date_constants.dart';
 import 'package:nokken/src/core/utils/date_time_formatter.dart';
 import 'package:nokken/src/core/theme/app_icons.dart';
 import 'package:nokken/src/core/theme/app_theme.dart';
+import 'package:nokken/src/core/theme/app_colors.dart';
+import 'package:nokken/src/core/theme/app_text_styles.dart';
 import 'package:nokken/src/core/theme/shared_widgets.dart';
 import '../models/medication.dart';
 import '../providers/medication_state.dart';
@@ -37,9 +39,13 @@ class _AddEditMedicationScreenState
   late final TextEditingController _nameController;
   late final TextEditingController _dosageController;
   late final TextEditingController _notesController;
+  late final TextEditingController _doctorController;
+  late final TextEditingController _pharmacyController;
 
   // State variables
   late MedicationType _medicationType;
+  late OralSubtype? _oralSubtype;
+  late TopicalSubtype? _topicalSubtype;
   late DateTime _startDate;
   late int _frequency;
   late List<TimeOfDay> _times;
@@ -64,9 +70,15 @@ class _AddEditMedicationScreenState
         TextEditingController(text: widget.medication?.dosage ?? '');
     _notesController =
         TextEditingController(text: widget.medication?.notes ?? '');
+    _doctorController =
+        TextEditingController(text: widget.medication?.doctor ?? '');
+    _pharmacyController =
+        TextEditingController(text: widget.medication?.pharmacy ?? '');
 
     // Initialize medication type and related fields
     _medicationType = widget.medication?.medicationType ?? MedicationType.oral;
+    _oralSubtype = widget.medication?.oralSubtype ?? OralSubtype.tablets;
+    _topicalSubtype = widget.medication?.topicalSubtype ?? TopicalSubtype.gel;
     _injectionDetails = _initializeInjectionDetails();
 
     // Initialize schedule related fields
@@ -102,24 +114,46 @@ class _AddEditMedicationScreenState
             injectingNeedleType: '',
             injectingNeedleCount: 0,
             injectingNeedleRefills: 0,
+            syringeType: '',
+            syringeCount: 0,
+            syringeRefills: 0,
             injectionSiteNotes: '',
             frequency: InjectionFrequency.weekly,
+            subtype: InjectionSubtype.intramuscular,
           );
     }
     return null;
   }
 
-  /// Handle medication type change (oral/injection)
-  /// Resets relevant fields according to the type
+  /// Handle medication type change (oral/injection/topical/patch)
   void _handleTypeChange(MedicationType type) {
     setState(() {
       _medicationType = type;
-      if (type == MedicationType.injection) {
+
+      // Reset subtypes based on selected type
+      if (type == MedicationType.oral) {
+        _oralSubtype = OralSubtype.tablets;
+        _topicalSubtype = null;
+        _injectionDetails = null;
+        _frequency = 1;
+        _selectedDays = {'Su', 'M', 'T', 'W', 'Th', 'F', 'Sa'};
+      } else if (type == MedicationType.injection) {
+        _oralSubtype = null;
+        _topicalSubtype = null;
         _frequency = 1;
         _selectedDays = {'Su'};
         _injectionDetails ??= _initializeInjectionDetails();
-      } else {
+      } else if (type == MedicationType.topical) {
+        _oralSubtype = null;
+        _topicalSubtype = TopicalSubtype.gel;
         _injectionDetails = null;
+        _frequency = 1;
+        _selectedDays = {'Su', 'M', 'T', 'W', 'Th', 'F', 'Sa'};
+      } else if (type == MedicationType.patch) {
+        _oralSubtype = null;
+        _topicalSubtype = null;
+        _injectionDetails = null;
+        _frequency = 1;
         _selectedDays = {'Su', 'M', 'T', 'W', 'Th', 'F', 'Sa'};
       }
     });
@@ -131,7 +165,99 @@ class _AddEditMedicationScreenState
     _nameController.dispose();
     _dosageController.dispose();
     _notesController.dispose();
+    _doctorController.dispose();
+    _pharmacyController.dispose();
     super.dispose();
+  }
+
+  /// Update injection details when fields change
+  void _updateInjectionDetails({
+    String? drawingNeedleType,
+    int? drawingNeedleCount,
+    int? drawingNeedleRefills,
+    String? injectingNeedleType,
+    int? injectingNeedleCount,
+    int? injectingNeedleRefills,
+    String? syringeType,
+    int? syringeCount,
+    int? syringeRefills,
+    String? injectionSiteNotes,
+    InjectionFrequency? frequency,
+    InjectionSubtype? subtype,
+  }) {
+    if (_injectionDetails == null) return;
+
+    setState(() {
+      _injectionDetails = InjectionDetails(
+        drawingNeedleType:
+            drawingNeedleType ?? _injectionDetails!.drawingNeedleType,
+        drawingNeedleCount:
+            drawingNeedleCount ?? _injectionDetails!.drawingNeedleCount,
+        drawingNeedleRefills:
+            drawingNeedleRefills ?? _injectionDetails!.drawingNeedleRefills,
+        injectingNeedleType:
+            injectingNeedleType ?? _injectionDetails!.injectingNeedleType,
+        injectingNeedleCount:
+            injectingNeedleCount ?? _injectionDetails!.injectingNeedleCount,
+        injectingNeedleRefills:
+            injectingNeedleRefills ?? _injectionDetails!.injectingNeedleRefills,
+        syringeType: syringeType ?? _injectionDetails!.syringeType,
+        syringeCount: syringeCount ?? _injectionDetails!.syringeCount,
+        syringeRefills: syringeRefills ?? _injectionDetails!.syringeRefills,
+        injectionSiteNotes:
+            injectionSiteNotes ?? _injectionDetails!.injectionSiteNotes,
+        frequency: frequency ?? _injectionDetails!.frequency,
+        subtype: subtype ?? _injectionDetails!.subtype,
+      );
+    });
+
+    // Ensure frequency is 1 when biweekly is selected
+    if (frequency == InjectionFrequency.biweekly && _frequency != 1) {
+      _frequency = 1;
+      _times = _adjustTimesList(_times, 1);
+    }
+  }
+
+  /// Handle frequency change (times per day)
+  void _handleFrequencyChange(int newFrequency) {
+    setState(() {
+      _frequency = newFrequency;
+      _times = _adjustTimesList(_times, newFrequency);
+    });
+  }
+
+  /// Adjust the time slots list when frequency changes
+  List<TimeOfDay> _adjustTimesList(
+      List<TimeOfDay> currentTimes, int newFrequency) {
+    if (newFrequency > currentTimes.length) {
+      // Add new time slots if frequency increases
+      return [
+        ...currentTimes,
+        ...List.generate(
+          newFrequency - currentTimes.length,
+          (_) => TimeOfDay.now(),
+        )
+      ];
+    }
+    // Remove excess time slots if frequency decreases
+    return currentTimes.sublist(0, newFrequency);
+  }
+
+  /// Handle changes to individual time slots
+  void _handleTimeChange(int index, TimeOfDay newTime) {
+    setState(() {
+      // Make sure index is valid
+      if (index >= 0 && index < _times.length) {
+        _times[index] = newTime;
+      }
+    });
+  }
+
+  /// Handle changes to the selected days of the week
+  void _handleDaysChange(Set<String> newDays) {
+    setState(() {
+      _selectedDays = newDays;
+    });
   }
 
   /// Save or update medication data
@@ -163,8 +289,20 @@ class _AddEditMedicationScreenState
         daysOfWeek: _selectedDays,
         currentQuantity: _currentQuantity,
         refillThreshold: _refillThreshold,
-        notes: _notesController.text.trim(),
+        notes: _notesController.text.trim().isNotEmpty
+            ? _notesController.text.trim()
+            : null,
         medicationType: _medicationType,
+        oralSubtype:
+            _medicationType == MedicationType.oral ? _oralSubtype : null,
+        topicalSubtype:
+            _medicationType == MedicationType.topical ? _topicalSubtype : null,
+        doctor: _doctorController.text.trim().isNotEmpty
+            ? _doctorController.text.trim()
+            : null,
+        pharmacy: _pharmacyController.text.trim().isNotEmpty
+            ? _pharmacyController.text.trim()
+            : null,
         injectionDetails: _injectionDetails,
       );
 
@@ -202,86 +340,6 @@ class _AddEditMedicationScreenState
     }
   }
 
-  /// Update injection details when fields change
-  void _updateInjectionDetails({
-    String? drawingNeedleType,
-    int? drawingNeedleCount,
-    int? drawingNeedleRefills,
-    String? injectingNeedleType,
-    int? injectingNeedleCount,
-    int? injectingNeedleRefills,
-    String? injectionSiteNotes,
-    InjectionFrequency? frequency,
-  }) {
-    if (_injectionDetails == null) return;
-
-    setState(() {
-      _injectionDetails = InjectionDetails(
-        drawingNeedleType:
-            drawingNeedleType ?? _injectionDetails!.drawingNeedleType,
-        drawingNeedleCount:
-            drawingNeedleCount ?? _injectionDetails!.drawingNeedleCount,
-        drawingNeedleRefills:
-            drawingNeedleRefills ?? _injectionDetails!.drawingNeedleRefills,
-        injectingNeedleType:
-            injectingNeedleType ?? _injectionDetails!.injectingNeedleType,
-        injectingNeedleCount:
-            injectingNeedleCount ?? _injectionDetails!.injectingNeedleCount,
-        injectingNeedleRefills:
-            injectingNeedleRefills ?? _injectionDetails!.injectingNeedleRefills,
-        injectionSiteNotes:
-            injectionSiteNotes ?? _injectionDetails!.injectionSiteNotes,
-        frequency: frequency ?? _injectionDetails!.frequency,
-      );
-    });
-
-    // Ensure frequency is 1 when biweekly is selected.
-    // We could have twice a week, every other week, but that's confusing idk who injects like that
-    if (frequency == InjectionFrequency.biweekly && _frequency != 1) {
-      _frequency = 1;
-      _times = _adjustTimesList(_times, 1);
-    }
-  }
-
-  /// Handle frequency change (times per day)
-  void _handleFrequencyChange(int newFrequency) {
-    setState(() {
-      _frequency = newFrequency;
-      _times = _adjustTimesList(_times, newFrequency);
-    });
-  }
-
-  /// Adjust the time slots list when frequency changes
-  List<TimeOfDay> _adjustTimesList(
-      List<TimeOfDay> currentTimes, int newFrequency) {
-    if (newFrequency > currentTimes.length) {
-      // Add new time slots if frequency increases
-      return [
-        ...currentTimes,
-        ...List.generate(
-          newFrequency - currentTimes.length,
-          (_) => TimeOfDay.now(),
-        )
-      ];
-    }
-    // Remove excess time slots if frequency decreases
-    return currentTimes.sublist(0, newFrequency);
-  }
-
-  /// Handle changes to the selected days of the week
-  void _handleDaysChange(Set<String> newDays) {
-    setState(() {
-      _selectedDays = newDays;
-    });
-  }
-
-  /// Handle changes to individual time slots
-  void _handleTimeChange(int index, TimeOfDay newTime) {
-    setState(() {
-      _times[index] = newTime;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -315,14 +373,28 @@ class _AddEditMedicationScreenState
               nameController: _nameController,
               dosageController: _dosageController,
             ),
-            SharedWidgets.verticalSpace(AppTheme.cardSpacing),
 
-            // Medication type section (oral/injection)
+            // Medication type section
             MedicationTypeSection(
               medicationType: _medicationType,
               onTypeChanged: _handleTypeChange,
             ),
-            SharedWidgets.verticalSpace(AppTheme.cardSpacing),
+
+            // Oral subtype section (only shown for oral medications)
+            if (_medicationType == MedicationType.oral)
+              OralSubtypeSection(
+                subtype: _oralSubtype,
+                onSubtypeChanged: (value) =>
+                    setState(() => _oralSubtype = value),
+              ),
+
+            // Topical subtype section (only shown for topical medications)
+            if (_medicationType == MedicationType.topical)
+              TopicalSubtypeSection(
+                subtype: _topicalSubtype,
+                onSubtypeChanged: (value) =>
+                    setState(() => _topicalSubtype = value),
+              ),
 
             // Injection details section (only shown for injectable medications)
             if (_medicationType == MedicationType.injection)
@@ -330,7 +402,6 @@ class _AddEditMedicationScreenState
                 injectionDetails: _injectionDetails!,
                 onDetailsChanged: _updateInjectionDetails,
               ),
-            SharedWidgets.verticalSpace(AppTheme.cardSpacing),
 
             // Timing section (frequency, days, time slots)
             TimingSection(
@@ -344,8 +415,8 @@ class _AddEditMedicationScreenState
               onDaysChanged: _handleDaysChange,
               isEveryTwoWeeks: _medicationType == MedicationType.injection &&
                   _injectionDetails?.frequency == InjectionFrequency.biweekly,
+              medicationType: _medicationType,
             ),
-            SharedWidgets.verticalSpace(AppTheme.cardSpacing),
 
             // Inventory section (quantities and refill threshold)
             InventorySection(
@@ -356,7 +427,12 @@ class _AddEditMedicationScreenState
               onThresholdChanged: (value) =>
                   setState(() => _refillThreshold = value),
             ),
-            SharedWidgets.verticalSpace(AppTheme.cardSpacing),
+
+            // Medical providers section
+            MedicalProvidersSection(
+              doctorController: _doctorController,
+              pharmacyController: _pharmacyController,
+            ),
 
             // Notes section
             NotesSection(controller: _notesController),
@@ -410,7 +486,6 @@ class BasicInfoSection extends StatelessWidget {
   }
 }
 
-/// Medication Type Selection Section (Oral vs Injection)
 class MedicationTypeSection extends StatelessWidget {
   final MedicationType medicationType;
   final ValueChanged<MedicationType> onTypeChanged;
@@ -427,25 +502,140 @@ class MedicationTypeSection extends StatelessWidget {
       context: context,
       title: 'Medication Type',
       children: [
-        // Oral medication radio button
-        RadioListTile<MedicationType>(
-          title: const Text('Oral'),
-          value: MedicationType.oral,
-          groupValue: medicationType,
+        DropdownButtonFormField<MedicationType>(
+          value: medicationType,
+          decoration: AppTheme.defaultTextFieldDecoration.copyWith(
+            labelText: 'Type',
+          ),
+          items: MedicationType.values.map((type) {
+            String displayName;
+            switch (type) {
+              case MedicationType.oral:
+                displayName = 'Oral';
+                break;
+              case MedicationType.injection:
+                displayName = 'Injection';
+                break;
+              case MedicationType.topical:
+                displayName = 'Topical';
+                break;
+              case MedicationType.patch:
+                displayName = 'Patch';
+                break;
+            }
+
+            return DropdownMenuItem<MedicationType>(
+              value: type,
+              child: Text(displayName),
+            );
+          }).toList(),
           onChanged: (value) {
             if (value != null) {
               onTypeChanged(value);
             }
           },
         ),
-        // Injection medication radio button
-        RadioListTile<MedicationType>(
-          title: const Text('Injection'),
-          value: MedicationType.injection,
-          groupValue: medicationType,
+      ],
+    );
+  }
+}
+
+/// Oral Subtype Section - Only shown for oral medications
+class OralSubtypeSection extends StatelessWidget {
+  final OralSubtype? subtype;
+  final ValueChanged<OralSubtype> onSubtypeChanged;
+
+  const OralSubtypeSection({
+    super.key,
+    required this.subtype,
+    required this.onSubtypeChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SharedWidgets.basicCard(
+      context: context,
+      title: 'Oral Medication Form',
+      children: [
+        DropdownButtonFormField<OralSubtype>(
+          value: subtype ?? OralSubtype.tablets,
+          decoration: AppTheme.defaultTextFieldDecoration.copyWith(
+            labelText: 'Form',
+          ),
+          items: OralSubtype.values.map((type) {
+            String displayName;
+            switch (type) {
+              case OralSubtype.tablets:
+                displayName = 'Tablets';
+                break;
+              case OralSubtype.capsules:
+                displayName = 'Capsules';
+                break;
+              case OralSubtype.drops:
+                displayName = 'Drops';
+                break;
+            }
+
+            return DropdownMenuItem<OralSubtype>(
+              value: type,
+              child: Text(displayName),
+            );
+          }).toList(),
           onChanged: (value) {
             if (value != null) {
-              onTypeChanged(value);
+              onSubtypeChanged(value);
+            }
+          },
+        ),
+      ],
+    );
+  }
+}
+
+/// Topical Subtype Section - Only shown for topical medications
+class TopicalSubtypeSection extends StatelessWidget {
+  final TopicalSubtype? subtype;
+  final ValueChanged<TopicalSubtype> onSubtypeChanged;
+
+  const TopicalSubtypeSection({
+    super.key,
+    required this.subtype,
+    required this.onSubtypeChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SharedWidgets.basicCard(
+      context: context,
+      title: 'Topical Medication Form',
+      children: [
+        DropdownButtonFormField<TopicalSubtype>(
+          value: subtype ?? TopicalSubtype.gel,
+          decoration: AppTheme.defaultTextFieldDecoration.copyWith(
+            labelText: 'Form',
+          ),
+          items: TopicalSubtype.values.map((type) {
+            String displayName;
+            switch (type) {
+              case TopicalSubtype.gel:
+                displayName = 'Gel';
+                break;
+              case TopicalSubtype.cream:
+                displayName = 'Cream';
+                break;
+              case TopicalSubtype.spray:
+                displayName = 'Spray';
+                break;
+            }
+
+            return DropdownMenuItem<TopicalSubtype>(
+              value: type,
+              child: Text(displayName),
+            );
+          }).toList(),
+          onChanged: (value) {
+            if (value != null) {
+              onSubtypeChanged(value);
             }
           },
         ),
@@ -464,8 +654,12 @@ class InjectionDetailsSection extends StatelessWidget {
     String? injectingNeedleType,
     int? injectingNeedleCount,
     int? injectingNeedleRefills,
+    String? syringeType,
+    int? syringeCount,
+    int? syringeRefills,
     String? injectionSiteNotes,
     InjectionFrequency? frequency,
+    InjectionSubtype? subtype,
   }) onDetailsChanged;
 
   const InjectionDetailsSection({
@@ -498,7 +692,7 @@ class InjectionDetailsSection extends StatelessWidget {
         TextFormField(
           initialValue: type,
           decoration: AppTheme.defaultTextFieldDecoration.copyWith(
-            labelText: 'Needle Type',
+            labelText: 'Type',
             hintText: typeHint,
           ),
           onChanged: onTypeChanged,
@@ -547,7 +741,40 @@ class InjectionDetailsSection extends StatelessWidget {
       context: context,
       title: 'Injection Details',
       children: [
-        // Frequency Dropdown
+        // Injection subtype dropdown
+        DropdownButtonFormField<InjectionSubtype>(
+          value: injectionDetails.subtype,
+          decoration: AppTheme.defaultTextFieldDecoration.copyWith(
+            labelText: 'Injection Type',
+          ),
+          items: InjectionSubtype.values.map((subtype) {
+            String displayName;
+            switch (subtype) {
+              case InjectionSubtype.intravenous:
+                displayName = 'Intravenous (IV)';
+                break;
+              case InjectionSubtype.intramuscular:
+                displayName = 'Intramuscular (IM)';
+                break;
+              case InjectionSubtype.subcutaneous:
+                displayName = 'Subcutaneous (SC)';
+                break;
+            }
+
+            return DropdownMenuItem<InjectionSubtype>(
+              value: subtype,
+              child: Text(displayName),
+            );
+          }).toList(),
+          onChanged: (value) {
+            if (value != null) {
+              onDetailsChanged(subtype: value);
+            }
+          },
+        ),
+        SharedWidgets.verticalSpace(),
+
+        // Frequency Dropdown (existing code)
         DropdownButtonFormField<InjectionFrequency>(
           value: injectionDetails.frequency,
           decoration: AppTheme.defaultTextFieldDecoration.copyWith(
@@ -569,7 +796,21 @@ class InjectionDetailsSection extends StatelessWidget {
         ),
         SharedWidgets.verticalSpace(AppTheme.tripleSpacing),
 
-        // Drawing Needles Section
+        // Syringe Section (new)
+        _buildNeedleSection(
+          context: context,
+          title: 'Syringes',
+          type: injectionDetails.syringeType,
+          count: injectionDetails.syringeCount,
+          refills: injectionDetails.syringeRefills,
+          typeHint: 'e.g., 3ml Luer Lock',
+          onTypeChanged: (value) => onDetailsChanged(syringeType: value),
+          onCountChanged: (value) => onDetailsChanged(syringeCount: value),
+          onRefillsChanged: (value) => onDetailsChanged(syringeRefills: value),
+        ),
+        SharedWidgets.verticalSpace(AppTheme.tripleSpacing),
+
+        // Drawing Needles Section (existing code)
         _buildNeedleSection(
           context: context,
           title: 'Drawing Needles',
@@ -585,7 +826,7 @@ class InjectionDetailsSection extends StatelessWidget {
         ),
         SharedWidgets.verticalSpace(AppTheme.tripleSpacing),
 
-        // Injecting Needles Section
+        // Injecting Needles Section (existing code)
         _buildNeedleSection(
           context: context,
           title: 'Injecting Needles',
@@ -602,7 +843,7 @@ class InjectionDetailsSection extends StatelessWidget {
         ),
         SharedWidgets.verticalSpace(AppTheme.tripleSpacing),
 
-        // Injection Site Notes
+        // Injection Site Notes (existing code)
         Text(
           'Injection Site Notes',
           style: Theme.of(context).textTheme.titleSmall,
@@ -623,28 +864,56 @@ class InjectionDetailsSection extends StatelessWidget {
 
 /// Timing Section for medication schedule
 class TimingSection extends StatelessWidget {
+  final DateTime selectedStartDate;
+  final ValueChanged<DateTime> onStartDateChanged;
   final int frequency;
   final List<TimeOfDay> times;
   final Set<String> selectedDays;
   final ValueChanged<int> onFrequencyChanged;
   final Function(int, TimeOfDay) onTimeChanged;
   final ValueChanged<Set<String>> onDaysChanged;
-  final DateTime selectedStartDate;
-  final ValueChanged<DateTime> onStartDateChanged;
   final bool isEveryTwoWeeks;
+  final MedicationType medicationType;
 
   const TimingSection({
     super.key,
+    required this.selectedStartDate,
+    required this.onStartDateChanged,
     required this.frequency,
     required this.times,
     required this.selectedDays,
     required this.onFrequencyChanged,
     required this.onTimeChanged,
     required this.onDaysChanged,
-    required this.selectedStartDate,
-    required this.onStartDateChanged,
     this.isEveryTwoWeeks = false,
+    required this.medicationType,
   });
+
+  @override
+  Widget build(BuildContext context) {
+    // Customize the title based on medication type
+    String sectionTitle = 'Timing';
+    if (medicationType == MedicationType.patch) {
+      sectionTitle = 'Change Schedule';
+    }
+
+    return SharedWidgets.basicCard(
+      context: context,
+      title: sectionTitle,
+      children: [
+        _buildStartDateSelector(context),
+        if (!isEveryTwoWeeks && medicationType != MedicationType.patch)
+          _buildFrequencySelector(),
+        SharedWidgets.verticalSpace(AppTheme.doubleSpacing),
+        _buildDaySelector(context),
+        SharedWidgets.verticalSpace(AppTheme.doubleSpacing),
+        ...List.generate(
+          frequency,
+          (index) => _buildTimeInput(context, index),
+        ),
+      ],
+    );
+  }
 
   /// Build the frequency selector (times per day)
   Widget _buildFrequencySelector() {
@@ -847,25 +1116,6 @@ class TimingSection extends StatelessWidget {
       ),
     );
   }
-
-  @override
-  Widget build(BuildContext context) {
-    return SharedWidgets.basicCard(
-      context: context,
-      title: 'Timing',
-      children: [
-        _buildStartDateSelector(context),
-        if (!isEveryTwoWeeks) _buildFrequencySelector(),
-        SharedWidgets.verticalSpace(AppTheme.doubleSpacing),
-        _buildDaySelector(context),
-        SharedWidgets.verticalSpace(AppTheme.doubleSpacing),
-        ...List.generate(
-          frequency,
-          (index) => _buildTimeInput(context, index),
-        ),
-      ],
-    );
-  }
 }
 
 /// Inventory Section for tracking medication quantities
@@ -981,6 +1231,46 @@ class InventorySection extends StatelessWidget {
               );
             },
           ),
+      ],
+    );
+  }
+}
+
+/// Doctor and Pharmacy Section
+class MedicalProvidersSection extends StatelessWidget {
+  final TextEditingController doctorController;
+  final TextEditingController pharmacyController;
+
+  const MedicalProvidersSection({
+    super.key,
+    required this.doctorController,
+    required this.pharmacyController,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SharedWidgets.basicCard(
+      context: context,
+      title: 'Medical Providers',
+      children: [
+        // Doctor field
+        TextFormField(
+          controller: doctorController,
+          decoration: AppTheme.defaultTextFieldDecoration.copyWith(
+            labelText: 'Doctor',
+            hintText: 'Enter prescribing doctor (optional)',
+          ),
+        ),
+        SharedWidgets.verticalSpace(),
+
+        // Pharmacy field
+        TextFormField(
+          controller: pharmacyController,
+          decoration: AppTheme.defaultTextFieldDecoration.copyWith(
+            labelText: 'Pharmacy',
+            hintText: 'Enter pharmacy (optional)',
+          ),
+        ),
       ],
     );
   }

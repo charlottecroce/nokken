@@ -7,7 +7,16 @@ import 'package:nokken/src/core/constants/date_constants.dart';
 import 'package:nokken/src/core/services/error/validation_service.dart';
 
 /// Types of medications supported
-enum MedicationType { oral, injection }
+enum MedicationType { oral, injection, topical, patch }
+
+/// Subtypes for oral medications
+enum OralSubtype { tablets, capsules, drops }
+
+/// Subtypes for topical medications
+enum TopicalSubtype { gel, cream, spray }
+
+/// Subtypes for injection medications
+enum InjectionSubtype { intravenous, intramuscular, subcutaneous }
 
 /// Frequency options for injectable medications
 enum InjectionFrequency { weekly, biweekly }
@@ -20,8 +29,12 @@ class InjectionDetails {
   final String injectingNeedleType;
   final int injectingNeedleCount;
   final int injectingNeedleRefills;
+  final String syringeType;
+  final int syringeCount;
+  final int syringeRefills;
   final String injectionSiteNotes;
   final InjectionFrequency frequency;
+  final InjectionSubtype subtype;
 
   InjectionDetails({
     required this.drawingNeedleType,
@@ -30,8 +43,12 @@ class InjectionDetails {
     required this.injectingNeedleType,
     required this.injectingNeedleCount,
     required this.injectingNeedleRefills,
+    required this.syringeType,
+    required this.syringeCount,
+    required this.syringeRefills,
     required this.injectionSiteNotes,
     required this.frequency,
+    required this.subtype,
   });
 
   /// Convert to JSON for database storage
@@ -42,8 +59,12 @@ class InjectionDetails {
         'injectingNeedleType': injectingNeedleType,
         'injectingNeedleCount': injectingNeedleCount,
         'injectingNeedleRefills': injectingNeedleRefills,
+        'syringeType': syringeType,
+        'syringeCount': syringeCount,
+        'syringeRefills': syringeRefills,
         'injectionSiteNotes': injectionSiteNotes,
         'frequency': frequency.toString(),
+        'subtype': subtype.toString(),
       };
 
   /// Create InjectionDetails from JSON (database record)
@@ -55,10 +76,16 @@ class InjectionDetails {
       injectingNeedleType: json['injectingNeedleType'],
       injectingNeedleCount: json['injectingNeedleCount'],
       injectingNeedleRefills: json['injectingNeedleRefills'],
+      syringeType: json['syringeType'] ?? '',
+      syringeCount: json['syringeCount'] ?? 0,
+      syringeRefills: json['syringeRefills'] ?? 0,
       injectionSiteNotes: json['injectionSiteNotes'],
       frequency: InjectionFrequency.values.firstWhere(
           (e) => e.toString() == json['frequency'],
           orElse: () => InjectionFrequency.weekly),
+      subtype: InjectionSubtype.values.firstWhere(
+          (e) => e.toString() == json['subtype'],
+          orElse: () => InjectionSubtype.intramuscular),
     );
   }
 }
@@ -85,7 +112,12 @@ class Medication {
   final int refillThreshold;
   final String? notes;
   final MedicationType medicationType;
-  final InjectionDetails? injectionDetails; // null for oral medications
+  final InjectionDetails?
+      injectionDetails; // null for non-injection medications
+  final OralSubtype? oralSubtype; // null for non-oral medications
+  final TopicalSubtype? topicalSubtype; // null for non-topical medications
+  final String? doctor; // Optional doctor name
+  final String? pharmacy; // Optional pharmacy name
 
   /// Constructor with validation
   Medication({
@@ -100,7 +132,11 @@ class Medication {
     required this.refillThreshold,
     required this.medicationType,
     this.injectionDetails,
+    this.oralSubtype,
+    this.topicalSubtype,
     this.notes,
+    this.doctor,
+    this.pharmacy,
   }) : id = id ?? const Uuid().v4() {
     _validate();
   }
@@ -143,6 +179,26 @@ class Medication {
     if (injectionResult.hasError) {
       throw MedicationException(injectionResult.message!);
     }
+
+    // Validate subtypes match medication type
+    if (medicationType == MedicationType.oral && oralSubtype == null) {
+      throw MedicationException('Oral subtype required for oral medications');
+    }
+
+    if (medicationType == MedicationType.topical && topicalSubtype == null) {
+      throw MedicationException(
+          'Topical subtype required for topical medications');
+    }
+
+    if (medicationType != MedicationType.oral && oralSubtype != null) {
+      throw MedicationException(
+          'Oral subtype should only be set for oral medications');
+    }
+
+    if (medicationType != MedicationType.topical && topicalSubtype != null) {
+      throw MedicationException(
+          'Topical subtype should only be set for topical medications');
+    }
   }
 
   /// Convert to JSON format for database storage
@@ -159,6 +215,10 @@ class Medication {
       'refillThreshold': refillThreshold,
       'notes': notes?.trim(),
       'medicationType': medicationType.toString(),
+      'doctor': doctor?.trim(),
+      'pharmacy': pharmacy?.trim(),
+      'oralSubtype': oralSubtype?.toString(),
+      'topicalSubtype': topicalSubtype?.toString(),
       if (injectionDetails != null)
         'injectionDetails': injectionDetails!.toJson(),
     };
@@ -167,6 +227,38 @@ class Medication {
   /// Create a Medication instance from JSON (database record)
   factory Medication.fromJson(Map<String, dynamic> json) {
     try {
+      // Handle medication type
+      final medicationType = MedicationType.values.firstWhere(
+        (e) => e.toString() == json['medicationType'],
+        orElse: () => MedicationType.oral,
+      );
+
+      // Handle oral subtype if present
+      OralSubtype? oralSubtype;
+      if (json['oralSubtype'] != null) {
+        try {
+          oralSubtype = OralSubtype.values.firstWhere(
+            (e) => e.toString() == json['oralSubtype'],
+          );
+        } catch (_) {
+          // If parsing fails, default to tablets
+          oralSubtype = OralSubtype.tablets;
+        }
+      }
+
+      // Handle topical subtype if present
+      TopicalSubtype? topicalSubtype;
+      if (json['topicalSubtype'] != null) {
+        try {
+          topicalSubtype = TopicalSubtype.values.firstWhere(
+            (e) => e.toString() == json['topicalSubtype'],
+          );
+        } catch (_) {
+          // If parsing fails, default to gel
+          topicalSubtype = TopicalSubtype.gel;
+        }
+      }
+
       return Medication(
         id: json['id'] as String,
         name: json['name'] as String,
@@ -180,8 +272,11 @@ class Medication {
         currentQuantity: json['currentQuantity'] as int,
         refillThreshold: json['refillThreshold'] as int,
         notes: json['notes'] as String?,
-        medicationType: MedicationType.values
-            .firstWhere((e) => e.toString() == json['medicationType']),
+        medicationType: medicationType,
+        doctor: json['doctor'] as String?,
+        pharmacy: json['pharmacy'] as String?,
+        oralSubtype: oralSubtype,
+        topicalSubtype: topicalSubtype,
         injectionDetails: json['injectionDetails'] != null
             ? InjectionDetails.fromJson(json['injectionDetails'])
             : null,
@@ -204,6 +299,10 @@ class Medication {
     String? notes,
     MedicationType? medicationType,
     InjectionDetails? injectionDetails,
+    OralSubtype? oralSubtype,
+    TopicalSubtype? topicalSubtype,
+    String? doctor,
+    String? pharmacy,
   }) {
     return Medication(
       id: id,
@@ -218,6 +317,10 @@ class Medication {
       notes: notes ?? this.notes,
       medicationType: medicationType ?? this.medicationType,
       injectionDetails: injectionDetails ?? this.injectionDetails,
+      oralSubtype: oralSubtype ?? this.oralSubtype,
+      topicalSubtype: topicalSubtype ?? this.topicalSubtype,
+      doctor: doctor ?? this.doctor,
+      pharmacy: pharmacy ?? this.pharmacy,
     );
   }
 

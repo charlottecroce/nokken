@@ -9,8 +9,11 @@ import 'package:nokken/src/features/medication_tracker/models/medication.dart';
 import 'package:nokken/src/features/medication_tracker/providers/medication_state.dart';
 import 'package:nokken/src/core/services/navigation/navigation_service.dart';
 import 'package:nokken/src/core/theme/app_theme.dart';
+import 'package:nokken/src/core/theme/app_colors.dart';
+import 'package:nokken/src/core/theme/app_text_styles.dart';
 import 'package:nokken/src/core/theme/shared_widgets.dart';
-//import 'package:nokken/src/shared/constants/date_constants.dart';
+import 'package:nokken/src/core/utils/get_icons_colors.dart';
+import 'package:nokken/src/core/utils/get_labels.dart';
 import 'package:nokken/src/core/utils/date_time_formatter.dart';
 
 class MedicationDetailScreen extends ConsumerWidget {
@@ -83,23 +86,30 @@ class MedicationDetailScreen extends ConsumerWidget {
                 children: [
                   Row(
                     children: [
-                      if (medication.medicationType == MedicationType.oral)
-                        Icon(AppIcons.getIcon('medication'))
-                      else
-                        Icon(AppIcons.getIcon('vaccine')),
+                      GetIconsColors.getMedicationIconCirlce(
+                          medication.medicationType),
                       SharedWidgets.verticalSpace(),
-                      Text(medication.name, style: AppTextStyles.titleLarge),
+                      Expanded(
+                        child: Text(
+                          medication.name,
+                          style: AppTextStyles.titleLarge,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                     ],
                   ),
                   SharedWidgets.verticalSpace(AppTheme.cardPadding),
-                  _buildInfoRow('Dosage', medication.dosage),
+                  SharedWidgets.buildInfoRow('Dosage', medication.dosage),
                   SharedWidgets.verticalSpace(),
-                  _buildInfoRow('Frequency',
+                  SharedWidgets.buildInfoRow(
+                      'Type', GetLabels.getMedicationTypeText(medication)),
+                  SharedWidgets.verticalSpace(),
+                  SharedWidgets.buildInfoRow('Frequency',
                       DateTimeFormatter.formatMedicationFrequency(medication)),
                   SharedWidgets.verticalSpace(),
                   if (medication.currentQuantity > 0 &&
                       medication.refillThreshold > 0)
-                    _buildInfoRow('Remaining / Refill',
+                    SharedWidgets.buildInfoRow('Remaining / Refill',
                         '${medication.currentQuantity} / ${medication.refillThreshold}'),
                 ],
               ),
@@ -107,10 +117,29 @@ class MedicationDetailScreen extends ConsumerWidget {
           ),
           SharedWidgets.verticalSpace(AppTheme.cardSpacing),
 
+          // Healthcare Providers card (if either doctor or pharmacy is provided)
+          if (medication.doctor != null || medication.pharmacy != null) ...[
+            SharedWidgets.basicCard(
+              context: context,
+              title: 'Healthcare Providers',
+              children: [
+                if (medication.doctor != null)
+                  SharedWidgets.buildInfoRow('Doctor', medication.doctor!),
+                if (medication.doctor != null && medication.pharmacy != null)
+                  SharedWidgets.verticalSpace(),
+                if (medication.pharmacy != null)
+                  SharedWidgets.buildInfoRow('Pharmacy', medication.pharmacy!),
+              ],
+            ),
+            SharedWidgets.verticalSpace(AppTheme.cardSpacing),
+          ],
+
           // Schedule information card
           SharedWidgets.basicCard(
             context: context,
-            title: 'Schedule',
+            title: medication.medicationType == MedicationType.patch
+                ? 'Change Schedule'
+                : 'Schedule',
             children: [
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -156,33 +185,61 @@ class MedicationDetailScreen extends ConsumerWidget {
               })(),
             ],
           ),
+          SharedWidgets.verticalSpace(AppTheme.cardSpacing),
 
           // Injection details card - only shown for injection medications
           if (medication.medicationType == MedicationType.injection &&
               medication.injectionDetails != null) ...[
             SharedWidgets.basicCard(
               context: context,
-              title: 'Syringes',
+              title: 'Injection Details',
               children: [
-                _buildInfoRow('Drawing Needle',
-                    medication.injectionDetails!.drawingNeedleType),
+                SharedWidgets.buildInfoRow(
+                    'Type',
+                    GetLabels.getInjectionSubtypeText(
+                        medication.injectionDetails!.subtype)),
+                SharedWidgets.verticalSpace(AppTheme.spacing * 2),
+
+                // Syringes section
+                Text('Syringes', style: AppTextStyles.titleSmall),
+                SharedWidgets.verticalSpace(),
+                SharedWidgets.buildInfoRow(
+                    'Type', medication.injectionDetails!.syringeType),
+                SharedWidgets.verticalSpace(),
+                if (medication.injectionDetails!.syringeCount > 0)
+                  SharedWidgets.buildInfoRow('Remaining / Refill',
+                      '${medication.injectionDetails!.syringeCount} / ${medication.injectionDetails!.syringeRefills.toString()}'),
+                SharedWidgets.verticalSpace(AppTheme.spacing * 2),
+
+                // Drawing Needles section
+                Text('Drawing Needles', style: AppTextStyles.titleSmall),
+                SharedWidgets.verticalSpace(),
+                SharedWidgets.buildInfoRow(
+                    'Type', medication.injectionDetails!.drawingNeedleType),
                 SharedWidgets.verticalSpace(),
                 if (medication.injectionDetails!.drawingNeedleCount > 0 &&
                     medication.injectionDetails!.drawingNeedleRefills > 0)
-                  _buildInfoRow('Remaining / Refill',
+                  SharedWidgets.buildInfoRow('Remaining / Refill',
                       '${medication.injectionDetails!.drawingNeedleCount} / ${medication.injectionDetails!.drawingNeedleRefills.toString()}'),
                 SharedWidgets.verticalSpace(AppTheme.spacing * 2),
-                _buildInfoRow('Injecting Needle',
-                    medication.injectionDetails!.injectingNeedleType),
+
+                // Injecting Needles section
+                Text('Injecting Needles', style: AppTextStyles.titleSmall),
+                SharedWidgets.verticalSpace(),
+                SharedWidgets.buildInfoRow(
+                    'Type', medication.injectionDetails!.injectingNeedleType),
                 SharedWidgets.verticalSpace(),
                 if (medication.injectionDetails!.injectingNeedleCount > 0 &&
                     medication.injectionDetails!.injectingNeedleRefills > 0)
-                  _buildInfoRow('Remaining / Refill',
+                  SharedWidgets.buildInfoRow('Remaining / Refill',
                       '${medication.injectionDetails!.injectingNeedleCount} / ${medication.injectionDetails!.injectingNeedleRefills.toString()}'),
+
+                // Injection site notes
                 if (medication
-                        .injectionDetails!.injectionSiteNotes.isNotEmpty ==
-                    true) ...[
+                    .injectionDetails!.injectionSiteNotes.isNotEmpty) ...[
                   SharedWidgets.verticalSpace(AppTheme.spacing * 2),
+                  Text('Site Notes', style: AppTextStyles.titleSmall),
+                  SharedWidgets.verticalSpace(),
                   Text(medication.injectionDetails!.injectionSiteNotes),
                 ],
               ],
@@ -203,23 +260,6 @@ class MedicationDetailScreen extends ConsumerWidget {
           ],
         ],
       ),
-    );
-  }
-
-  /// Helper to build consistent info rows
-  Widget _buildInfoRow(String label, String value) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: AppTextStyles.bodyMedium,
-        ),
-        Text(
-          value,
-          style: AppTextStyles.bodyMedium,
-        ),
-      ],
     );
   }
 

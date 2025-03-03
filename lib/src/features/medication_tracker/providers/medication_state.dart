@@ -232,22 +232,34 @@ final sortedMedicationsProvider = Provider<List<Medication>>((ref) {
 });
 
 /// Provider that groups medications by type (oral vs injection)
+/// Provider that groups medications by type (all types)
 final groupedMedicationTypeProvider =
     Provider<Map<String, List<Medication>>>((ref) {
   final medications = ref.watch(sortedMedicationsProvider);
 
-  // Initialize the result map with empty lists
+  // Initialize the result map with empty lists for all types
   final result = {
     'oral': <Medication>[],
     'injection': <Medication>[],
+    'topical': <Medication>[],
+    'patch': <Medication>[],
   };
 
   // Categorize each medication by type
   for (final medication in medications) {
-    if (medication.medicationType == MedicationType.oral) {
-      result['oral']!.add(medication);
-    } else {
-      result['injection']!.add(medication);
+    switch (medication.medicationType) {
+      case MedicationType.oral:
+        result['oral']!.add(medication);
+        break;
+      case MedicationType.injection:
+        result['injection']!.add(medication);
+        break;
+      case MedicationType.topical:
+        result['topical']!.add(medication);
+        break;
+      case MedicationType.patch:
+        result['patch']!.add(medication);
+        break;
     }
   }
 

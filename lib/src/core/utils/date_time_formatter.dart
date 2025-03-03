@@ -74,25 +74,6 @@ class DateTimeFormatter {
   //----------------------------------------------------------------------------
 
   /// Returns a string describing the frequency of a medication
-  static String formatMedicationFrequency(Medication medication) {
-    if (medication.medicationType == MedicationType.injection) {
-      if (medication.injectionDetails?.frequency ==
-          InjectionFrequency.biweekly) {
-        return 'every 2 weeks';
-      }
-      return 'every week';
-    }
-
-    String frequencyText = medication.frequency == 1
-        ? 'once'
-        : medication.frequency == 2
-            ? 'twice'
-            : '${medication.frequency} times';
-
-    return '$frequencyText a day';
-  }
-
-  /// Creates a comprehensive description of medication dosage and schedule
   /// Accounts for medication type and frequency and weekly vs. biweekly
   static String formatMedicationFrequencyDosage(Medication medication) {
     // Format frequency text (once/twice/three times)
@@ -102,20 +83,67 @@ class DateTimeFormatter {
             ? 'twice'
             : '${medication.frequency} times';
 
-    if (medication.medicationType == MedicationType.oral) {
-      if (medication.daysOfWeek.isEmpty || medication.daysOfWeek.length == 7) {
-        return 'Take ${medication.dosage} $frequencyText daily, everyday';
-      } else {
-        return 'Take ${medication.dosage} $frequencyText daily, on ${medication.daysOfWeek.join(', ')}';
-      }
-    } else {
-      // Add this condition for biweekly injections
+    // Handle different medication types
+    switch (medication.medicationType) {
+      case MedicationType.oral:
+        if (medication.daysOfWeek.isEmpty ||
+            medication.daysOfWeek.length == 7) {
+          return 'Take ${medication.dosage} $frequencyText daily, everyday';
+        } else {
+          return 'Take ${medication.dosage} $frequencyText daily, on ${medication.daysOfWeek.join(', ')}';
+        }
+
+      case MedicationType.injection:
+        // Add this condition for biweekly injections
+        if (medication.injectionDetails?.frequency ==
+            InjectionFrequency.biweekly) {
+          return 'Inject ${medication.dosage} every 2 weeks on ${medication.daysOfWeek.join(', ')}';
+        }
+        return 'Inject ${medication.dosage} every week on ${medication.daysOfWeek.join(', ')}';
+
+      case MedicationType.topical:
+        if (medication.daysOfWeek.isEmpty ||
+            medication.daysOfWeek.length == 7) {
+          return 'Apply ${medication.dosage} $frequencyText daily, everyday';
+        } else {
+          return 'Apply ${medication.dosage} $frequencyText daily, on ${medication.daysOfWeek.join(', ')}';
+        }
+
+      case MedicationType.patch:
+        if (medication.daysOfWeek.isEmpty ||
+            medication.daysOfWeek.length == 7) {
+          return 'Change ${medication.name} patch, ${medication.dosage}, $frequencyText daily, everyday';
+        } else {
+          return 'Change ${medication.name} patch, ${medication.dosage}, $frequencyText on ${medication.daysOfWeek.join(', ')}';
+        }
+    }
+  }
+
+  /// Returns a string describing the frequency of a medication
+  static String formatMedicationFrequency(Medication medication) {
+    if (medication.medicationType == MedicationType.injection) {
       if (medication.injectionDetails?.frequency ==
           InjectionFrequency.biweekly) {
-        return 'Inject ${medication.dosage} every 2 weeks on ${medication.daysOfWeek.join(', ')}';
+        return 'every 2 weeks';
       }
-      return 'Inject ${medication.dosage} every week on ${medication.daysOfWeek.join(', ')}';
+      return 'every week';
+    } else if (medication.medicationType == MedicationType.patch) {
+      String frequencyText = medication.frequency == 1
+          ? 'once'
+          : medication.frequency == 2
+              ? 'twice'
+              : '${medication.frequency} times';
+
+      return 'change $frequencyText a day';
     }
+
+    String frequencyText = medication.frequency == 1
+        ? 'once'
+        : medication.frequency == 2
+            ? 'twice'
+            : '${medication.frequency} times';
+
+    return '$frequencyText a day';
   }
 
   //----------------------------------------------------------------------------
