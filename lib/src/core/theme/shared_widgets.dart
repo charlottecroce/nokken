@@ -4,6 +4,7 @@
 //
 import 'package:flutter/material.dart';
 import 'package:nokken/src/core/theme/app_theme.dart';
+import 'package:nokken/src/core/theme/app_text_styles.dart';
 
 class SharedWidgets {
   /// Creates a vertical spacer with customizable height

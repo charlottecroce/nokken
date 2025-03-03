@@ -13,6 +13,8 @@ import 'package:nokken/src/core/utils/date_time_formatter.dart';
 import 'package:nokken/src/core/theme/shared_widgets.dart';
 import 'package:nokken/src/core/theme/app_icons.dart';
 import 'package:nokken/src/core/theme/app_theme.dart';
+import 'package:nokken/src/core/theme/app_colors.dart';
+import 'package:nokken/src/core/theme/app_text_styles.dart';
 
 /// This widget adds a sticky header decorator for each medication type section
 class MedicationSectionWithStickyHeader extends StatelessWidget {
