@@ -252,9 +252,25 @@ class MedicationListTile extends StatelessWidget {
       child: ListTile(
           contentPadding: AppTheme.standardCardPadding,
           title: Text(medication.name, style: AppTextStyles.titleMedium),
+          leading: _buildMedicationTypeIcon(),
           subtitle: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              SharedWidgets.verticalSpace(),
+              Row(
+                children: [
+                  Text(_getTypeBadgeText()),
+                  if (medication.currentQuantity != 0 ||
+                      medication.refillThreshold != 0) ...[
+                    const Text(' • '),
+                    Icon(
+                      Icons.inventory_2_outlined,
+                      size: 16,
+                    ),
+                    Text('${medication.currentQuantity}'),
+                  ],
+                ],
+              ),
               SharedWidgets.verticalSpace(),
               Text(DateTimeFormatter.formatMedicationFrequencyDosage(
                   medication)),
@@ -277,5 +293,79 @@ class MedicationListTile extends StatelessWidget {
           onTap: () => NavigationService.goToMedicationDetails(context,
               medication: medication)),
     );
+  }
+
+  /// Create an icon based on medication type
+  Widget _buildMedicationTypeIcon() {
+    Color iconColor;
+    IconData iconData;
+
+    switch (medication.medicationType) {
+      case MedicationType.oral:
+        iconColor = AppColors.oralMedication;
+        iconData = AppIcons.getOutlined('medication');
+        break;
+      case MedicationType.injection:
+        iconColor = AppColors.injection;
+        iconData = AppIcons.getOutlined('vaccine');
+        break;
+      case MedicationType.topical:
+        iconColor = Colors.teal;
+        iconData = Icons.spa_outlined;
+        break;
+      case MedicationType.patch:
+        iconColor = Colors.purple;
+        iconData = Icons.healing_outlined;
+        break;
+    }
+
+    return CircleAvatar(
+      backgroundColor: iconColor.withOpacity(0.2),
+      child: Icon(iconData, color: iconColor),
+    );
+  }
+
+  /// Get a short text description for the medication type badge
+  String _getTypeBadgeText() {
+    switch (medication.medicationType) {
+      case MedicationType.oral:
+        switch (medication.oralSubtype) {
+          case OralSubtype.tablets:
+            return 'Tablets';
+          case OralSubtype.capsules:
+            return 'Capsules';
+          case OralSubtype.drops:
+            return 'Drops';
+          case null:
+            return 'Oral';
+        }
+
+      case MedicationType.injection:
+        switch (medication.injectionDetails?.subtype) {
+          case InjectionSubtype.intravenous:
+            return 'IV';
+          case InjectionSubtype.intramuscular:
+            return 'IM';
+          case InjectionSubtype.subcutaneous:
+            return 'SC';
+          case null:
+            return 'Injection';
+        }
+
+      case MedicationType.topical:
+        switch (medication.topicalSubtype) {
+          case TopicalSubtype.gel:
+            return 'Gel';
+          case TopicalSubtype.cream:
+            return 'Cream';
+          case TopicalSubtype.spray:
+            return 'Spray';
+          case null:
+            return 'Topical';
+        }
+
+      case MedicationType.patch:
+        return 'Patch';
+    }
   }
 }

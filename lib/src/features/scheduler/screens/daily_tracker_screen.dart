@@ -663,16 +663,8 @@ class _MedicationListTile extends ConsumerWidget {
     final isTaken = ref.watch(isUniqueDoseTakenProvider((dose, doseIndex)));
 
     // Determine icon and color based on medication type
-    final IconData medicationIcon =
-        medication.medicationType == MedicationType.oral
-            ? AppIcons.getOutlined('medication')
-            : AppIcons.getOutlined('vaccine');
-
-    // Set color based on medication type
-    final Color medicationColor =
-        medication.medicationType == MedicationType.oral
-            ? AppColors.oralMedication
-            : AppColors.injection;
+    final IconData medicationIcon = _getMedicationIcon();
+    final Color medicationColor = _getMedicationColor();
 
     // Add dose index indicator if this is not the first dose at this time
     final String doseIndicator =
@@ -737,10 +729,10 @@ class _MedicationListTile extends ConsumerWidget {
                       ),
                     ),
 
-                    // Medication dosage
+                    // Medication dosage with type specific language
                     SharedWidgets.verticalSpace(),
                     Text(
-                      medication.dosage,
+                      _formatDosageText(),
                       style: AppTextStyles.bodyMedium,
                     ),
 
@@ -774,9 +766,9 @@ class _MedicationListTile extends ConsumerWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        // Status text
+                        // Status text - customized per medication type
                         Text(
-                          isTaken ? 'Taken' : 'Not taken',
+                          isTaken ? _getCompletedText() : _getPendingText(),
                           style: AppTextStyles.bodyMedium.copyWith(
                             fontWeight: FontWeight.w500,
                             color: isTaken ? AppColors.tertiary : Colors.grey,
@@ -808,6 +800,106 @@ class _MedicationListTile extends ConsumerWidget {
     );
   }
 
+  /// Get appropriate icon based on medication type
+  IconData _getMedicationIcon() {
+    switch (medication.medicationType) {
+      case MedicationType.oral:
+        return AppIcons.getOutlined('medication');
+      case MedicationType.injection:
+        return AppIcons.getOutlined('vaccine');
+      case MedicationType.topical:
+        return Icons.spa_outlined;
+      case MedicationType.patch:
+        return Icons.healing_outlined;
+    }
+  }
+
+  /// Get appropriate color based on medication type
+  Color _getMedicationColor() {
+    switch (medication.medicationType) {
+      case MedicationType.oral:
+        return AppColors.oralMedication;
+      case MedicationType.injection:
+        return AppColors.injection;
+      case MedicationType.topical:
+        return Colors.teal;
+      case MedicationType.patch:
+        return Colors.purple;
+    }
+  }
+
+  /// Format dosage text based on medication type
+  String _formatDosageText() {
+    switch (medication.medicationType) {
+      case MedicationType.oral:
+        return medication.dosage;
+      case MedicationType.injection:
+        String subtypeText = '';
+        switch (medication.injectionDetails?.subtype) {
+          case InjectionSubtype.intravenous:
+            subtypeText = 'IV';
+            break;
+          case InjectionSubtype.intramuscular:
+            subtypeText = 'IM';
+            break;
+          case InjectionSubtype.subcutaneous:
+            subtypeText = 'SC';
+            break;
+          case null:
+            subtypeText = '';
+            break;
+        }
+        return '${medication.dosage}${subtypeText.isNotEmpty ? ' ($subtypeText)' : ''}';
+      case MedicationType.topical:
+        String subtypeText = '';
+        switch (medication.topicalSubtype) {
+          case TopicalSubtype.gel:
+            subtypeText = 'Gel';
+            break;
+          case TopicalSubtype.cream:
+            subtypeText = 'Cream';
+            break;
+          case TopicalSubtype.spray:
+            subtypeText = 'Spray';
+            break;
+          case null:
+            subtypeText = '';
+            break;
+        }
+        return '${medication.dosage}${subtypeText.isNotEmpty ? ' ($subtypeText)' : ''}';
+      case MedicationType.patch:
+        return medication.dosage;
+    }
+  }
+
+  /// Get text for completed state based on medication type
+  String _getCompletedText() {
+    switch (medication.medicationType) {
+      case MedicationType.oral:
+        return 'Taken';
+      case MedicationType.injection:
+        return 'Injected';
+      case MedicationType.topical:
+        return 'Applied';
+      case MedicationType.patch:
+        return 'Changed';
+    }
+  }
+
+  /// Get text for pending state based on medication type
+  String _getPendingText() {
+    switch (medication.medicationType) {
+      case MedicationType.oral:
+        return 'Not taken';
+      case MedicationType.injection:
+        return 'Not injected';
+      case MedicationType.topical:
+        return 'Not applied';
+      case MedicationType.patch:
+        return 'Not changed';
+    }
+  }
+
   /// Handle toggling a medication's taken status
   void _handleTakenChange(bool? value, WidgetRef ref) {
     if (value == null) return;
@@ -831,8 +923,6 @@ class _MedicationListTile extends ConsumerWidget {
         '${dose.medicationId}-${dose.date.toIso8601String()}-${dose.timeSlot}-$doseIndex';
 
     // Update taken medications in database and state
-    // For the existing database schema, we'll still use the setMedicationTaken method
-    // but internally we'll save using the unique key
     ref.read(medicationTakenProvider.notifier).setMedicationTaken(
           dose,
           value,

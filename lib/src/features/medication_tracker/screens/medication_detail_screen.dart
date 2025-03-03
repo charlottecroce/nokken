@@ -83,16 +83,21 @@ class MedicationDetailScreen extends ConsumerWidget {
                 children: [
                   Row(
                     children: [
-                      if (medication.medicationType == MedicationType.oral)
-                        Icon(AppIcons.getIcon('medication'))
-                      else
-                        Icon(AppIcons.getIcon('vaccine')),
+                      _buildMedicationTypeIcon(),
                       SharedWidgets.verticalSpace(),
-                      Text(medication.name, style: AppTextStyles.titleLarge),
+                      Expanded(
+                        child: Text(
+                          medication.name,
+                          style: AppTextStyles.titleLarge,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                     ],
                   ),
                   SharedWidgets.verticalSpace(AppTheme.cardPadding),
                   _buildInfoRow('Dosage', medication.dosage),
+                  SharedWidgets.verticalSpace(),
+                  _buildInfoRow('Type', _getMedicationTypeText()),
                   SharedWidgets.verticalSpace(),
                   _buildInfoRow('Frequency',
                       DateTimeFormatter.formatMedicationFrequency(medication)),
@@ -107,10 +112,29 @@ class MedicationDetailScreen extends ConsumerWidget {
           ),
           SharedWidgets.verticalSpace(AppTheme.cardSpacing),
 
+          // Healthcare Providers card (if either doctor or pharmacy is provided)
+          if (medication.doctor != null || medication.pharmacy != null) ...[
+            SharedWidgets.basicCard(
+              context: context,
+              title: 'Healthcare Providers',
+              children: [
+                if (medication.doctor != null)
+                  _buildInfoRow('Doctor', medication.doctor!),
+                if (medication.doctor != null && medication.pharmacy != null)
+                  SharedWidgets.verticalSpace(),
+                if (medication.pharmacy != null)
+                  _buildInfoRow('Pharmacy', medication.pharmacy!),
+              ],
+            ),
+            SharedWidgets.verticalSpace(AppTheme.cardSpacing),
+          ],
+
           // Schedule information card
           SharedWidgets.basicCard(
             context: context,
-            title: 'Schedule',
+            title: medication.medicationType == MedicationType.patch
+                ? 'Change Schedule'
+                : 'Schedule',
             children: [
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -156,33 +180,60 @@ class MedicationDetailScreen extends ConsumerWidget {
               })(),
             ],
           ),
+          SharedWidgets.verticalSpace(AppTheme.cardSpacing),
 
           // Injection details card - only shown for injection medications
           if (medication.medicationType == MedicationType.injection &&
               medication.injectionDetails != null) ...[
             SharedWidgets.basicCard(
               context: context,
-              title: 'Syringes',
+              title: 'Injection Details',
               children: [
-                _buildInfoRow('Drawing Needle',
-                    medication.injectionDetails!.drawingNeedleType),
+                _buildInfoRow(
+                    'Type',
+                    _getInjectionSubtypeText(
+                        medication.injectionDetails!.subtype)),
+                SharedWidgets.verticalSpace(AppTheme.spacing * 2),
+
+                // Syringes section
+                Text('Syringes', style: AppTextStyles.titleSmall),
+                SharedWidgets.verticalSpace(),
+                _buildInfoRow('Type', medication.injectionDetails!.syringeType),
+                SharedWidgets.verticalSpace(),
+                if (medication.injectionDetails!.syringeCount > 0)
+                  _buildInfoRow('Remaining / Refill',
+                      '${medication.injectionDetails!.syringeCount} / ${medication.injectionDetails!.syringeRefills.toString()}'),
+                SharedWidgets.verticalSpace(AppTheme.spacing * 2),
+
+                // Drawing Needles section
+                Text('Drawing Needles', style: AppTextStyles.titleSmall),
+                SharedWidgets.verticalSpace(),
+                _buildInfoRow(
+                    'Type', medication.injectionDetails!.drawingNeedleType),
                 SharedWidgets.verticalSpace(),
                 if (medication.injectionDetails!.drawingNeedleCount > 0 &&
                     medication.injectionDetails!.drawingNeedleRefills > 0)
                   _buildInfoRow('Remaining / Refill',
                       '${medication.injectionDetails!.drawingNeedleCount} / ${medication.injectionDetails!.drawingNeedleRefills.toString()}'),
                 SharedWidgets.verticalSpace(AppTheme.spacing * 2),
-                _buildInfoRow('Injecting Needle',
-                    medication.injectionDetails!.injectingNeedleType),
+
+                // Injecting Needles section
+                Text('Injecting Needles', style: AppTextStyles.titleSmall),
+                SharedWidgets.verticalSpace(),
+                _buildInfoRow(
+                    'Type', medication.injectionDetails!.injectingNeedleType),
                 SharedWidgets.verticalSpace(),
                 if (medication.injectionDetails!.injectingNeedleCount > 0 &&
                     medication.injectionDetails!.injectingNeedleRefills > 0)
                   _buildInfoRow('Remaining / Refill',
                       '${medication.injectionDetails!.injectingNeedleCount} / ${medication.injectionDetails!.injectingNeedleRefills.toString()}'),
+
+                // Injection site notes
                 if (medication
-                        .injectionDetails!.injectionSiteNotes.isNotEmpty ==
-                    true) ...[
+                    .injectionDetails!.injectionSiteNotes.isNotEmpty) ...[
                   SharedWidgets.verticalSpace(AppTheme.spacing * 2),
+                  Text('Site Notes', style: AppTextStyles.titleSmall),
+                  SharedWidgets.verticalSpace(),
                   Text(medication.injectionDetails!.injectionSiteNotes),
                 ],
               ],
@@ -221,6 +272,79 @@ class MedicationDetailScreen extends ConsumerWidget {
         ),
       ],
     );
+  }
+
+  /// Get the appropriate icon based on medication type and subtype
+  Widget _buildMedicationTypeIcon() {
+    switch (medication.medicationType) {
+      case MedicationType.oral:
+        return Icon(AppIcons.getOutlined('medication'));
+      case MedicationType.injection:
+        return Icon(AppIcons.getOutlined('vaccine'));
+      case MedicationType.topical:
+        return Icon(Icons.spa_outlined);
+      case MedicationType.patch:
+        return Icon(Icons.healing_outlined);
+    }
+  }
+
+  /// Get a text description of the medication type and subtype
+  String _getMedicationTypeText() {
+    switch (medication.medicationType) {
+      case MedicationType.oral:
+        String subtypeText;
+        switch (medication.oralSubtype) {
+          case OralSubtype.tablets:
+            subtypeText = 'Tablets';
+            break;
+          case OralSubtype.capsules:
+            subtypeText = 'Capsules';
+            break;
+          case OralSubtype.drops:
+            subtypeText = 'Drops';
+            break;
+          case null:
+            subtypeText = '';
+            break;
+        }
+        return 'Oral${subtypeText.isNotEmpty ? ' - $subtypeText' : ''}';
+
+      case MedicationType.injection:
+        return 'Injection';
+
+      case MedicationType.topical:
+        String subtypeText;
+        switch (medication.topicalSubtype) {
+          case TopicalSubtype.gel:
+            subtypeText = 'Gel';
+            break;
+          case TopicalSubtype.cream:
+            subtypeText = 'Cream';
+            break;
+          case TopicalSubtype.spray:
+            subtypeText = 'Spray';
+            break;
+          case null:
+            subtypeText = '';
+            break;
+        }
+        return 'Topical${subtypeText.isNotEmpty ? ' - $subtypeText' : ''}';
+
+      case MedicationType.patch:
+        return 'Patch';
+    }
+  }
+
+  /// Get a text description of the injection subtype
+  String _getInjectionSubtypeText(InjectionSubtype subtype) {
+    switch (subtype) {
+      case InjectionSubtype.intravenous:
+        return 'Intravenous (IV)';
+      case InjectionSubtype.intramuscular:
+        return 'Intramuscular (IM)';
+      case InjectionSubtype.subcutaneous:
+        return 'Subcutaneous (SC)';
+    }
   }
 
   /// Show confirmation dialog before deleting medication

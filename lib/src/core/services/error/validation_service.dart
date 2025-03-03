@@ -99,10 +99,10 @@ class ValidationService {
       );
     }
 
-    if (type == MedicationType.oral && details != null) {
+    if (type != MedicationType.injection && details != null) {
       return ValidationResult(
         isValid: false,
-        message: 'Oral medication should not have injection details',
+        message: 'Only injection type should have injection details',
       );
     }
 
@@ -118,11 +118,60 @@ class ValidationService {
     return ValidationResult.valid();
   }
 
+  /// Validate oral subtype based on medication type
+  static ValidationResult validateOralSubtype(
+      MedicationType type, OralSubtype? subtype) {
+    if (type == MedicationType.oral && subtype == null) {
+      return ValidationResult(
+        isValid: false,
+        message: 'Oral subtype required for oral medications',
+      );
+    }
+
+    if (type != MedicationType.oral && subtype != null) {
+      return ValidationResult(
+        isValid: false,
+        message: 'Only oral type should have oral subtype',
+      );
+    }
+
+    return ValidationResult.valid();
+  }
+
+  /// Validate topical subtype based on medication type
+  static ValidationResult validateTopicalSubtype(
+      MedicationType type, TopicalSubtype? subtype) {
+    if (type == MedicationType.topical && subtype == null) {
+      return ValidationResult(
+        isValid: false,
+        message: 'Topical subtype required for topical medications',
+      );
+    }
+
+    if (type != MedicationType.topical && subtype != null) {
+      return ValidationResult(
+        isValid: false,
+        message: 'Only topical type should have topical subtype',
+      );
+    }
+
+    return ValidationResult.valid();
+  }
+
   /// Validate needle type
   static ValidationResult validateNeedleType(String? needleType) {
     if (needleType == null || needleType.isEmpty) {
       return ValidationResult(
           isValid: false, message: 'Please enter needle type');
+    }
+    return ValidationResult.valid();
+  }
+
+  /// Validate syringe type
+  static ValidationResult validateSyringeType(String? syringeType) {
+    if (syringeType == null || syringeType.isEmpty) {
+      return ValidationResult(
+          isValid: false, message: 'Please enter syringe type');
     }
     return ValidationResult.valid();
   }
@@ -158,6 +207,12 @@ class ValidationService {
   /// TextFormField validator for needle type
   static String? needleTypeValidator(String? value) {
     final result = validateNeedleType(value);
+    return result.isValid ? null : result.message;
+  }
+
+  /// TextFormField validator for syringe type
+  static String? syringeTypeValidator(String? value) {
+    final result = validateSyringeType(value);
     return result.isValid ? null : result.message;
   }
 
