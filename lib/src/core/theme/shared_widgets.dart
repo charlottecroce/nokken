@@ -29,6 +29,23 @@ class SharedWidgets {
     );
   }
 
+  /// Helper to build consistent info rows
+  static Widget buildInfoRow(String label, String value) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: AppTextStyles.bodyMedium,
+        ),
+        Text(
+          value,
+          style: AppTextStyles.bodyMedium,
+        ),
+      ],
+    );
+  }
+
   /// Creates a standardized card with title and content
   /// Used for displaying grouped information throughout the app
   static Widget basicCard({

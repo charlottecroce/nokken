@@ -15,7 +15,7 @@ import 'package:nokken/src/core/theme/shared_widgets.dart';
 import 'package:nokken/src/core/theme/app_theme.dart';
 import 'package:nokken/src/core/theme/app_icons.dart';
 import 'package:nokken/src/core/utils/date_time_formatter.dart';
-import 'package:nokken/src/core/utils/appointment_utils.dart';
+import 'package:nokken/src/core/utils/get_labels.dart';
 import 'package:nokken/src/core/utils/get_icons_colors.dart';
 
 /// Provider to track the currently selected date
@@ -446,10 +446,6 @@ class _AppointmentCard extends StatelessWidget {
       DateTime.now().day,
     ));
 
-    // Get appointment specific details using AppointmentUtils
-    final appointmentTitle =
-        AppointmentUtils.getAppointmentTypeText(bloodwork.appointmentType);
-
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -475,7 +471,8 @@ class _AppointmentCard extends StatelessWidget {
                     child: Row(
                       children: [
                         Text(
-                          appointmentTitle,
+                          GetLabels.getAppointmentTypeText(
+                              bloodwork.appointmentType),
                           style: AppTextStyles.titleLarge,
                         ),
                         if (isDateInFuture) ...[

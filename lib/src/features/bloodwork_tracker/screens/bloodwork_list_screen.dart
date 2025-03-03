@@ -13,7 +13,7 @@ import 'package:nokken/src/core/theme/shared_widgets.dart';
 import 'package:nokken/src/core/theme/app_icons.dart';
 import 'package:nokken/src/core/theme/app_theme.dart';
 import 'package:nokken/src/core/utils/date_time_formatter.dart';
-import 'package:nokken/src/core/utils/appointment_utils.dart';
+import 'package:nokken/src/core/utils/get_labels.dart';
 
 /// This widget adds a sticky header decorator for each section
 class SectionWithStickyHeader extends StatelessWidget {
@@ -253,9 +253,6 @@ class BloodworkListTile extends StatelessWidget {
     final timeStr = DateTimeFormatter.formatTimeToAMPM(timeOfDay);
     final timeIcon = DateTimeFormatter.getTimeIcon(timeStr);
 
-    // Use the AppointmentUtils helper for appointment details
-    final appointmentTypeText =
-        AppointmentUtils.getAppointmentTypeText(bloodwork.appointmentType);
     final appointmentTypeColor =
         GetIconsColors.getAppointmentColor(bloodwork.appointmentType);
 
@@ -308,7 +305,7 @@ class BloodworkListTile extends StatelessWidget {
                 Flexible(
                   // Added Flexible to prevent overflow
                   child: Text(
-                    appointmentTypeText,
+                    GetLabels.getAppointmentTypeText(bloodwork.appointmentType),
                     style: AppTextStyles.bodyMedium.copyWith(
                       color: appointmentTypeColor,
                       fontWeight: FontWeight.w500,

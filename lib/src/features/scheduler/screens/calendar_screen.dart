@@ -18,7 +18,7 @@ import 'package:nokken/src/core/services/database/database_service.dart';
 import 'package:nokken/src/core/services/navigation/navigation_service.dart';
 import 'package:nokken/src/core/theme/app_icons.dart';
 import 'package:nokken/src/core/theme/app_theme.dart';
-import 'package:nokken/src/core/utils/appointment_utils.dart';
+import 'package:nokken/src/core/utils/get_labels.dart';
 
 class CalendarScreen extends ConsumerStatefulWidget {
   const CalendarScreen({super.key});
@@ -263,10 +263,6 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     final timeStr = DateTimeFormatter.formatTimeToAMPM(timeOfDay);
     final timeIcon = DateTimeFormatter.getTimeIcon(timeStr);
 
-    // Get appointment specific details using the AppointmentUtils class
-    final appointmentTitle =
-        AppointmentUtils.getAppointmentTypeText(bloodwork.appointmentType);
-
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       child: Padding(
@@ -293,7 +289,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     child: Row(
                       children: [
                         Text(
-                          appointmentTitle,
+                          GetLabels.getAppointmentTypeText(
+                              bloodwork.appointmentType),
                           style: AppTextStyles.titleLarge,
                         ),
                         if (isDateInFuture) ...[

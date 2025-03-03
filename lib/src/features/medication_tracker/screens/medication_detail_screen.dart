@@ -10,7 +10,8 @@ import 'package:nokken/src/features/medication_tracker/providers/medication_stat
 import 'package:nokken/src/core/services/navigation/navigation_service.dart';
 import 'package:nokken/src/core/theme/app_theme.dart';
 import 'package:nokken/src/core/theme/shared_widgets.dart';
-//import 'package:nokken/src/shared/constants/date_constants.dart';
+import 'package:nokken/src/core/utils/get_icons_colors.dart';
+import 'package:nokken/src/core/utils/get_labels.dart';
 import 'package:nokken/src/core/utils/date_time_formatter.dart';
 
 class MedicationDetailScreen extends ConsumerWidget {
@@ -83,7 +84,8 @@ class MedicationDetailScreen extends ConsumerWidget {
                 children: [
                   Row(
                     children: [
-                      _buildMedicationTypeIcon(),
+                      GetIconsColors.getMedicationIconCirlce(
+                          medication.medicationType),
                       SharedWidgets.verticalSpace(),
                       Expanded(
                         child: Text(
@@ -95,16 +97,17 @@ class MedicationDetailScreen extends ConsumerWidget {
                     ],
                   ),
                   SharedWidgets.verticalSpace(AppTheme.cardPadding),
-                  _buildInfoRow('Dosage', medication.dosage),
+                  SharedWidgets.buildInfoRow('Dosage', medication.dosage),
                   SharedWidgets.verticalSpace(),
-                  _buildInfoRow('Type', _getMedicationTypeText()),
+                  SharedWidgets.buildInfoRow(
+                      'Type', GetLabels.getMedicationTypeText(medication)),
                   SharedWidgets.verticalSpace(),
-                  _buildInfoRow('Frequency',
+                  SharedWidgets.buildInfoRow('Frequency',
                       DateTimeFormatter.formatMedicationFrequency(medication)),
                   SharedWidgets.verticalSpace(),
                   if (medication.currentQuantity > 0 &&
                       medication.refillThreshold > 0)
-                    _buildInfoRow('Remaining / Refill',
+                    SharedWidgets.buildInfoRow('Remaining / Refill',
                         '${medication.currentQuantity} / ${medication.refillThreshold}'),
                 ],
               ),
@@ -119,11 +122,11 @@ class MedicationDetailScreen extends ConsumerWidget {
               title: 'Healthcare Providers',
               children: [
                 if (medication.doctor != null)
-                  _buildInfoRow('Doctor', medication.doctor!),
+                  SharedWidgets.buildInfoRow('Doctor', medication.doctor!),
                 if (medication.doctor != null && medication.pharmacy != null)
                   SharedWidgets.verticalSpace(),
                 if (medication.pharmacy != null)
-                  _buildInfoRow('Pharmacy', medication.pharmacy!),
+                  SharedWidgets.buildInfoRow('Pharmacy', medication.pharmacy!),
               ],
             ),
             SharedWidgets.verticalSpace(AppTheme.cardSpacing),
@@ -189,43 +192,44 @@ class MedicationDetailScreen extends ConsumerWidget {
               context: context,
               title: 'Injection Details',
               children: [
-                _buildInfoRow(
+                SharedWidgets.buildInfoRow(
                     'Type',
-                    _getInjectionSubtypeText(
+                    GetLabels.getInjectionSubtypeText(
                         medication.injectionDetails!.subtype)),
                 SharedWidgets.verticalSpace(AppTheme.spacing * 2),
 
                 // Syringes section
                 Text('Syringes', style: AppTextStyles.titleSmall),
                 SharedWidgets.verticalSpace(),
-                _buildInfoRow('Type', medication.injectionDetails!.syringeType),
+                SharedWidgets.buildInfoRow(
+                    'Type', medication.injectionDetails!.syringeType),
                 SharedWidgets.verticalSpace(),
                 if (medication.injectionDetails!.syringeCount > 0)
-                  _buildInfoRow('Remaining / Refill',
+                  SharedWidgets.buildInfoRow('Remaining / Refill',
                       '${medication.injectionDetails!.syringeCount} / ${medication.injectionDetails!.syringeRefills.toString()}'),
                 SharedWidgets.verticalSpace(AppTheme.spacing * 2),
 
                 // Drawing Needles section
                 Text('Drawing Needles', style: AppTextStyles.titleSmall),
                 SharedWidgets.verticalSpace(),
-                _buildInfoRow(
+                SharedWidgets.buildInfoRow(
                     'Type', medication.injectionDetails!.drawingNeedleType),
                 SharedWidgets.verticalSpace(),
                 if (medication.injectionDetails!.drawingNeedleCount > 0 &&
                     medication.injectionDetails!.drawingNeedleRefills > 0)
-                  _buildInfoRow('Remaining / Refill',
+                  SharedWidgets.buildInfoRow('Remaining / Refill',
                       '${medication.injectionDetails!.drawingNeedleCount} / ${medication.injectionDetails!.drawingNeedleRefills.toString()}'),
                 SharedWidgets.verticalSpace(AppTheme.spacing * 2),
 
                 // Injecting Needles section
                 Text('Injecting Needles', style: AppTextStyles.titleSmall),
                 SharedWidgets.verticalSpace(),
-                _buildInfoRow(
+                SharedWidgets.buildInfoRow(
                     'Type', medication.injectionDetails!.injectingNeedleType),
                 SharedWidgets.verticalSpace(),
                 if (medication.injectionDetails!.injectingNeedleCount > 0 &&
                     medication.injectionDetails!.injectingNeedleRefills > 0)
-                  _buildInfoRow('Remaining / Refill',
+                  SharedWidgets.buildInfoRow('Remaining / Refill',
                       '${medication.injectionDetails!.injectingNeedleCount} / ${medication.injectionDetails!.injectingNeedleRefills.toString()}'),
 
                 // Injection site notes
@@ -255,96 +259,6 @@ class MedicationDetailScreen extends ConsumerWidget {
         ],
       ),
     );
-  }
-
-  /// Helper to build consistent info rows
-  Widget _buildInfoRow(String label, String value) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: AppTextStyles.bodyMedium,
-        ),
-        Text(
-          value,
-          style: AppTextStyles.bodyMedium,
-        ),
-      ],
-    );
-  }
-
-  /// Get the appropriate icon based on medication type and subtype
-  Widget _buildMedicationTypeIcon() {
-    switch (medication.medicationType) {
-      case MedicationType.oral:
-        return Icon(AppIcons.getOutlined('medication'));
-      case MedicationType.injection:
-        return Icon(AppIcons.getOutlined('vaccine'));
-      case MedicationType.topical:
-        return Icon(AppIcons.getOutlined('topical'));
-      case MedicationType.patch:
-        return Icon(AppIcons.getOutlined('patch'));
-    }
-  }
-
-  /// Get a text description of the medication type and subtype
-  String _getMedicationTypeText() {
-    switch (medication.medicationType) {
-      case MedicationType.oral:
-        String subtypeText;
-        switch (medication.oralSubtype) {
-          case OralSubtype.tablets:
-            subtypeText = 'Tablets';
-            break;
-          case OralSubtype.capsules:
-            subtypeText = 'Capsules';
-            break;
-          case OralSubtype.drops:
-            subtypeText = 'Drops';
-            break;
-          case null:
-            subtypeText = '';
-            break;
-        }
-        return 'Oral${subtypeText.isNotEmpty ? ' - $subtypeText' : ''}';
-
-      case MedicationType.injection:
-        return 'Injection';
-
-      case MedicationType.topical:
-        String subtypeText;
-        switch (medication.topicalSubtype) {
-          case TopicalSubtype.gel:
-            subtypeText = 'Gel';
-            break;
-          case TopicalSubtype.cream:
-            subtypeText = 'Cream';
-            break;
-          case TopicalSubtype.spray:
-            subtypeText = 'Spray';
-            break;
-          case null:
-            subtypeText = '';
-            break;
-        }
-        return 'Topical${subtypeText.isNotEmpty ? ' - $subtypeText' : ''}';
-
-      case MedicationType.patch:
-        return 'Patch';
-    }
-  }
-
-  /// Get a text description of the injection subtype
-  String _getInjectionSubtypeText(InjectionSubtype subtype) {
-    switch (subtype) {
-      case InjectionSubtype.intravenous:
-        return 'Intravenous (IV)';
-      case InjectionSubtype.intramuscular:
-        return 'Intramuscular (IM)';
-      case InjectionSubtype.subcutaneous:
-        return 'Subcutaneous (SC)';
-    }
   }
 
   /// Show confirmation dialog before deleting medication
