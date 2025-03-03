@@ -1,5 +1,5 @@
 # Nøkken
-[![build status](https://github.com/charlottecroce/nokken/actions/workflows/code_quality.yml/badge.svg?branch=main)](https://github.com/charlottecroce/nokken/actions)
+[![build status](https://github.com/charlottecroce/nokken/actions/workflows/ci_testing.yml/badge.svg?branch=main)](https://github.com/charlottecroce/nokken/actions)
 ![version](https://img.shields.io/badge/version-0.0.1-blue)
 [![codecov](https://codecov.io/gh/charlottecroce/nokken/graph/badge.svg?token=DTHAJGX6X9)](https://codecov.io/gh/charlottecroce/nokken)
 [![activity](https://img.shields.io/github/commit-activity/m/badges/shields)](https://github.com/charlottecroce/nokken/pulse)
